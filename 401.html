@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>401 Unauthorized</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tank-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .tank-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            animation: tankMove 4s linear infinite;
+        }
+        @keyframes tankMove {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(20px) rotate(5deg); }
+            50% { transform: translateX(0) rotate(0deg); }
+            75% { transform: translateX(-20px) rotate(-5deg); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="text-center fade-in">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">/̵͇̿̿/’̿’̿ ̿ ̿̿ ̿̿ ̿̿401 Unauthorized/̵͇̿̿/’̿’̿ ̿ ̿̿ ̿̿ ̿̿</h1>
+        <p class="text-lg text-gray-600 mb-6">Access denied. Please log in to continue.</p>
+
+        <!-- Animated tank image -->
+        <div class="tank-container">
+            <img src="images/401.png" alt="Tank 401" class="tank-image">
+        </div>
+
+        <button 
+            onclick="window.location.href='index.html'" 
+            class="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-300"
+        >
+            Go to Login
+        </button>
+    </div>
+</body>
+</html>

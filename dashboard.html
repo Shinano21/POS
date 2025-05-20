@@ -99,7 +99,7 @@
             color: #fff;
             height: calc(100vh - 70px);
             position: fixed;
-            padding-top: 65px;
+            padding-top: 25px; /* Aligned with Inventory.html */
         }
         .sidebar ul {
             list-style: none;
@@ -118,6 +118,14 @@
         }
         .sidebar ul li i {
             margin-right: 12px;
+        }
+        .sidebar ul li a {
+            color: #fff;
+            text-decoration: none;
+            display: block;
+        }
+        .sidebar ul li a:hover {
+            color: #fff;
         }
         .main-content {
             margin-left: 260px;
@@ -605,7 +613,7 @@
         <div class="navbar-actions">
             <div class="user-info">
                 <img src="images/user.png" alt="User">
-                <span>Argie Z. Bermudo <br> Pharmacist</span>
+                <span>Randiel <br> Drug Lord</span>
             </div>
         </div>
     </div>
@@ -613,8 +621,8 @@
     <div class="sidebar">
         <ul id="sidebarMenu">
             <li data-tab="home" class="active"><i class="fas fa-home"></i> Home</li>
-            <li data-tab="transaction"><i class="fas fa-exchange-alt"></i> Transactions</li>
-            <li data-tab="inventory"><i class="fas fa-boxes"></i> Inventory</li>
+            <li data-tab="transaction"><a href="Transaction.html"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
+            <li data-tab="inventory"><a href="Inventory.html"><i class="fas fa-boxes"></i> Inventory</a></li>
             <li onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</li>
         </ul>
     </div>
@@ -658,7 +666,7 @@
                     <div class="discount-toggle">
                         <input type="checkbox" id="discountCheckbox" onchange="toggleDiscount()">
                         <label for="discountCheckbox">Apply 20% Discount (Senior/PWD)</label>
-                        <i class="fas fa-info-circle tooltip-icon" title="Apply a 20% discount for Senior Citizens or Persons with Disabilities (PWD)."></i>
+                        <i class="fas fa-info-circle tooltip-icon" title="Apply a 20% discount for Senior Citizens or Persons with Disabilities (PWD). Admin approval required for non-admins."></i>
                     </div>
                     <div class="summary-group">
                         <label>Subtotal (PHP):</label>
@@ -686,73 +694,6 @@
                         <div class="spinner"></div>
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <div id="transactionTab" class="tab-content">
-            <div class="form-section">
-                <h3>Transactions</h3>
-                <table class="cart-table" id="transactionTable">
-                    <thead>
-                        <tr>
-                            <th>Transaction ID</th>
-                            <th>Items</th>
-                            <th>Total Amount (PHP)</th>
-                            <th>Cash Paid (PHP)</th>
-                            <th>Change (PHP)</th>
-                            <th>Timestamp</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="inventoryTab" class="tab-content">
-            <div class="form-section">
-                <h3>Inventory</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="inventoryItemId">Item ID (Barcode):</label>
-                        <input type="text" id="inventoryItemId" placeholder="Enter 8-13 digit barcode">
-                    </div>
-                    <div class="form-group">
-                        <label for="inventoryName">Name:</label>
-                        <input type="text" id="inventoryName" placeholder="Enter product name">
-                    </div>
-                    <div class="form-group">
-                        <label for="inventoryType">Type:</label>
-                        <input type="text" id="inventoryType" placeholder="Enter product type">
-                    </div>
-                    <div class="form-group">
-                        <label for="inventoryQuantity">Quantity:</label>
-                        <input type="number" id="inventoryQuantity" min="0" placeholder="Enter quantity">
-                    </div>
-                    <div class="form-group">
-                        <label for="inventoryPrice">Price (PHP):</label>
-                        <input type="number" id="inventoryPrice" step="0.01" min="0" placeholder="Enter price">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-success" onclick="addOrUpdateInventory()">Add/Update Item</button>
-                    </div>
-                </div>
-                <div id="inventoryError" class="error"></div>
-            </div>
-            <div class="form-section">
-                <table class="cart-table" id="inventoryTable">
-                    <thead>
-                        <tr>
-                            <th>Item ID</th>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Quantity</th>
-                            <th>Price (PHP)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryBody"></tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -840,7 +781,7 @@
         </div>
     </div>
 
-    <div id="toast" class="toast">Checkout successful!</div>
+    <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
@@ -850,6 +791,8 @@
         let discountApplied = false;
         let isProcessing = false;
         let pendingAction = null;
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY = 1000;
 
         // Authentication check
         document.addEventListener('DOMContentLoaded', function() {
@@ -858,8 +801,6 @@
                 window.location.replace('401.html');
             } else {
                 initializeDashboard();
-                loadTransactions();
-                loadInventory();
                 addKeyboardNavigation('navbarSearch');
                 addKeyboardNavigation('itemSearch');
             }
@@ -971,11 +912,10 @@
 
             try {
                 const params = new URLSearchParams();
-                if (/^\d{8,13}$/.test(query)) {
-                    params.append('action', 'getItem');
-                    params.append('itemId', query);
+                params.append('action', 'getItem');
+                if (/^\d{8,13}$/.test(query.trim())) {
+                    params.append('itemId', query.trim());
                 } else {
-                    params.append('action', 'getItem');
                     params.append('name', query);
                     params.append('partial', 'true');
                 }
@@ -985,30 +925,25 @@
 
                 suggestionsDiv.innerHTML = '';
 
-                if (result.success && result.items && result.items.length > 0) {
-                    result.items.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'suggestion-item';
-                        div.innerHTML = `
-                            <span>${item.name}</span>
-                            <span>ID: ${item.itemId} | ₱${item.price.toFixed(2)}</span>
-                        `;
-                        div.onclick = () => selectSuggestion(item, inputId);
-                        div.dataset.item = JSON.stringify(item);
-                        suggestionsDiv.appendChild(div);
-                    });
-                } else if (result.success && result.item) {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.innerHTML = `
-                        <span>${result.item.name}</span>
-                        <span>ID: ${result.item.itemId} | ₱${result.item.price.toFixed(2)}</span>
-                    `;
-                    div.onclick = () => selectSuggestion(result.item, inputId);
-                    div.dataset.item = JSON.stringify(result.item);
-                    suggestionsDiv.appendChild(div);
+                if (result.success && (result.item || result.items)) {
+                    const items = result.item ? [result.item] : result.items || [];
+                    if (items.length > 0) {
+                        items.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            div.innerHTML = `
+                                <span>${item.name}</span>
+                                <span>ID: ${item.itemId} | ₱${item.price.toFixed(2)} | Stock: ${item.stock}</span>
+                            `;
+                            div.onclick = () => selectSuggestion(item, inputId);
+                            div.dataset.item = JSON.stringify(item);
+                            suggestionsDiv.appendChild(div);
+                        });
+                    } else {
+                        suggestionsDiv.innerHTML = '<div class="loading">No results found</div>';
+                    }
                 } else {
-                    suggestionsDiv.innerHTML = '<div class="loading">No results found</div>';
+                    suggestionsDiv.innerHTML = '<div class="loading">Error loading suggestions</div>';
                 }
 
                 suggestionsDiv.style.display = 'block';
@@ -1022,18 +957,87 @@
         function selectSuggestion(item, inputId) {
             const input = document.getElementById(inputId);
             const suggestionsDiv = document.getElementById(inputId === 'itemSearch' ? 'itemSearchSuggestions' : 'nameSuggestions');
-            
+
             if (inputId === 'itemSearch') {
-                input.value = item.itemId;
-                addToCart();
+                input.value = item.name;
+                input.dataset.selectedItem = JSON.stringify(item);
+                suggestionsDiv.style.display = 'none';
+                suggestionsDiv.innerHTML = '';
+                input.focus();
             } else {
                 input.value = item.name;
-                document.getElementById('itemSearch').value = item.itemId;
+                document.getElementById('itemSearch').value = item.name;
+                document.getElementById('itemSearch').dataset.selectedItem = JSON.stringify(item);
                 document.getElementById('itemSearch').focus();
+                suggestionsDiv.style.display = 'none';
+                suggestionsDiv.innerHTML = '';
+            }
+        }
+
+        async function addToCart() {
+            const itemSearch = document.getElementById('itemSearch');
+            const errorDiv = document.getElementById('itemSearchError');
+            const selectedItem = itemSearch.dataset.selectedItem ? JSON.parse(itemSearch.dataset.selectedItem) : null;
+            const query = itemSearch.value.trim();
+
+            if (!query) {
+                errorDiv.textContent = 'Please enter a barcode or product name.';
+                return;
             }
 
-            suggestionsDiv.style.display = 'none';
-            suggestionsDiv.innerHTML = '';
+            errorDiv.textContent = '';
+
+            let item = null;
+
+            if (selectedItem) {
+                item = selectedItem;
+            } else if (/^\d{8,13}$/.test(query)) {
+                try {
+                    const params = new URLSearchParams();
+                    params.append('action', 'getItem');
+                    params.append('itemId', query);
+
+                    const response = await fetch(`${API_URL}?${params.toString()}`);
+                    const result = await response.json();
+
+                    if (result.success && result.item) {
+                        item = result.item;
+                    } else {
+                        errorDiv.textContent = 'Item not found for the entered barcode.';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching item by barcode:', error);
+                    errorDiv.textContent = 'Error adding item to cart.';
+                    return;
+                }
+            } else {
+                errorDiv.textContent = 'Please select an item from the suggestion list.';
+                fetchSuggestions(query, 'itemSearch');
+                return;
+            }
+
+            const existingItem = cart.find(cartItem => cartItem.itemId === item.itemId);
+
+            if (existingItem) {
+                if (existingItem.quantity < item.stock) {
+                    existingItem.quantity += 1;
+                } else {
+                    errorDiv.textContent = `Cannot add more ${item.name}. Only ${item.stock} in stock.`;
+                    return;
+                }
+            } else {
+                if (item.stock > 0) {
+                    cart.push({ ...item, quantity: 1 });
+                } else {
+                    errorDiv.textContent = `${item.name} is out of stock.`;
+                    return;
+                }
+            }
+
+            updateCartTable();
+            itemSearch.value = '';
+            itemSearch.dataset.selectedItem = '';
         }
 
         function addKeyboardNavigation(inputId) {
@@ -1080,60 +1084,6 @@
                     selectedIndex = -1;
                 }
             });
-        }
-
-        async function addToCart() {
-            const itemSearch = document.getElementById('itemSearch');
-            const query = itemSearch.value.trim();
-            const errorDiv = document.getElementById('itemSearchError');
-
-            if (!query) {
-                errorDiv.textContent = 'Please enter a barcode or product name.';
-                return;
-            }
-
-            errorDiv.textContent = '';
-            try {
-                const params = new URLSearchParams();
-                if (/^\d{8,13}$/.test(query)) {
-                    params.append('action', 'getItem');
-                    params.append('itemId', query);
-                } else {
-                    params.append('action', 'getItem');
-                    params.append('name', query);
-                }
-
-                const response = await fetch(`${API_URL}?${params.toString()}`);
-                const result = await response.json();
-
-                if (result.success && result.item) {
-                    const item = result.item;
-                    const existingItem = cart.find(cartItem => cartItem.itemId === item.itemId);
-
-                    if (existingItem) {
-                        if (existingItem.quantity < item.stock) {
-                            existingItem.quantity += 1;
-                        } else {
-                            errorDiv.textContent = `Cannot add more ${item.name}. Only ${item.stock} in stock.`;
-                            return;
-                        }
-                    } else {
-                        if (item.stock > 0) {
-                            cart.push({ ...item, quantity: 1 });
-                        } else {
-                            errorDiv.textContent = `${item.name} is out of stock.`;
-                            return;
-                        }
-                    }
-                    updateCartTable();
-                    itemSearch.value = '';
-                } else {
-                    errorDiv.textContent = 'Item not found.';
-                }
-            } catch (error) {
-                console.error('Error adding to cart:', error);
-                errorDiv.textContent = 'Error adding item to cart.';
-            }
         }
 
         function updateCartTable() {
@@ -1208,6 +1158,10 @@
         }
 
         function clearCart() {
+            if (cart.length === 0) {
+                document.getElementById('itemSearchError').textContent = 'Cart is already empty.';
+                return;
+            }
             const modal = new bootstrap.Modal(document.getElementById('clearCartModal'));
             modal.show();
         }
@@ -1220,6 +1174,7 @@
             if (userRole === 'admin') {
                 discountApplied = isChecked;
                 updateCartTable();
+                showToast(isChecked ? 'Discount applied.' : 'Discount removed.');
             } else {
                 pendingAction = { type: 'discount', value: isChecked };
                 const modal = new bootstrap.Modal(document.getElementById('adminApprovalModal'));
@@ -1228,6 +1183,12 @@
                 document.getElementById('adminPassword').value = '';
                 document.getElementById('adminApprovalError').textContent = '';
                 modal.show();
+                modal._element.addEventListener('hidden.bs.modal', function handler() {
+                    if (!discountApplied) {
+                        discountCheckbox.checked = !isChecked;
+                    }
+                    modal._element.removeEventListener('hidden.bs.modal', handler);
+                }, { once: true });
             }
         }
 
@@ -1243,6 +1204,7 @@
             }
 
             approveButton.classList.add('loading');
+            approveButton.disabled = true;
             errorDiv.textContent = '';
 
             try {
@@ -1258,17 +1220,18 @@
                     const modal = bootstrap.Modal.getInstance(document.getElementById('adminApprovalModal'));
                     modal.hide();
 
-                    if (pendingAction.type === 'discount') {
-                        discountApplied = pendingAction.value;
-                        document.getElementById('discountCheckbox').checked = discountApplied;
-                        updateCartTable();
-                    } else if (pendingAction.type === 'checkout') {
-                        processCheckout();
-                    } else if (pendingAction.type === 'refund') {
-                        processRefund(pendingAction.transactionId);
+                    if (pendingAction) {
+                        if (pendingAction.type === 'discount') {
+                            discountApplied = pendingAction.value;
+                            document.getElementById('discountCheckbox').checked = discountApplied;
+                            updateCartTable();
+                            showToast(discountApplied ? 'Discount applied.' : 'Discount removed.');
+                        }
+                        pendingAction = null;
                     }
 
-                    pendingAction = null;
+                    document.getElementById('adminUsername').value = '';
+                    document.getElementById('adminPassword').value = '';
                 } else {
                     errorDiv.textContent = result.message || 'Invalid admin credentials.';
                 }
@@ -1277,6 +1240,7 @@
                 console.error('Error:', error);
             } finally {
                 approveButton.classList.remove('loading');
+                approveButton.disabled = false;
             }
         }
 
@@ -1304,18 +1268,7 @@
                 return;
             }
 
-            const userRole = localStorage.getItem('userRole');
-            if (userRole === 'admin') {
-                showCheckoutModal();
-            } else {
-                pendingAction = { type: 'checkout' };
-                const modal = new bootstrap.Modal(document.getElementById('adminApprovalModal'));
-                document.getElementById('adminApprovalModalLabel').textContent = 'Admin Approval for Checkout';
-                document.getElementById('adminUsername').value = '';
-                document.getElementById('adminPassword').value = '';
-                document.getElementById('adminApprovalError').textContent = '';
-                modal.show();
-            }
+            showCheckoutModal();
         }
 
         function showCheckoutModal() {
@@ -1340,10 +1293,49 @@
             const payButton = document.querySelector('.pay-btn');
             payButton.classList.add('loading');
             payButton.disabled = true;
+            const errorDiv = document.getElementById('itemSearchError');
+            errorDiv.textContent = '';
 
             const finalTotal = parseFloat(document.getElementById('finalTotal').value) || 0;
             const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
             const change = cashPaid - finalTotal;
+
+            // Validate cart
+            if (cart.length === 0) {
+                errorDiv.textContent = 'Cart is empty.';
+                resetCheckout(payButton);
+                return;
+            }
+
+            for (const item of cart) {
+                if (!item.itemId || !item.quantity || item.quantity <= 0 || isNaN(item.price)) {
+                    errorDiv.textContent = `Invalid cart item: ${item.name || 'Unknown'}.`;
+                    resetCheckout(payButton);
+                    return;
+                }
+                try {
+                    const url = new URL(API_URL);
+                    url.searchParams.append('action', 'getItem');
+                    url.searchParams.append('itemId', item.itemId);
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if (!data.success || !data.item) {
+                        errorDiv.textContent = `Item ${item.name} not found in inventory.`;
+                        resetCheckout(payButton);
+                        return;
+                    }
+                    if (data.item.stock < item.quantity) {
+                        errorDiv.textContent = `Insufficient stock for ${item.name}. Available: ${data.item.stock}, Requested: ${item.quantity}.`;
+                        resetCheckout(payButton);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error verifying stock:', error);
+                    errorDiv.textContent = 'Error verifying stock availability.';
+                    resetCheckout(payButton);
+                    return;
+                }
+            }
 
             const transactionData = {
                 action: 'processTransaction',
@@ -1356,209 +1348,75 @@
                 change: change
             };
 
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(transactionData)
-                });
+            let attempt = 0;
+            let success = false;
+            let result = null;
 
-                const result = await response.json();
-
-                if (result.success) {
-                    cart = [];
-                    updateCartTable();
-                    document.getElementById('cashPaid').value = '';
-                    document.getElementById('change').value = '0.00';
-                    document.getElementById('discountCheckbox').checked = false;
-                    discountApplied = false;
-
-                    const toast = document.getElementById('toast');
-                    toast.textContent = `Checkout successful! Transaction ID: ${result.transactionId}`;
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 3000);
-
-                    bootstrap.Modal.getInstance(document.getElementById('checkoutModal')).hide();
-                    loadTransactions();
-                } else {
-                    document.getElementById('itemSearchError').textContent = result.message || 'Error processing transaction.';
-                }
-            } catch (error) {
-                console.error('Error processing checkout:', error);
-                document.getElementById('itemSearchError').textContent = 'Error processing transaction.';
-            } finally {
-                isProcessing = false;
-                payButton.classList.remove('loading');
-                payButton.disabled = false;
-            }
-        }
-
-        async function loadTransactions() {
-            try {
-                const response = await fetch(`${API_URL}?action=getTransactions`);
-                const result = await response.json();
-
-                if (result.success) {
-                    const transactionBody = document.getElementById('transactionBody');
-                    transactionBody.innerHTML = '';
-
-                    result.transactions.forEach(transaction => {
-                        const row = document.createElement('tr');
-                        const itemsList = transaction.items.map(item => 
-                            `${item.name || 'Item'} (ID: ${item.itemId}, Qty: ${item.quantity})`
-                        ).join('<br>');
-
-                        row.innerHTML = `
-                            <td>${transaction.transactionId}</td>
-                            <td>${itemsList}</td>
-                            <td>₱${transaction.totalAmount.toFixed(2)}</td>
-                            <td>₱${transaction.cashPaid.toFixed(2)}</td>
-                            <td>₱${transaction.change.toFixed(2)}</td>
-                            <td>${transaction.timestamp}</td>
-                            <td>${transaction.status}</td>
-                            <td>
-                                <button class="btn btn-danger btn-sm" onclick="refundTransaction('${transaction.transactionId}')" ${transaction.status === 'Refunded' ? 'disabled' : ''}>
-                                    Refund
-                                </button>
-                            </td>
-                        `;
-                        transactionBody.appendChild(row);
+            while (attempt < MAX_RETRIES && !success) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(transactionData)
                     });
+
+                    result = await response.json();
+
+                    if (result.success) {
+                        success = true;
+                        cart = [];
+                        updateCartTable();
+                        document.getElementById('cashPaid').value = '';
+                        document.getElementById('change').value = '0.00';
+                        document.getElementById('discountCheckbox').checked = false;
+                        discountApplied = false;
+
+                        showToast(`Checkout successful! Transaction ID: ${result.transactionId}`);
+                        bootstrap.Modal.getInstance(document.getElementById('checkoutModal')).hide();
+                    } else {
+                        errorDiv.textContent = result.message || 'Error processing transaction.';
+                    }
+                } catch (error) {
+                    console.error('Checkout attempt', attempt + 1, 'failed:', error);
+                    attempt++;
+                    if (attempt < MAX_RETRIES) {
+                        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                        errorDiv.textContent = `Retrying... (Attempt ${attempt + 1}/${MAX_RETRIES})`;
+                    } else {
+                        errorDiv.textContent = 'Network error after retries. Please try again.';
+                    }
                 }
-            } catch (error) {
-                console.error('Error loading transactions:', error);
             }
+
+            resetCheckout(payButton);
         }
 
-        function refundTransaction(transactionId) {
-            const userRole = localStorage.getItem('userRole');
-            if (userRole === 'admin') {
-                processRefund(transactionId);
-            } else {
-                pendingAction = { type: 'refund', transactionId };
-                const modal = new bootstrap.Modal(document.getElementById('adminApprovalModal'));
-                document.getElementById('adminApprovalModalLabel').textContent = 'Admin Approval for Refund';
-                document.getElementById('adminUsername').value = '';
-                document.getElementById('adminPassword').value = '';
-                document.getElementById('adminApprovalError').textContent = '';
-                modal.show();
-            }
+        function resetCheckout(payButton) {
+            isProcessing = false;
+            payButton.classList.remove('loading');
+            payButton.disabled = false;
         }
 
-        async function processRefund(transactionId) {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action: 'refundTransaction', transactionId })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const toast = document.getElementById('toast');
-                    toast.textContent = `Refund successful for Transaction ID: ${result.transactionId}`;
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 3000);
-                    loadTransactions();
-                    loadInventory();
-                } else {
-                    document.getElementById('itemSearchError').textContent = result.message || 'Error processing refund.';
-                }
-            } catch (error) {
-                console.error('Error processing refund:', error);
-                document.getElementById('itemSearchError').textContent = 'Error processing refund.';
-            }
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        async function loadInventory() {
-            try {
-                const response = await fetch(`${API_URL}?action=getInventory`);
-                const result = await response.json();
-
-                if (result.success) {
-                    const inventoryBody = document.getElementById('inventoryBody');
-                    inventoryBody.innerHTML = '';
-
-                    result.items.forEach(item => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${item.itemId}</td>
-                            <td>${item.name}</td>
-                            <td>${item.type}</td>
-                            <td>${item.stock}</td>
-                            <td>₱${item.price.toFixed(2)}</td>
-                        `;
-                        inventoryBody.appendChild(row);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading inventory:', error);
-            }
-        }
-
-        async function addOrUpdateInventory() {
-            const itemId = document.getElementById('inventoryItemId').value.trim();
-            const name = document.getElementById('inventoryName').value.trim();
-            const type = document.getElementById('inventoryType').value.trim();
-            const quantity = parseInt(document.getElementById('inventoryQuantity').value) || 0;
-            const price = parseFloat(document.getElementById('inventoryPrice').value) || 0;
-            const errorDiv = document.getElementById('inventoryError');
-
-            if (!itemId || !name || !type || quantity < 0 || price <= 0) {
-                errorDiv.textContent = 'Please fill in all fields with valid values.';
+        function switchTab(tabId) {
+            if (tabId === 'home') {
+                window.location.href = 'dashboard.html';
                 return;
             }
-
-            if (!/^\d{8,13}$/.test(itemId)) {
-                errorDiv.textContent = 'Item ID must be a barcode of 8 to 13 digits.';
+            if (tabId === 'transaction') {
+                window.location.href = 'Transaction.html';
                 return;
             }
-
-            errorDiv.textContent = '';
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'add',
-                        itemId,
-                        name,
-                        type,
-                        quantity,
-                        price
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById('inventoryItemId').value = '';
-                    document.getElementById('inventoryName').value = '';
-                    document.getElementById('inventoryType').value = '';
-                    document.getElementById('inventoryQuantity').value = '';
-                    document.getElementById('inventoryPrice').value = '';
-                    loadInventory();
-                } else {
-                    errorDiv.textContent = result.message || 'Error adding/updating item.';
-                }
-            } catch (error) {
-                console.error('Error adding/updating inventory:', error);
-                errorDiv.textContent = 'Error adding/updating item.';
+            if (tabId === 'inventory') {
+                window.location.href = 'Inventory.html';
+                return;
             }
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`${tab}Tab`).classList.add('active');
-
-            document.querySelectorAll('.sidebar ul li').forEach(li => {
-                li.classList.remove('active');
-            });
-            document.querySelector(`.sidebar ul li[data-tab="${tab}"]`).classList.add('active');
         }
     </script>
 </body>
