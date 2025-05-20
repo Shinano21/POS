@@ -20,9 +20,9 @@
             background-color: #f5f7fa;
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
 
-        /* Hide content until authenticated */
         body.unauthenticated {
             display: none;
         }
@@ -61,6 +61,7 @@
             flex-grow: 1;
             margin: 0 25px;
             max-width: 300px;
+            position: relative;
         }
         .search-bar input {
             width: 100%;
@@ -105,50 +106,227 @@
         }
 
         .sidebar {
-            width: 260px;
-            background-color: #1a1a1a;
+            width: 250px;
+            background-color: #2c3e50;
             color: #fff;
-            height: calc(100vh - 70px);
+            height: calc(100vh - 60px);
             position: fixed;
-            top: 70px;
+            top: 110px;
             left: 0;
-            padding-top: 20px;
-            z-index: 900;
+            padding: 20px 0;
+            border-right: 1px solid #34495e;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            transition: left 0.3s ease, width 0.3s ease;
+            z-index: 1000;
+        }
+        .sidebar.collapsed {
+            left: -250px;
+        }
+        .sidebar.collapsed-desktop {
+            width: 70px;
+        }
+        .sidebar.collapsed-desktop ul li a {
+            justify-content: center;
+            padding: 15px;
+        }
+        .sidebar.collapsed-desktop ul li a span {
+            display: none;
+        }
+        .sidebar.collapsed-desktop ul li i {
+            margin-right: 0;
         }
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         .sidebar ul li {
-            padding: 18px 25px;
+            padding: 0;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        .sidebar ul li:hover {
-            background-color: #333;
+        .sidebar ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            font-size: 1em;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        .sidebar ul li.active {
+        .sidebar ul li a:hover {
+            background-color: #34495e;
+            color: #fff;
+        }
+        .sidebar ul li.active a {
             background-color: #28a745;
+            font-weight: 600;
+        }
+        .sidebar ul li[aria-label="Log out"] a {
+            color: #dc3545;
+        }
+        .sidebar ul li[aria-label="Log out"] a:hover {
+            background-color: #dc3545;
+            color: #fff;
         }
         .sidebar ul li i {
             margin-right: 12px;
+            font-size: 1.2em;
+        }
+        .sidebar ul li a span {
+            flex-grow: 1;
+        }
+        .sidebar ul li[tabindex="0"]:focus {
+            outline: 2px solid #28a745;
+            outline-offset: 2px;
+        }
+        .sidebar-toggle {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            top: 20px;
+            right: -40px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1.1em;
+            z-index: 1001;
+        }
+        .sidebar-toggle:hover {
+            background-color: #218838;
         }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: 250px;
             padding: 25px;
             margin-top: 70px;
-            padding-top: 10px;
+            transition: margin-left 0.3s ease;
             min-height: calc(100vh - 70px);
-            overflow-x: auto;
+        }
+        .main-content.collapsed {
+            margin-left: 0;
+        }
+        .main-content.collapsed-desktop {
+            margin-left: 70px;
+        }
+        .backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        .backdrop.active {
+            display: block;
+        }
+        @media (max-width: 767px) {
+            .sidebar {
+                left: -250px;
+            }
+            .sidebar.collapsed {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .main-content.collapsed {
+                margin-left: 0;
+            }
+        }
+        @media (min-width: 768px) {
+            .sidebar {
+                left: 0;
+            }
+            .sidebar.collapsed {
+                left: 0;
+            }
+            .sidebar.collapsed-desktop {
+                width: 70px;
+            }
+            .main-content {
+                margin-left: 250px;
+            }
+            .main-content.collapsed-desktop {
+                margin-left: 70px;
+            }
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .transaction-search {
+            position: relative;
+            flex: 1;
+        }
+        .transaction-search input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s ease;
+            font-size: 0.9em;
+        }
+        .transaction-search input:focus {
+            border-color: #28a745;
+        }
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            margin-top: 5px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .suggestion-item:hover, .suggestion-item.active {
+            background-color: #e9ecef;
+        }
+        .suggestion-item span {
+            font-size: 0.85em;
+            color: #666;
+        }
+        .loading {
+            padding: 10px 15px;
+            color: #666;
+            font-style: italic;
+            text-align: center;
         }
 
         .table-container {
-            width: 100%;
-            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
             background-color: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            overflow-x: auto;
         }
 
         .transactions-table {
@@ -223,11 +401,11 @@
             transform: translateY(-1px);
         }
         .print-btn {
-            background-color: #007bff;
+            background-color: #28a745;
             color: white;
         }
         .print-btn:hover:not(:disabled) {
-            background-color: #0056b3;
+            background-color: #218838;
             transform: translateY(-1px);
         }
         .refund-btn:disabled, .print-btn:disabled {
@@ -240,6 +418,40 @@
             outline: 2px solid #28a745;
             outline-offset: 2px;
         }
+
+        .refresh-transactions-btn {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            background-color: #28a745;
+            color: white;
+            font-size: 0.9em;
+        }
+        .refresh-transactions-btn:hover {
+            background-color: #218838;
+        }
+        .refresh-transactions-btn.loading .spinner {
+            display: inline-block;
+        }
+        .refresh-transactions-btn .spinner {
+            display: none;
+            border: 2px solid #fff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .refresh-transactions-btn.loading span {
+            visibility: hidden;
+        }
+
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -390,12 +602,6 @@
             }
         }
         @media (max-width: 767px) {
-            .sidebar {
-                width: 200px;
-            }
-            .main-content {
-                margin-left: 200px;
-            }
             .transactions-table th, .transactions-table td {
                 padding: 8px;
             }
@@ -423,10 +629,16 @@
                 <div class="date" id="datetime"></div>
             </div>
         </div>
+        <br>
+        <br>
         <div class="search-bar">
-            <input type="text" id="navbarSearch" placeholder="Search medicine" readonly>
+            <input type="text" id="navbarSearch" placeholder="Search transactions by ID" oninput="fetchSuggestions(this.value, 'navbarSearch')">
+            <div id="nameSuggestions" class="suggestions"></div>
         </div>
         <div class="navbar-actions">
+            <button class="hamburger-btn d-md-none" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="user-info">
                 <img src="images/user.png" alt="User">
                 <span>Randiel <br> Drug Lord</span>
@@ -434,18 +646,53 @@
         </div>
     </div>
 
-    <div class="sidebar">
+    <nav class="sidebar" role="navigation" aria-label="Main navigation">
+        <button class="sidebar-toggle d-md-none" aria-label="Toggle sidebar">
+            <i class="fas fa-times"></i>
+        </button>
         <ul id="sidebarMenu">
-            <li data-tab="home"><i class="fas fa-home"></i> Home</li>
-            <li data-tab="transactions" class="active"><i class="fas fa-exchange-alt"></i> Transactions</li>
-            <li data-tab="inventory"><i class="fas fa-boxes"></i> Inventory</li>
-            <li onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</li>
+            <li role="menuitem" tabindex="0" title="Go to Dashboard">
+                <a href="dashboard.html" aria-label="Go to Dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+            </li>
+            <li role="menuitem" tabindex="0" title="View Transactions" class="active" aria-current="page">
+                <a href="#" aria-label="View Transactions">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transactions</span>
+                </a>
+            </li>
+            <li role="menuitem" tabindex="0" title="View Inventory">
+                <a href="inventory.html" aria-label="View Inventory">
+                    <i class="fas fa-boxes"></i>
+                    <span>Inventory</span>
+                </a>
+            </li>
+            <li role="button" tabindex="0" title="Log out of the system">
+                <a href="#" onclick="logout()" aria-label="Log out">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log out</span>
+                </a>
+            </li>
         </ul>
-    </div>
+    </nav>
+
+    <div class="backdrop" onclick="toggleSidebar()"></div>
 
     <div class="main-content">
         <div id="loadingOverlay" class="loading-overlay">
             <div class="loading-spinner"></div>
+        </div>
+        <div class="form-section">
+            <div class="transaction-search">
+                <input type="text" id="transactionSearch" placeholder="Search transactions by ID or item" oninput="debouncedSearchTransactions()">
+                <div id="transactionSearchSuggestions" class="suggestions"></div>
+            </div>
+            <button class="refresh-transactions-btn" onclick="refreshTransactions()">
+                <span>Refresh Transactions</span>
+                <div class="spinner"></div>
+            </button>
         </div>
         <div class="table-container">
             <table class="transactions-table" id="transactionsTable">
@@ -514,7 +761,7 @@
         </div>
     </div>
 
-    <div id="toast" class="toast">Transaction refunded successfully!</div>
+    <div id="toast" class="toast"></div>
 
     <div id="receipt">
         <h2>Pharmacy Receipt</h2>
@@ -527,7 +774,7 @@
                     <th>Qty</th>
                     <th>Price</th>
                     <th>Subtotal</th>
-                Lester
+                </tr>
             </thead>
             <tbody id="receiptItems"></tbody>
         </table>
@@ -541,20 +788,23 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxUaW7iKxSA_jRnBTbM_P2zDNjg1iX7TPC-eakS2yKPELFwlbJOnm66J43yz2xu13DM7Q/exec';
         let transactions = [];
+        let fullTransactions = [];
         let isLoading = false;
         let pendingAction = null;
+        let searchTimeout = null;
+        let isMobile = window.innerWidth <= 767;
 
-        // Immediate authentication check
-        (function checkAuth() {
+        document.addEventListener('DOMContentLoaded', function() {
             const authToken = localStorage.getItem('authToken');
             if (!authToken) {
                 window.location.replace('401.html');
-                return;
+            } else {
+                document.body.classList.remove('unauthenticated');
+                initializePage();
+                addKeyboardNavigation('navbarSearch');
+                addKeyboardNavigation('transactionSearch');
             }
-
-            document.body.classList.remove('unauthenticated');
-            initializePage();
-        })();
+        });
 
         function initializePage() {
             updateDateTime();
@@ -563,10 +813,41 @@
 
             document.getElementById('sidebarMenu').addEventListener('click', function(e) {
                 const li = e.target.closest('li');
-                if (li && li.dataset.tab) {
-                    switchTab(li.dataset.tab);
+                if (li && !li.hasAttribute('aria-label') || li.getAttribute('aria-label') === 'Log out') {
+                    updateActiveTab(li);
+                    if (isMobile) toggleSidebar();
                 }
             });
+
+            document.getElementById('sidebarMenu').addEventListener('keydown', function(e) {
+                const items = Array.from(this.querySelectorAll('li[tabindex="0"]'));
+                const currentIndex = items.indexOf(document.activeElement);
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextIndex = (currentIndex + 1) % items.length;
+                    items[nextIndex].focus();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prevIndex = (currentIndex - 1 + items.length) % items.length;
+                    items[prevIndex].focus();
+                } else if (e.key === 'Enter' && currentIndex >= 0) {
+                    e.preventDefault();
+                    const li = items[currentIndex];
+                    if (li.getAttribute('aria-label') === 'Log out') {
+                        logout();
+                    } else {
+                        const link = li.querySelector('a');
+                        if (link && link.href) {
+                            updateActiveTab(li);
+                            if (isMobile) toggleSidebar();
+                            window.location.href = link.href;
+                        }
+                    }
+                }
+            });
+
+            document.querySelector('.hamburger-btn')?.addEventListener('click', toggleSidebar);
+            document.querySelector('.sidebar-toggle')?.addEventListener('click', toggleSidebar);
 
             document.getElementById('confirmRefundBtn').addEventListener('click', function() {
                 const transactionId = document.getElementById('refundTransactionId').textContent;
@@ -591,6 +872,60 @@
                     }
                 }
             });
+
+            window.addEventListener('resize', () => {
+                isMobile = window.innerWidth <= 767;
+                adjustLayout();
+            });
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const backdrop = document.querySelector('.backdrop');
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+
+            if (isMobile) {
+                sidebar.classList.toggle('collapsed');
+                backdrop.classList.toggle('active');
+                mainContent.classList.toggle('collapsed');
+                sidebarToggle.querySelector('i').classList.toggle('fa-bars');
+                sidebarToggle.querySelector('i').classList.toggle('fa-times');
+            } else {
+                sidebar.classList.toggle('collapsed-desktop');
+                mainContent.classList.toggle('collapsed-desktop');
+            }
+        }
+
+        function adjustLayout() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const backdrop = document.querySelector('.backdrop');
+
+            if (isMobile) {
+                if (!sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('collapsed');
+                    backdrop.classList.remove('active');
+                }
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('collapsed');
+                backdrop.classList.remove('active');
+                if (!sidebar.classList.contains('collapsed-desktop')) {
+                    mainContent.classList.remove('collapsed-desktop');
+                }
+            }
+        }
+
+        function updateActiveTab(li) {
+            document.querySelectorAll('.sidebar ul li').forEach(item => {
+                item.classList.remove('active');
+                item.removeAttribute('aria-current');
+            });
+            li.classList.add('active');
+            li.setAttribute('aria-current', 'page');
         }
 
         function logout() {
@@ -624,7 +959,7 @@
                 minute: '2-digit',
                 hour12: true
             };
-            document.getElementById('datetime').textContent = now.toLocaleString('en-PH', options);
+            document.getElementById('datetime').textContent = now.toLocaleString('en-PH', options).replace(',', '');
         }
 
         async function fetchTransactions() {
@@ -643,11 +978,20 @@
                 if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
                 const result = await response.json();
                 if (result.success) {
-                    transactions = result.transactions;
+                    fullTransactions = result.transactions || [];
+                    transactions = [...fullTransactions];
                     updateTransactionsTable();
+                } else {
+                    fullTransactions = [];
+                    transactions = [];
+                    updateTransactionsTable();
+                    showToast('Error loading transactions: ' + (result.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error fetching transactions:', error);
+                fullTransactions = [];
+                transactions = [];
+                updateTransactionsTable();
                 showToast('Error loading transactions: ' + error.message, 'error');
             } finally {
                 loadingOverlay.style.display = 'none';
@@ -659,15 +1003,23 @@
             const transactionsBody = document.getElementById('transactionsBody');
             transactionsBody.innerHTML = '';
 
+            if (!transactions || transactions.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="8">No transactions found.</td>';
+                transactionsBody.appendChild(row);
+                return;
+            }
+
             transactions.forEach((txn, index) => {
                 const itemsList = txn.items.map(item => `${item.quantity}x ${item.name}`).join(', ');
                 const row = document.createElement('tr');
+                row.tabIndex = 0;
                 row.innerHTML = `
                     <td>${txn.transactionId}</td>
                     <td title="${itemsList}">${itemsList}</td>
-                    <td>${txn.totalAmount.toFixed(2)}</td>
-                    <td>${txn.cashPaid.toFixed(2)}</td>
-                    <td>${txn.change.toFixed(2)}</td>
+                    <td>₱${txn.totalAmount.toFixed(2)}</td>
+                    <td>₱${txn.cashPaid.toFixed(2)}</td>
+                    <td>₱${txn.change.toFixed(2)}</td>
                     <td>${formatTimestamp(txn.timestamp)}</td>
                     <td>${txn.status}</td>
                     <td>
@@ -794,8 +1146,8 @@
                 row.innerHTML = `
                     <td>${item.name}</td>
                     <td>${item.quantity}</td>
-                    <td>${item.price.toFixed(2)}</td>
-                    <td>${subtotal.toFixed(2)}</td>
+                    <td>₱${item.price.toFixed(2)}</td>
+                    <td>₱${subtotal.toFixed(2)}</td>
                 `;
                 receiptItems.appendChild(row);
             });
@@ -817,8 +1169,175 @@
             }, 3000);
         }
 
-        function switchTab(tabId) {
-            window.location.href = tabId === 'home' ? 'dashboard.html' : `${tabId}.html`;
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function searchTransactions(searchQuery = '') {
+            searchQuery = searchQuery.trim();
+            if (!searchQuery) {
+                transactions = [...fullTransactions];
+            } else {
+                const queryLower = searchQuery.toLowerCase();
+                transactions = fullTransactions.filter(txn =>
+                    (txn.transactionId && txn.transactionId.toLowerCase().includes(queryLower)) ||
+                    (txn.items.some(item => item.name.toLowerCase().includes(queryLower)))
+                );
+            }
+            updateTransactionsTable();
+        }
+
+        const debouncedSearchTransactions = debounce(function() {
+            const query = document.getElementById('transactionSearch').value;
+            searchTransactions(query);
+        }, 300);
+
+        async function fetchSuggestions(query, inputId) {
+            const suggestionsDiv = document.getElementById(inputId === 'transactionSearch' ? 'transactionSearchSuggestions' : 'nameSuggestions');
+            suggestionsDiv.style.display = 'none';
+            suggestionsDiv.innerHTML = '';
+
+            if (!query || query.length < 2) {
+                searchTransactions('');
+                return;
+            }
+
+            suggestionsDiv.innerHTML = '<div class="loading">Loading...</div>';
+            suggestionsDiv.style.display = 'block';
+
+            try {
+                const params = new URLSearchParams();
+                params.append('action', 'getTransactions');
+                params.append('searchQuery', query);
+
+                const response = await fetch(`${API_URL}?${params.toString()}`);
+                const result = await response.json();
+
+                suggestionsDiv.innerHTML = '';
+
+                if (result.success && result.transactions) {
+                    const items = result.transactions || [];
+                    if (items.length > 0) {
+                        items.forEach(txn => {
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            const itemsList = txn.items.map(item => `${item.quantity}x ${item.name}`).join(', ');
+                            div.innerHTML = `
+                                <span>${txn.transactionId}</span>
+                                <span>${itemsList} | ₱${txn.totalAmount.toFixed(2)}</span>
+                            `;
+                            div.onclick = () => selectSuggestion(txn, inputId);
+                            div.dataset.txn = JSON.stringify(txn);
+                            suggestionsDiv.appendChild(div);
+                        });
+                    } else {
+                        suggestionsDiv.innerHTML = '<div class="loading">No results found</div>';
+                    }
+                } else {
+                    suggestionsDiv.innerHTML = '<div class="loading">Error loading suggestions</div>';
+                }
+
+                suggestionsDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+                suggestionsDiv.innerHTML = '<div class="loading">Error loading suggestions</div>';
+                suggestionsDiv.style.display = 'block';
+            }
+        }
+
+        function selectSuggestion(txn, inputId) {
+            const input = document.getElementById(inputId);
+            const suggestionsDiv = document.getElementById(inputId === 'transactionSearch' ? 'transactionSearchSuggestions' : 'nameSuggestions');
+
+            input.value = txn.transactionId;
+            suggestionsDiv.style.display = 'none';
+            suggestionsDiv.innerHTML = '';
+            input.focus();
+
+            if (inputId === 'transactionSearch') {
+                searchTransactions(txn.transactionId);
+            } else {
+                document.getElementById('transactionSearch').value = txn.transactionId;
+                document.getElementById('transactionSearch').focus();
+                searchTransactions(txn.transactionId);
+            }
+        }
+
+        function addKeyboardNavigation(inputId) {
+            const input = document.getElementById(inputId);
+            const suggestionsDiv = document.getElementById(inputId === 'transactionSearch' ? 'transactionSearchSuggestions' : 'nameSuggestions');
+            let selectedIndex = -1;
+
+            input.addEventListener('keydown', (e) => {
+                const items = suggestionsDiv.querySelectorAll('.suggestion-item');
+                if (!items.length) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                    updateSelection();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, -1);
+                    updateSelection();
+                } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                    e.preventDefault();
+                    const txn = JSON.parse(items[selectedIndex].dataset.txn);
+                    selectSuggestion(txn, inputId);
+                } else if (e.key === 'Escape') {
+                    suggestionsDiv.style.display = 'none';
+                    suggestionsDiv.innerHTML = '';
+                    selectedIndex = -1;
+                }
+            });
+
+            function updateSelection() {
+                suggestionsDiv.querySelectorAll('.suggestion-item').forEach((item, index) => {
+                    item.classList.toggle('active', index === selectedIndex);
+                    if (index === selectedIndex) {
+                        item.scrollIntoView({ block: 'nearest' });
+                    }
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!suggestionsDiv.contains(e.target) && e.target !== input) {
+                    suggestionsDiv.style.display = 'none';
+                    suggestionsDiv.innerHTML = '';
+                    selectedIndex = -1;
+                }
+            });
+        }
+
+        async function refreshTransactions() {
+            const refreshBtn = document.querySelector('.refresh-transactions-btn');
+            if (isLoading) return;
+
+            refreshBtn.classList.add('loading');
+            refreshBtn.disabled = true;
+            isLoading = true;
+
+            try {
+                await fetchTransactions();
+                document.getElementById('transactionSearch').value = '';
+                searchTransactions('');
+                showToast('Transactions refreshed successfully.');
+            } catch (error) {
+                console.error('Error refreshing transactions:', error);
+                showToast('Error refreshing transactions: Network error', 'error');
+            } finally {
+                refreshBtn.classList.remove('loading');
+                refreshBtn.disabled = false;
+                isLoading = false;
+            }
         }
     </script>
 </body>

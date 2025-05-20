@@ -16,6 +16,7 @@
             background-color: #f5f7fa;
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
         .navbar {
             background-color: #fff;
@@ -94,76 +95,153 @@
             color: #333;
         }
         .sidebar {
-            width: 260px;
-            background-color: #1a1a1a;
+            width: 250px;
+            background-color: #2c3e50;
             color: #fff;
-            height: calc(100vh - 70px);
+            height: calc(100vh - 60px);
             position: fixed;
-            top: 70px;
+            top: 110px;
             left: 0;
-            padding-top: 25px;
-            border-right: 1px solid #333;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            padding: 20px 0;
+            border-right: 1px solid #34495e;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+            transition: left 0.3s ease, width 0.3s ease;
             z-index: 1000;
         }
         .sidebar.collapsed {
-            transform: translateX(-260px);
+            left: -250px;
+        }
+        .sidebar.collapsed-desktop {
+            width: 70px;
+        }
+        .sidebar.collapsed-desktop ul li a {
+            justify-content: center;
+            padding: 15px;
+        }
+        .sidebar.collapsed-desktop ul li a span {
+            display: none;
+        }
+        .sidebar.collapsed-desktop ul li i {
+            margin-right: 0;
         }
         .sidebar ul {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         .sidebar ul li {
-            padding: 20px 30px;
+            padding: 0;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        .sidebar ul li:hover {
-            background-color: #444;
+        .sidebar ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            font-size: 1em;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        .sidebar ul li.active {
+        .sidebar ul li a:hover {
+            background-color: #34495e;
+            color: #fff;
+        }
+        .sidebar ul li.active a {
             background-color: #28a745;
             font-weight: 600;
         }
-        .sidebar ul li[aria-label="Log out"] {
+        .sidebar ul li[aria-label="Log out"] a {
             color: #dc3545;
         }
-        .sidebar ul li[aria-label="Log out"]:hover {
+        .sidebar ul li[aria-label="Log out"] a:hover {
             background-color: #dc3545;
             color: #fff;
         }
         .sidebar ul li i {
-            margin-right: 15px;
+            margin-right: 12px;
+            font-size: 1.2em;
         }
-        .sidebar ul li a {
-            color: #fff;
-            text-decoration: none;
-            display: block;
-        }
-        .sidebar ul li a:hover {
-            color: #fff;
+        .sidebar ul li a span {
+            flex-grow: 1;
         }
         .sidebar ul li[tabindex="0"]:focus {
             outline: 2px solid #28a745;
             outline-offset: 2px;
         }
-        .hamburger-btn {
-            background: none;
+        .sidebar-toggle {
+            background-color: #28a745;
+            color: #fff;
             border: none;
-            font-size: 1.5em;
-            color: #333;
+            padding: 8px 12px;
+            border-radius: 0 5px 5px 0;
+            position: absolute;
+            top: 20px;
+            right: -40px;
             cursor: pointer;
-            display: none;
+            transition: background-color 0.3s ease;
+            font-size: 1.1em;
+            z-index: 1001;
+        }
+        .sidebar-toggle:hover {
+            background-color: #218838;
         }
         .main-content {
-            margin-left: 260px;
+            margin-left: 250px;
             padding: 25px;
             margin-top: 70px;
             transition: margin-left 0.3s ease;
+            min-height: calc(100vh - 70px);
         }
         .main-content.collapsed {
             margin-left: 0;
+        }
+        .main-content.collapsed-desktop {
+            margin-left: 70px;
+        }
+        .backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        .backdrop.active {
+            display: block;
+        }
+        @media (max-width: 767px) {
+            .sidebar {
+                left: -250px;
+            }
+            .sidebar.collapsed {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .main-content.collapsed {
+                margin-left: 0;
+            }
+        }
+        @media (min-width: 768px) {
+            .sidebar {
+                left: 0;
+            }
+            .sidebar.collapsed {
+                left: 0;
+            }
+            .sidebar.collapsed-desktop {
+                width: 70px;
+            }
+            .main-content {
+                margin-left: 250px;
+            }
+            .main-content.collapsed-desktop {
+                margin-left: 70px;
+            }
         }
         .tab-content {
             display: none;
@@ -218,11 +296,11 @@
             display: flex;
             gap: 19px;
             flex-wrap: wrap;
+            align-items: flex-start;
         }
         .cart-table-container {
             flex: 1;
             min-width: 100px;
-            order: 1;
             max-height: 500px;
             overflow-y: auto;
             background-color: #fff;
@@ -352,7 +430,8 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            order: 2;
+            position: sticky;
+            top: 95px;
         }
         .summary-group {
             margin-bottom: 15px;
@@ -550,6 +629,7 @@
             }
             .summary-section {
                 order: 1;
+                position: static;
             }
             .cart-table-container {
                 order: 2;
@@ -569,18 +649,6 @@
             }
         }
         @media (max-width: 767px) {
-            .hamburger-btn {
-                display: block;
-            }
-            .sidebar {
-                position: fixed;
-                top: 70px;
-                left: 0;
-                z-index: 1000;
-            }
-            .main-content {
-                margin-left: 0;
-            }
             .cart-table th, .cart-table td {
                 padding: 8px;
             }
@@ -644,9 +712,6 @@
 </head>
 <body>
     <div class="navbar">
-        <button class="hamburger-btn d-md-none" aria-label="Toggle sidebar">
-            <i class="fas fa-bars"></i>
-        </button>
         <div class="navbar-brand">
             <img src="images/medkitpos.png" alt="MedKitPOS Logo">
             <div class="pharmacy-info">
@@ -659,6 +724,9 @@
             <div id="nameSuggestions" class="suggestions"></div>
         </div>
         <div class="navbar-actions">
+            <button class="hamburger-btn d-md-none" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="user-info">
                 <img src="images/user.png" alt="User">
                 <span>Randiel <br> Drug Lord</span>
@@ -667,21 +735,38 @@
     </div>
 
     <nav class="sidebar" role="navigation" aria-label="Main navigation">
+        <button class="sidebar-toggle d-md-none" aria-label="Toggle sidebar">
+            <i class="fas fa-times"></i>
+        </button>
         <ul id="sidebarMenu">
             <li class="active" role="menuitem" aria-current="page" tabindex="0" title="Go to Dashboard">
-                <i class="fas fa-home"></i> Home
+                <a href="#" aria-label="Go to Dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
             </li>
             <li role="menuitem" tabindex="0" title="View Transactions">
-                <a href="Transaction.html" aria-label="View Transactions"><i class="fas fa-exchange-alt"></i> Transactions</a>
+                <a href="Transaction.html" aria-label="View Transactions">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transactions</span>
+                </a>
             </li>
             <li role="menuitem" tabindex="0" title="View Inventory">
-                <a href="Inventory.html" aria-label="View Inventory"><i class="fas fa-boxes"></i> Inventory</a>
+                <a href="Inventory.html" aria-label="View Inventory">
+                    <i class="fas fa-boxes"></i>
+                    <span>Inventory</span>
+                </a>
             </li>
-            <li role="button" tabindex="0" onclick="logout()" aria-label="Log out" title="Log out of the system">
-                <i class="fas fa-sign-out-alt"></i> Log out
+            <li role="button" tabindex="0" title="Log out of the system">
+                <a href="#" onclick="logout()" aria-label="Log out">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log out</span>
+                </a>
             </li>
         </ul>
     </nav>
+
+    <div class="backdrop" onclick="toggleSidebar()"></div>
 
     <div class="main-content">
         <div id="homeTab" class="tab-content active">
@@ -720,7 +805,7 @@
                 </div>
                 <div class="summary-section">
                     <div class="discount-toggle">
-                        <input type="text" id="discountCheckbox" onchange="toggleDiscount()">
+                        <input type="checkbox" id="discountCheckbox" onchange="toggleDiscount()">
                         <label for="discountCheckbox">Apply 20% Discount (Senior/PWD)</label>
                         <i class="fas fa-info-circle tooltip-icon" title="Apply a 20% discount for Senior Citizens or Persons with Disabilities (PWD). Admin approval required for non-admins."></i>
                     </div>
@@ -849,8 +934,8 @@
         let pendingAction = null;
         const MAX_RETRIES = 3;
         const RETRY_DELAY = 1000;
+        let isMobile = window.innerWidth <= 767;
 
-        // Authentication check
         document.addEventListener('DOMContentLoaded', function() {
             const authToken = localStorage.getItem('authToken');
             if (!authToken) {
@@ -872,8 +957,9 @@
 
             document.getElementById('sidebarMenu').addEventListener('click', function(e) {
                 const li = e.target.closest('li');
-                if (li && !li.hasAttribute('aria-label')) {
+                if (li && !li.hasAttribute('aria-label') || li.getAttribute('aria-label') === 'Log out') {
                     updateActiveTab(li);
+                    if (isMobile) toggleSidebar();
                 }
             });
 
@@ -891,26 +977,23 @@
                 } else if (e.key === 'Enter' && currentIndex >= 0) {
                     e.preventDefault();
                     const li = items[currentIndex];
-                    if (li.hasAttribute('aria-label') && li.getAttribute('aria-label') === 'Log out') {
+                    if (li.getAttribute('aria-label') === 'Log out') {
                         logout();
                     } else {
                         const link = li.querySelector('a');
                         if (link) {
                             updateActiveTab(li);
-                            window.location.href = link.href;
-                        } else {
-                            updateActiveTab(li);
+                            if (isMobile) toggleSidebar();
+                            if (link.href) {
+                                window.location.href = link.href;
+                            }
                         }
                     }
                 }
             });
 
-            document.querySelector('.hamburger-btn')?.addEventListener('click', function() {
-                const sidebar = document.querySelector('.sidebar');
-                const mainContent = document.querySelector('.main-content');
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('collapsed');
-            });
+            document.querySelector('.hamburger-btn')?.addEventListener('click', toggleSidebar);
+            document.querySelector('.sidebar-toggle')?.addEventListener('click', toggleSidebar);
 
             const itemSearchInput = document.getElementById('itemSearch');
             itemSearchInput.addEventListener('input', debounce(function() {
@@ -959,8 +1042,52 @@
             });
             document.getElementById('confirmCheckout').addEventListener('click', processCheckout);
 
-            // Set active tab based on current page
             updateActiveTabBasedOnPage();
+
+            window.addEventListener('resize', () => {
+                isMobile = window.innerWidth <= 767;
+                adjustLayout();
+            });
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const backdrop = document.querySelector('.backdrop');
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+
+            if (isMobile) {
+                sidebar.classList.toggle('collapsed');
+                backdrop.classList.toggle('active');
+                mainContent.classList.toggle('collapsed');
+                sidebarToggle.querySelector('i').classList.toggle('fa-bars');
+                sidebarToggle.querySelector('i').classList.toggle('fa-times');
+            } else {
+                sidebar.classList.toggle('collapsed-desktop');
+                mainContent.classList.toggle('collapsed-desktop');
+            }
+        }
+
+        function adjustLayout() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const backdrop = document.querySelector('.backdrop');
+
+            if (isMobile) {
+                if (!sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.add('collapsed');
+                    mainContent.classList.add('collapsed');
+                    backdrop.classList.remove('active');
+                }
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('collapsed');
+                backdrop.classList.remove('active');
+                if (!sidebar.classList.contains('collapsed-desktop')) {
+                    mainContent.classList.remove('collapsed-desktop');
+                }
+            }
         }
 
         function updateActiveTabBasedOnPage() {
@@ -1016,7 +1143,7 @@
                 minute: '2-digit',
                 hour12: true
             };
-            document.getElementById('datetime').textContent = now.toLocaleString('en-US', options);
+            document.getElementById('datetime').textContent = now.toLocaleString('en-US', options).replace(',', '');
         }
 
         function debounce(func, wait) {
@@ -1246,7 +1373,7 @@
                     <td class="subtotal-col">₱${subtotalItem.toFixed(2)}</td>
                     <td class="action-col">
                         <button class="remove-btn" onclick="removeFromCart(${index})">
-                            <i class="fas fa-trash-alt Handel">
+                            <i class="fas fa-trash-alt"></i>
                         </button>
                     </td>
                 `;
@@ -1431,7 +1558,6 @@
             const cashPaid = parseFloat(document.getElementById('cashPaid').value) || 0;
             const change = cashPaid - finalTotal;
 
-            // Validate cart
             if (cart.length === 0) {
                 errorDiv.textContent = 'Cart is empty.';
                 resetCheckout(payButton);
