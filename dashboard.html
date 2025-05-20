@@ -99,25 +99,42 @@
             color: #fff;
             height: calc(100vh - 70px);
             position: fixed;
-            padding-top: 25px; /* Aligned with Inventory.html */
+            top: 70px;
+            left: 0;
+            padding-top: 25px;
+            border-right: 1px solid #333;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .sidebar.collapsed {
+            transform: translateX(-260px);
         }
         .sidebar ul {
             list-style: none;
             padding: 0;
         }
         .sidebar ul li {
-            padding: 18px 25px;
+            padding: 20px 30px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
         .sidebar ul li:hover {
-            background-color: #333;
+            background-color: #444;
         }
         .sidebar ul li.active {
             background-color: #28a745;
+            font-weight: 600;
+        }
+        .sidebar ul li[aria-label="Log out"] {
+            color: #dc3545;
+        }
+        .sidebar ul li[aria-label="Log out"]:hover {
+            background-color: #dc3545;
+            color: #fff;
         }
         .sidebar ul li i {
-            margin-right: 12px;
+            margin-right: 15px;
         }
         .sidebar ul li a {
             color: #fff;
@@ -127,10 +144,26 @@
         .sidebar ul li a:hover {
             color: #fff;
         }
+        .sidebar ul li[tabindex="0"]:focus {
+            outline: 2px solid #28a745;
+            outline-offset: 2px;
+        }
+        .hamburger-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #333;
+            cursor: pointer;
+            display: none;
+        }
         .main-content {
             margin-left: 260px;
             padding: 25px;
             margin-top: 70px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.collapsed {
+            margin-left: 0;
         }
         .tab-content {
             display: none;
@@ -536,6 +569,18 @@
             }
         }
         @media (max-width: 767px) {
+            .hamburger-btn {
+                display: block;
+            }
+            .sidebar {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                z-index: 1000;
+            }
+            .main-content {
+                margin-left: 0;
+            }
             .cart-table th, .cart-table td {
                 padding: 8px;
             }
@@ -599,6 +644,9 @@
 </head>
 <body>
     <div class="navbar">
+        <button class="hamburger-btn d-md-none" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
         <div class="navbar-brand">
             <img src="images/medkitpos.png" alt="MedKitPOS Logo">
             <div class="pharmacy-info">
@@ -618,14 +666,22 @@
         </div>
     </div>
 
-    <div class="sidebar">
+    <nav class="sidebar" role="navigation" aria-label="Main navigation">
         <ul id="sidebarMenu">
-            <li data-tab="home" class="active"><i class="fas fa-home"></i> Home</li>
-            <li data-tab="transaction"><a href="Transaction.html"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
-            <li data-tab="inventory"><a href="Inventory.html"><i class="fas fa-boxes"></i> Inventory</a></li>
-            <li onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</li>
+            <li class="active" role="menuitem" aria-current="page" tabindex="0" title="Go to Dashboard">
+                <i class="fas fa-home"></i> Home
+            </li>
+            <li role="menuitem" tabindex="0" title="View Transactions">
+                <a href="Transaction.html" aria-label="View Transactions"><i class="fas fa-exchange-alt"></i> Transactions</a>
+            </li>
+            <li role="menuitem" tabindex="0" title="View Inventory">
+                <a href="Inventory.html" aria-label="View Inventory"><i class="fas fa-boxes"></i> Inventory</a>
+            </li>
+            <li role="button" tabindex="0" onclick="logout()" aria-label="Log out" title="Log out of the system">
+                <i class="fas fa-sign-out-alt"></i> Log out
+            </li>
         </ul>
-    </div>
+    </nav>
 
     <div class="main-content">
         <div id="homeTab" class="tab-content active">
@@ -664,7 +720,7 @@
                 </div>
                 <div class="summary-section">
                     <div class="discount-toggle">
-                        <input type="checkbox" id="discountCheckbox" onchange="toggleDiscount()">
+                        <input type="text" id="discountCheckbox" onchange="toggleDiscount()">
                         <label for="discountCheckbox">Apply 20% Discount (Senior/PWD)</label>
                         <i class="fas fa-info-circle tooltip-icon" title="Apply a 20% discount for Senior Citizens or Persons with Disabilities (PWD). Admin approval required for non-admins."></i>
                     </div>
@@ -816,9 +872,44 @@
 
             document.getElementById('sidebarMenu').addEventListener('click', function(e) {
                 const li = e.target.closest('li');
-                if (li && li.dataset.tab) {
-                    switchTab(li.dataset.tab);
+                if (li && !li.hasAttribute('aria-label')) {
+                    updateActiveTab(li);
                 }
+            });
+
+            document.getElementById('sidebarMenu').addEventListener('keydown', function(e) {
+                const items = Array.from(this.querySelectorAll('li[tabindex="0"]'));
+                const currentIndex = items.indexOf(document.activeElement);
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextIndex = (currentIndex + 1) % items.length;
+                    items[nextIndex].focus();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prevIndex = (currentIndex - 1 + items.length) % items.length;
+                    items[prevIndex].focus();
+                } else if (e.key === 'Enter' && currentIndex >= 0) {
+                    e.preventDefault();
+                    const li = items[currentIndex];
+                    if (li.hasAttribute('aria-label') && li.getAttribute('aria-label') === 'Log out') {
+                        logout();
+                    } else {
+                        const link = li.querySelector('a');
+                        if (link) {
+                            updateActiveTab(li);
+                            window.location.href = link.href;
+                        } else {
+                            updateActiveTab(li);
+                        }
+                    }
+                }
+            });
+
+            document.querySelector('.hamburger-btn')?.addEventListener('click', function() {
+                const sidebar = document.querySelector('.sidebar');
+                const mainContent = document.querySelector('.main-content');
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('collapsed');
             });
 
             const itemSearchInput = document.getElementById('itemSearch');
@@ -867,6 +958,46 @@
                 bootstrap.Modal.getInstance(document.getElementById('clearCartModal')).hide();
             });
             document.getElementById('confirmCheckout').addEventListener('click', processCheckout);
+
+            // Set active tab based on current page
+            updateActiveTabBasedOnPage();
+        }
+
+        function updateActiveTabBasedOnPage() {
+            const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+            const items = document.querySelectorAll('.sidebar ul li');
+            items.forEach(item => {
+                item.classList.remove('active');
+                item.removeAttribute('aria-current');
+            });
+            if (currentPath.includes('Transaction.html')) {
+                const transactionItem = document.querySelector('.sidebar ul li[title="View Transactions"]');
+                if (transactionItem) {
+                    transactionItem.classList.add('active');
+                    transactionItem.setAttribute('aria-current', 'page');
+                }
+            } else if (currentPath.includes('Inventory.html')) {
+                const inventoryItem = document.querySelector('.sidebar ul li[title="View Inventory"]');
+                if (inventoryItem) {
+                    inventoryItem.classList.add('active');
+                    inventoryItem.setAttribute('aria-current', 'page');
+                }
+            } else {
+                const homeItem = document.querySelector('.sidebar ul li[title="Go to Dashboard"]');
+                if (homeItem) {
+                    homeItem.classList.add('active');
+                    homeItem.setAttribute('aria-current', 'page');
+                }
+            }
+        }
+
+        function updateActiveTab(li) {
+            document.querySelectorAll('.sidebar ul li').forEach(item => {
+                item.classList.remove('active');
+                item.removeAttribute('aria-current');
+            });
+            li.classList.add('active');
+            li.setAttribute('aria-current', 'page');
         }
 
         function logout() {
@@ -1115,7 +1246,7 @@
                     <td class="subtotal-col">₱${subtotalItem.toFixed(2)}</td>
                     <td class="action-col">
                         <button class="remove-btn" onclick="removeFromCart(${index})">
-                            <i class="fas fa-trash-alt"></i>
+                            <i class="fas fa-trash-alt Handel">
                         </button>
                     </td>
                 `;
@@ -1341,6 +1472,8 @@
                 action: 'processTransaction',
                 items: cart.map(item => ({
                     itemId: item.itemId,
+                    name: item.name,
+                    price: item.price,
                     quantity: item.quantity
                 })),
                 totalAmount: finalTotal,
@@ -1402,21 +1535,6 @@
             toast.textContent = message;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        function switchTab(tabId) {
-            if (tabId === 'home') {
-                window.location.href = 'dashboard.html';
-                return;
-            }
-            if (tabId === 'transaction') {
-                window.location.href = 'Transaction.html';
-                return;
-            }
-            if (tabId === 'inventory') {
-                window.location.href = 'Inventory.html';
-                return;
-            }
         }
     </script>
 </body>

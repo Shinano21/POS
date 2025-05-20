@@ -338,7 +338,7 @@
                     document.getElementById('itemName').value = item.name || '';
                     document.getElementById('itemType').value = item.type || '';
                     document.getElementById('itemPrice').value = item.price || 0;
-                    document.getElementById('itemQuantity').value = item.quantity || 0;
+                    document.getElementById('itemQuantity').value = item.stock || 0; // Changed from item.quantity to item.stock
                 } else {
                     document.getElementById('updateError').textContent = 'Item not found.';
                 }
