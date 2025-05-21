@@ -739,8 +739,8 @@
             <i class="fas fa-times"></i>
         </button>
         <ul id="sidebarMenu">
-            <li class="active" role="menuitem" aria-current="page" tabindex="0" title="Go to Dashboard">
-                <a href="#" aria-label="Go to Dashboard">
+            <li role="menuitem" tabindex="0" title="Go to Dashboard">
+                <a href="dashboard.html" aria-label="Go to Dashboard">
                     <i class="fas fa-home"></i>
                     <span>Home</span>
                 </a>
@@ -755,6 +755,12 @@
                 <a href="inventory.html" aria-label="View Inventory">
                     <i class="fas fa-boxes"></i>
                     <span>Inventory</span>
+                </a>
+            </li>
+            <li role="menuitem" tabindex="0" title="View Sales Summary">
+                <a href="summary.html" aria-label="View Sales Summary">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sales Summary</span>
                 </a>
             </li>
             <li role="button" tabindex="0" title="Log out of the system">
@@ -957,7 +963,7 @@
 
             document.getElementById('sidebarMenu').addEventListener('click', function(e) {
                 const li = e.target.closest('li');
-                if (li && !li.hasAttribute('aria-label') || li.getAttribute('aria-label') === 'Log out') {
+                if (li && li.getAttribute('aria-label') !== 'Log out') {
                     updateActiveTab(li);
                     if (isMobile) toggleSidebar();
                 }
@@ -1091,23 +1097,29 @@
         }
 
         function updateActiveTabBasedOnPage() {
-            const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+            const currentPath = window.location.pathname.split('/').pop().toLowerCase() || 'dashboard.html';
             const items = document.querySelectorAll('.sidebar ul li');
             items.forEach(item => {
                 item.classList.remove('active');
                 item.removeAttribute('aria-current');
             });
-            if (currentPath.includes('Transaction.html')) {
+            if (currentPath.includes('transaction.html')) {
                 const transactionItem = document.querySelector('.sidebar ul li[title="View Transactions"]');
                 if (transactionItem) {
                     transactionItem.classList.add('active');
                     transactionItem.setAttribute('aria-current', 'page');
                 }
-            } else if (currentPath.includes('Inventory.html')) {
+            } else if (currentPath.includes('inventory.html')) {
                 const inventoryItem = document.querySelector('.sidebar ul li[title="View Inventory"]');
                 if (inventoryItem) {
                     inventoryItem.classList.add('active');
                     inventoryItem.setAttribute('aria-current', 'page');
+                }
+            } else if (currentPath.includes('summary.html')) {
+                const summaryItem = document.querySelector('.sidebar ul li[title="View Sales Summary"]');
+                if (summaryItem) {
+                    summaryItem.classList.add('active');
+                    summaryItem.setAttribute('aria-current', 'page');
                 }
             } else {
                 const homeItem = document.querySelector('.sidebar ul li[title="Go to Dashboard"]');

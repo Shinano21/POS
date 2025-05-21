@@ -6,24 +6,35 @@
     <title>401 Unauthorized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body {
+            background: linear-gradient(to bottom, #87CEEB 50%, #D2B48C 50%); /* Sky and ground */
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
         .tank-container {
             position: relative;
             width: 100%;
             max-width: 500px;
             margin: 0 auto;
+            height: 300px; /* Give space for the tank to move */
         }
         .tank-image {
             width: 100%;
             height: auto;
             display: block;
-            animation: tankMove 4s linear infinite;
+            position: absolute;
+            bottom: 0; /* Align tank to the ground */
+            animation: tankMove 6s linear infinite, tankBounce 0.5s ease-in-out infinite; /* Combine animations */
         }
+        /* Forward movement */
         @keyframes tankMove {
-            0% { transform: translateX(0) rotate(0deg); }
-            25% { transform: translateX(20px) rotate(5deg); }
-            50% { transform: translateX(0) rotate(0deg); }
-            75% { transform: translateX(-20px) rotate(-5deg); }
-            100% { transform: translateX(0) rotate(0deg); }
+            0% { transform: translateX(-100%); } /* Start off-screen left */
+            100% { transform: translateX(100vw); } /* Move to the right edge */
+        }
+        /* Bouncing motion to simulate running */
+        @keyframes tankBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); } /* Slight bounce */
         }
         .fade-in {
             animation: fadeIn 1s ease-in;
@@ -32,15 +43,34 @@
             0% { opacity: 0; }
             100% { opacity: 1; }
         }
+        /* Scrolling background for motion effect */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 200%;
+            height: 50%;
+            background: repeating-linear-gradient(
+                90deg,
+                #D2B48C,
+                #D2B48C 50px,
+                #C2A47C 50px,
+                #C2A47C 100px
+            ); /* Simulate terrain */
+            animation: scrollGround 3s linear infinite;
+        }
+        @keyframes scrollGround {
+            0% { transform: translateX(-50%); } /* Start shifted left */
+            100% { transform: translateX(0); } /* Scroll to the right */
+        }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="text-center fade-in">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">/̵͇̿̿/’̿’̿ ̿ ̿̿ ̿̿ ̿̿401 Unauthorized/̵͇̿̿/’̿’̿ ̿ ̿̿ ̿̿ ̿̿</h1>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="text-center fade-in relative z-10">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">401 Unauthorized</h1>
         <p class="text-lg text-gray-600 mb-6">Access denied. Please log in to continue.</p>
-
         <!-- Animated tank image -->
         <div class="tank-container">
+            <div class="ground"></div>
             <img src="images/401.png" alt="Tank 401" class="tank-image">
         </div>
 

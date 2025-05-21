@@ -446,10 +446,16 @@
                     <span>Transactions</span>
                 </a>
             </li>
-            <li role="menuitem" tabindex="0" title="View Inventory" class="active" aria-current="page">
+            <li role="menuitem" tabindex="0" title="View Inventory">
                 <a href="inventory.html" aria-label="View Inventory">
                     <i class="fas fa-boxes"></i>
                     <span>Inventory</span>
+                </a>
+            </li>
+            <li role="menuitem" tabindex="0" title="View Sales Summary">
+                <a href="summary.html" aria-label="View Sales Summary">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sales Summary</span>
                 </a>
             </li>
             <li role="button" tabindex="0" title="Log out of the system">
@@ -535,7 +541,7 @@
 
             document.getElementById('sidebarMenu').addEventListener('click', function(e) {
                 const li = e.target.closest('li');
-                if (li && !li.hasAttribute('aria-label') || li.getAttribute('aria-label') === 'Log out') {
+                if (li && li.getAttribute('aria-label') !== 'Log out') {
                     updateActiveTab(li);
                     if (isMobile) toggleSidebar();
                 }
@@ -559,10 +565,12 @@
                         logout();
                     } else {
                         const link = li.querySelector('a');
-                        if (link && link.href) {
+                        if (link) {
                             updateActiveTab(li);
                             if (isMobile) toggleSidebar();
-                            window.location.href = link.href;
+                            if (link.href) {
+                                window.location.href = link.href;
+                            }
                         }
                     }
                 }
@@ -591,6 +599,9 @@
                     }
                 });
             });
+
+            // Set initial active tab based on current page
+            updateActiveTab(null);
         }
 
         function toggleSidebar() {
@@ -638,8 +649,38 @@
                 item.classList.remove('active');
                 item.removeAttribute('aria-current');
             });
-            li.classList.add('active');
-            li.setAttribute('aria-current', 'page');
+
+            const currentPath = window.location.pathname.split('/').pop().toLowerCase() || 'add.html';
+            if (currentPath.includes('dashboard.html')) {
+                const homeItem = document.querySelector('.sidebar ul li[title="Go to Dashboard"]');
+                if (homeItem) {
+                    homeItem.classList.add('active');
+                    homeItem.setAttribute('aria-current', 'page');
+                }
+            } else if (currentPath.includes('transaction.html')) {
+                const transactionItem = document.querySelector('.sidebar ul li[title="View Transactions"]');
+                if (transactionItem) {
+                    transactionItem.classList.add('active');
+                    transactionItem.setAttribute('aria-current', 'page');
+                }
+            } else if (currentPath.includes('inventory.html') || currentPath.includes('add.html') || currentPath.includes('update.html')) {
+                const inventoryItem = document.querySelector('.sidebar ul li[title="View Inventory"]');
+                if (inventoryItem) {
+                    inventoryItem.classList.add('active');
+                    inventoryItem.setAttribute('aria-current', 'page');
+                }
+            } else if (currentPath.includes('summary.html')) {
+                const summaryItem = document.querySelector('.sidebar ul li[title="View Sales Summary"]');
+                if (summaryItem) {
+                    summaryItem.classList.add('active');
+                    summaryItem.setAttribute('aria-current', 'page');
+                }
+            }
+
+            if (li && li.getAttribute('aria-label') !== 'Log out') {
+                li.classList.add('active');
+                li.setAttribute('aria-current', 'page');
+            }
         }
 
         function logout() {
