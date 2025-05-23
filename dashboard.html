@@ -716,7 +716,7 @@
             <img src="images/medkitpos.png" alt="MedKitPOS Logo">
             <div class="pharmacy-info">
                 <div>ARI Pharma</div>
-                <div class="date" id="datetime"></div>
+                <div class="date" id="datetime">10:30 AM PST, May 23, 2025</div>
             </div>
         </div>
         <div class="search-bar">
@@ -778,9 +778,9 @@
         <div id="homeTab" class="tab-content active">
             <div class="form-section">
                 <div class="form-row">
-                    <div class="form-group">
+                    <div class="form-group inventory-search">
                         <label for="itemSearch">Search Item (Barcode or Name):</label>
-                        <input type="text" id="itemSearch" placeholder="Enter barcode (8-13 digits) or product name">
+                        <input type="text" id="itemSearch" placeholder="Enter barcode (8-13 digits) or product name" oninput="fetchSuggestions(this.value, 'itemSearch')">
                         <div id="itemSearchSuggestions" class="suggestions"></div>
                     </div>
                     <div class="form-group">
@@ -1153,9 +1153,10 @@
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: true
+                hour12: true,
+                timeZone: 'America/Los_Angeles'
             };
-            document.getElementById('datetime').textContent = now.toLocaleString('en-US', options).replace(',', '');
+            document.getElementById('datetime').textContent = now.toLocaleString('en-US', options).replace(',', '') + ' PST';
         }
 
         function debounce(func, wait) {
@@ -1198,7 +1199,7 @@
                 if (result.success && (result.item || result.items)) {
                     const items = result.item ? [result.item] : result.items || [];
                     if (items.length > 0) {
-                        items.forEach(item => {
+                        items.forEach((item, index) => {
                             const div = document.createElement('div');
                             div.className = 'suggestion-item';
                             div.innerHTML = `
@@ -1207,6 +1208,8 @@
                             `;
                             div.onclick = () => selectSuggestion(item, inputId);
                             div.dataset.item = JSON.stringify(item);
+                            div.tabIndex = 0; // Make suggestion focusable
+                            div.dataset.index = index; // Store index for keyboard navigation
                             suggestionsDiv.appendChild(div);
                         });
                     } else {
@@ -1225,23 +1228,28 @@
         }
 
         function selectSuggestion(item, inputId) {
-            const input = document.getElementById(inputId);
-            const suggestionsDiv = document.getElementById(inputId === 'itemSearch' ? 'itemSearchSuggestions' : 'nameSuggestions');
+            const itemSearch = document.getElementById('itemSearch');
+            const navbarSearch = document.getElementById('navbarSearch');
+            const itemSuggestions = document.getElementById('itemSearchSuggestions');
+            const navbarSuggestions = document.getElementById('nameSuggestions');
 
-            if (inputId === 'itemSearch') {
-                input.value = item.name;
-                input.dataset.selectedItem = JSON.stringify(item);
-                suggestionsDiv.style.display = 'none';
-                suggestionsDiv.innerHTML = '';
-                input.focus();
-            } else {
-                input.value = item.name;
-                document.getElementById('itemSearch').value = item.name;
-                document.getElementById('itemSearch').dataset.selectedItem = JSON.stringify(item);
-                document.getElementById('itemSearch').focus();
-                suggestionsDiv.style.display = 'none';
-                suggestionsDiv.innerHTML = '';
+            // Populate itemSearch input and store item data
+            itemSearch.value = item.name;
+            itemSearch.dataset.selectedItem = JSON.stringify(item);
+
+            // If triggered from navbarSearch, also update navbarSearch
+            if (inputId === 'navbarSearch') {
+                navbarSearch.value = item.name;
             }
+
+            // Hide both suggestion lists
+            itemSuggestions.style.display = 'none';
+            itemSuggestions.innerHTML = '';
+            navbarSuggestions.style.display = 'none';
+            navbarSuggestions.innerHTML = '';
+
+            // Focus on itemSearch for further action
+            itemSearch.focus();
         }
 
         async function addToCart() {
@@ -1250,12 +1258,12 @@
             const selectedItem = itemSearch.dataset.selectedItem ? JSON.parse(itemSearch.dataset.selectedItem) : null;
             const query = itemSearch.value.trim();
 
+            errorDiv.textContent = '';
+
             if (!query) {
                 errorDiv.textContent = 'Please enter a barcode or product name.';
                 return;
             }
-
-            errorDiv.textContent = '';
 
             let item = null;
 
@@ -1283,7 +1291,7 @@
                 }
             } else {
                 errorDiv.textContent = 'Please select an item from the suggestion list.';
-                fetchSuggestions(query, 'itemSearch');
+                fetchSuggestions(query, 'itemSearch'); // Retry fetching suggestions if no selection
                 return;
             }
 
@@ -1308,6 +1316,8 @@
             updateCartTable();
             itemSearch.value = '';
             itemSearch.dataset.selectedItem = '';
+            document.getElementById('navbarSearch').value = ''; // Clear navbar search
+            showToast(`${item.name} added to cart.`);
         }
 
         function addKeyboardNavigation(inputId) {
@@ -1331,6 +1341,9 @@
                     e.preventDefault();
                     const item = JSON.parse(items[selectedIndex].dataset.item);
                     selectSuggestion(item, inputId);
+                    if (inputId === 'itemSearch') {
+                        addToCart(); // Add to cart immediately if in itemSearch
+                    }
                 } else if (e.key === 'Escape') {
                     suggestionsDiv.style.display = 'none';
                     suggestionsDiv.innerHTML = '';
