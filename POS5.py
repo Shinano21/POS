@@ -482,7 +482,7 @@ class PharmacyPOS:
         cart_frame.grid(row=0, column=0, sticky="nsew", padx=0)
 
         columns = ("Product", "UnitPrice", "Quantity", "Subtotal")
-        headers = ("PRODUCT DETAILS", "UNIT PRICE ", "QUANTITY", "SUBTOTAL ")
+        headers = ("PRODUCT DETAILS", "SRP ", "QUANTITY", "SUBTOTAL ")
         self.cart_table = ttk.Treeview(cart_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.cart_table.heading(col, text=head)
@@ -557,9 +557,9 @@ class PharmacyPOS:
             self.suggestion_window.wm_overrideredirect(True)
             self.suggestion_window.configure(bg="#ffffff")
             self.suggestion_listbox = tk.Listbox(self.suggestion_window, height=5, font=("Helvetica", 12),
-                                                bg="#ffffff", fg="#000000", selectbackground="#2ecc71",
-                                                selectforeground="#ffffff", highlightthickness=0, bd=0,
-                                                relief="flat")
+                                            bg="#ffffff", fg="#000000", selectbackground="#2ecc71",
+                                            selectforeground="#ffffff", highlightthickness=0, bd=0,
+                                            relief="flat")
             self.suggestion_listbox.pack(fill="both", expand=True)
             self.suggestion_listbox.bind("<<ListboxSelect>>", self.select_suggestion)
             self.suggestion_listbox.bind("<Return>", self.select_suggestion)
@@ -571,13 +571,14 @@ class PharmacyPOS:
         if query:
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("SELECT name FROM inventory WHERE name LIKE ?",
-                               (f"%{query}%",))
-                suggestions = [row[0] for row in cursor.fetchall()]
+                cursor.execute("SELECT name, price, quantity FROM inventory WHERE name LIKE ?",
+                            (f"%{query}%",))
+                suggestions = cursor.fetchall()
 
             if suggestions:
-                for name in suggestions:
-                    self.suggestion_listbox.insert(tk.END, name)
+                for name, price, quantity in suggestions:
+                    display_text = f"{name} - ${price:.2f} (Stock: {quantity})"
+                    self.suggestion_listbox.insert(tk.END, display_text)
                 search_width = self.search_entry.winfo_width()
                 self.suggestion_window.geometry(f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}")
                 self.suggestion_window.deiconify()
@@ -634,9 +635,11 @@ class PharmacyPOS:
             selection = self.suggestion_listbox.curselection()
             if selection:
                 selected_text = self.suggestion_listbox.get(selection[0])
+                # Extract just the item name from the display text
+                item_name = selected_text.split(" - ")[0]
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("SELECT * FROM inventory WHERE name = ?", (selected_text,))
+                    cursor.execute("SELECT * FROM inventory WHERE name = ?", (item_name,))
                     item = cursor.fetchone()
                     if item:
                         for cart_item in self.cart:
@@ -878,10 +881,10 @@ class PharmacyPOS:
         self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.inventory_search_entry.bind("<KeyRelease>", self.update_inventory_table)
 
-        # Add New Item button with authentication for all users
-        tk.Button(search_frame, text="Add New Item", 
+        # Add New Item button with authentication
+        tk.Button(search_frame, text="Add New Item",
                 command=lambda: self.create_password_auth_window(
-                    "Authenticate Add Item", "Enter admin password to add item", 
+                    "Authenticate Add Item", "Enter admin password to add item",
                     self.validate_add_item_auth),
                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
                 activebackground="#27ae60", activeforeground="#ffffff",
@@ -908,7 +911,7 @@ class PharmacyPOS:
         self.update_item_btn = tk.Button(button_frame, text="Update Item",
                                         command=lambda: self.create_password_auth_window(
                                             "Authenticate Update Item", "Enter admin password to update item",
-                                            self.validate_update_item_auth, 
+                                            self.validate_update_item_auth,
                                             selected_item=self.inventory_table.selection()),
                                         bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
                                         activebackground="#2980b9", activeforeground="#ffffff",
@@ -936,6 +939,8 @@ class PharmacyPOS:
             else:
                 window.destroy()
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+
+                
 
     def update_inventory_table(self, event: Optional[tk.Event] = None) -> None:
         for item in self.inventory_table.get_children():
@@ -1029,14 +1034,25 @@ class PharmacyPOS:
                                                 self.validate_update_item_auth, item=item)
 
     def validate_update_item_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        item = kwargs.get("item")
+        selected_item = kwargs.get("selected_item")
+        if not selected_item:
+            window.destroy()
+            messagebox.showerror("Error", "No item selected", parent=self.root)
+            return
         with self.conn:
             cursor = self.conn.cursor()
             cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
             admin_password = cursor.fetchone()
             if admin_password and password == admin_password[0]:
-                window.destroy()
-                self.show_update_item(item)
+                item_name = self.inventory_table.item(selected_item)["values"][0]
+                cursor.execute("SELECT * FROM inventory WHERE name = ?", (item_name,))
+                item = cursor.fetchone()
+                if item:
+                    window.destroy()
+                    self.show_update_item(item)
+                else:
+                    window.destroy()
+                    messagebox.showerror("Error", "Item not found", parent=self.root)
             else:
                 window.destroy()
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
@@ -1051,7 +1067,7 @@ class PharmacyPOS:
         update_box.pack(pady=20)
 
         tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
-                 bg="#ffffff", fg="#1a1a1a").pack(pady=15)
+                bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
         fields = ["Item ID (Barcode)", "Product Name", "Price ", "Quantity"]
         entries = {}
@@ -1067,27 +1083,30 @@ class PharmacyPOS:
         type_var = tk.StringVar(value=item[2])
         tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
         ttk.Combobox(update_box, textvariable=type_var,
-                     values=["Medicine", "Supplement", "Medical Device", "Other"],
-                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                    values=["Medicine", "Supplement", "Medical Device", "Other"],
+                    state="readonly", font=("Helvetica", 14)).pack(pady=5)
 
         tk.Button(update_box, text="Update Item",
-                  command=lambda: self.update_item(
-                      entries["Item ID (Barcode)"].get(),
-                      entries["Product Name"].get(),
-                      type_var.get(),
-                      entries["Price "].get(),
-                      entries["Quantity"].get(),
-                      item[0],
-                      window
-                  ),
-                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                  activebackground="#27ae60", activeforeground="#ffffff",
-                  padx=12, pady=8, bd=0).pack(pady=15)
+                command=lambda: self.update_item(
+                    entries["Item ID (Barcode)"].get(),
+                    entries["Product Name"].get(),
+                    type_var.get(),
+                    entries["Price "].get(),
+                    entries["Quantity"].get(),
+                    item[0],
+                    window
+                ),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=12, pady=8, bd=0).pack(pady=15)
 
     def update_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, original_item_id: str, window: tk.Toplevel) -> None:
         try:
             price = float(price)
             quantity = int(quantity)
+            if price < 0 or quantity < 0:
+                messagebox.showerror("Error", "Price and quantity cannot be negative", parent=self.root)
+                return
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Product Name and Type are required", parent=self.root)
                 return
@@ -1095,6 +1114,12 @@ class PharmacyPOS:
             item_id = item_id.strip() if item_id.strip() else original_item_id
             with self.conn:
                 cursor = self.conn.cursor()
+                # Check if the new item_id already exists (excluding the original item)
+                if item_id != original_item_id:
+                    cursor.execute("SELECT item_id FROM inventory WHERE item_id = ?", (item_id,))
+                    if cursor.fetchone():
+                        messagebox.showerror("Error", "Item ID already exists", parent=self.root)
+                        return
                 cursor.execute("""
                     UPDATE inventory
                     SET item_id = ?, name = ?, type = ?, price = ?, quantity = ?
@@ -1103,11 +1128,18 @@ class PharmacyPOS:
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
-                messagebox.showinfo("Success", "Item updated successfully", parent=self.root)
+                messagebox.showinfo("Success", f"Item '{name}' updated successfully", parent=self.root)
+                # Log the update action
+                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units",
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                self.conn.commit()
         except ValueError:
             messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
-        except sqlite3.IntegrityError:
-            messagebox.showerror("Error", "Item ID already exists", parent=self.root)
+        except sqlite3.IntegrityError as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to update item: {e}", parent=self.root)
 
     def on_inventory_select(self, event: tk.Event) -> None:
         selected_item = self.inventory_table.selection()
@@ -2113,8 +2145,12 @@ class PharmacyPOS:
             with self.conn:
                 cursor = self.conn.cursor()
                 query = search_entry.get().strip()
-                sql = "SELECT transaction_id, items, total_amount, timestamp, status FROM transactions WHERE transaction_id LIKE ? AND status = 'Completed'"
-                cursor.execute(sql, (f"%{query}%",) if query else "SELECT transaction_id, items, total_amount, timestamp, status FROM transactions WHERE status = 'Completed'")
+                if query:
+                    sql = "SELECT transaction_id, items, total_amount, timestamp, status FROM transactions WHERE transaction_id LIKE ? AND status = 'Completed'"
+                    cursor.execute(sql, (f"%{query}%",))
+                else:
+                    sql = "SELECT transaction_id, items, total_amount, timestamp, status FROM transactions WHERE status = 'Completed'"
+                    cursor.execute(sql, ())
                 for transaction in cursor.fetchall():
                     items_str = transaction[1]
                     item_names = []
@@ -2141,36 +2177,37 @@ class PharmacyPOS:
         self.return_table.bind("<<TreeviewSelect>>", self.on_return_select)
         self.return_table.bind("<Double-1>", lambda e: self.process_return())
 
-        def on_return_select(self, event: tk.Event) -> None:
-            selected_item = self.return_table.selection()
-            self.process_transaction_btn.config(state="normal" if selected_item else "disabled")
+       
+    def on_return_select(self, event: tk.Event) -> None:
+        selected_item = self.return_table.selection()
+        self.process_transaction_btn.config(state="normal" if selected_item else "disabled")
 
-        def process_return(self) -> None:
-            selected_item = self.return_table.selection()
-            if not selected_item:
-                messagebox.showerror("Error", "No transaction selected", parent=self.root)
-                return
-            transaction_id = self.return_table.item(selected_item)["values"][0]
-            with self.conn:
-                cursor = self.conn.cursor()
-                cursor.execute("SELECT items, total_amount FROM transactions WHERE transaction_id = ?", (transaction_id,))
-                transaction = cursor.fetchone()
-                if transaction:
-                    items = transaction[0]
-                    total_amount = transaction[1]
-                    for item_data in items.split(";"):
-                        if item_data:
-                            item_id, qty = item_data.split(":")
-                            cursor.execute("UPDATE inventory SET quantity = quantity + ? WHERE item_id = ?",
-                                        (int(qty), item_id))
-                    cursor.execute("UPDATE transactions SET status = 'Returned' WHERE transaction_id = ?", (transaction_id,))
-                    cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                (str(uuid.uuid4()), "Return", f"Returned transaction {transaction_id}",
-                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
-                    self.conn.commit()
-                    self.return_table.delete(*self.return_table.get_children())
-                    self.update_return_table()
-                    messagebox.showinfo("Success", f"Transaction {transaction_id} returned successfully", parent=self.root)
+    def process_return(self) -> None:
+        selected_item = self.return_table.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "No transaction selected", parent=self.root)
+            return
+        transaction_id = self.return_table.item(selected_item)["values"][0]
+        with self.conn:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT items, total_amount FROM transactions WHERE transaction_id = ?", (transaction_id,))
+            transaction = cursor.fetchone()
+            if transaction:
+                items = transaction[0]
+                total_amount = transaction[1]
+                for item_data in items.split(";"):
+                    if item_data:
+                        item_id, qty = item_data.split(":")
+                        cursor.execute("UPDATE inventory SET quantity = quantity + ? WHERE item_id = ?",
+                                    (int(qty), item_id))
+                cursor.execute("UPDATE transactions SET status = 'Returned' WHERE transaction_id = ?", (transaction_id,))
+                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                            (str(uuid.uuid4()), "Return", f"Returned transaction {transaction_id}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                self.conn.commit()
+                self.return_table.delete(*self.return_table.get_children())
+                self.update_return_table()
+                messagebox.showinfo("Success", f"Transaction {transaction_id} returned successfully", parent=self.root)
 
 if __name__ == "__main__":
     root = tk.Tk()
