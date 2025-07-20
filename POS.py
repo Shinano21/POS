@@ -55,14 +55,15 @@ class PharmacyPOS:
         self.root.bind("<F11>", self.toggle_fullscreen)
         self.root.bind("<Escape>", lambda e: self.root.attributes('-fullscreen', False))
         self.root.bind("<F1>", self.opening_closing_fund)
-        self.root.bind("<F3>", self.void_selected_items)
-        self.root.bind("<F4>", self.void_order)
-        self.root.bind("<F5>", self.hold_transaction)
-        self.root.bind("<F6>", self.view_unpaid_transactions)
-        self.root.bind("<F8>", self.mode_of_payment)
+        self.root.bind("<F2>", self.void_selected_items)
+        self.root.bind("<F3>", self.void_order)
+        self.root.bind("<F4>", self.hold_transaction)
+        self.root.bind("<F5>", self.view_unpaid_transactions)
+        self.root.bind("<F6>", self.mode_of_payment)
         self.root.bind("<F7>", self.handle_discount_toggle_event)
-        self.root.bind("<F10>", self.return_transaction)
-        self.root.bind("<F12>", self.select_customer)
+        self.root.bind("<F8>", self.return_transaction)
+        self.root.bind("<F9>", self.select_customer)
+        self.root.bind("<Shift_R>", self.focus_cash_paid)
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA') or os.path.expanduser("~")
@@ -105,8 +106,8 @@ class PharmacyPOS:
 
     def style_config(self) -> None:
         style = ttk.Style()
-        style.configure("Treeview", rowheight=30, font=("Helvetica", 12))
-        style.configure("Treeview.Heading", font=("Helvetica", 12, "bold"))
+        style.configure("Treeview", rowheight=30, font=("Helvetica", 14))
+        style.configure("Treeview.Heading", font=("Helvetica", 14, "bold"))
         style.theme_use("clam")
 
     def toggle_fullscreen(self, event: Optional[tk.Event] = None) -> str:
@@ -234,9 +235,22 @@ class PharmacyPOS:
         self.main_frame = tk.Frame(self.root, bg="#f5f6f5")
         self.main_frame.pack(fill="both", expand=True)
         self.show_login()
-        self.root.bind("<Return>", self.handle_enter_key)
+        self.root.bind("<Shift-Return>", self.handle_shift_enter_key)
+        self.root.bind("<Shift_R>", self.focus_cash_paid)
 
-    def handle_enter_key(self, event: Optional[tk.Event] = None) -> None:
+    def focus_cash_paid(self, event: Optional[tk.Event] = None) -> None:
+   
+        if self.current_user and hasattr(self, 'summary_entries') and "Cash Paid " in self.summary_entries:
+            cash_paid_entry = self.summary_entries["Cash Paid "]
+            cash_paid_entry.focus_set()
+            cash_paid_entry.select_range(0, tk.END)  # Select existing text for quick editing
+        else:
+            if not self.current_user:
+                messagebox.showerror("Error", "You must be logged in to use this function.", parent=self.root)
+            else:
+                messagebox.showerror("Error", "Cash Paid field is not available.", parent=self.root)
+
+    def handle_shift_enter_key(self, event: Optional[tk.Event] = None) -> None:
         if self.cart and self.main_frame.winfo_exists() and self.current_user:
             self.confirm_checkout()
         else:
@@ -505,7 +519,6 @@ class PharmacyPOS:
         self.summary_frame.grid_propagate(False)
         self.summary_frame.configure(width=300)
 
-        # Display discount status instead of checkbox
         self.discount_status_label = tk.Label(self.summary_frame, text="Discount: Not Applied",
                                             font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a")
         self.discount_status_label.pack(pady=5)
@@ -516,13 +529,13 @@ class PharmacyPOS:
                                         bg="#ffffff", fg="#666")
         self.customer_id_label.pack(pady=2, anchor="w")
         tk.Button(self.summary_frame, text="Select Customer", command=self.select_customer,
-                bg="#3498db", fg="#ffffff", font=("Helvetica", 12),
+                bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
                 activebackground="#2980b9", activeforeground="#ffffff",
                 padx=8, pady=4, bd=0).pack(pady=5, fill="x")
 
-        tk.Label(self.summary_frame, text="Selected Item Quantity", font=("Helvetica", 14),
+        tk.Label(self.summary_frame, text="Selected Item Quantity", font=("Helvetica", 18),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=2, anchor="w")
-        self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", 14), bg="#f5f6f5", state="disabled")
+        self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", 18), bg="#f5f6f5", state="disabled")
         self.quantity_entry.pack(pady=2, fill="x")
         self.quantity_entry.bind("<Return>", self.adjust_quantity)
         self.quantity_entry.bind("<FocusOut>", self.adjust_quantity)
@@ -530,9 +543,9 @@ class PharmacyPOS:
         fields = ["Subtotal ", "Discount ", "Final Total ", "Cash Paid ", "Change "]
         self.summary_entries = {}
         for field in fields:
-            tk.Label(self.summary_frame, text=field, font=("Helvetica", 14),
+            tk.Label(self.summary_frame, text=field, font=("Helvetica", 18),
                     bg="#ffffff", fg="#1a1a1a").pack(pady=2, anchor="w")
-            entry = tk.Entry(self.summary_frame, font=("Helvetica", 14), bg="#f5f6f5")
+            entry = tk.Entry(self.summary_frame, font=("Helvetica", 18), bg="#f5f6f5")
             entry.pack(pady=2, fill="x")
             self.summary_entries[field] = entry
             if field != "Cash Paid ":
@@ -544,14 +557,6 @@ class PharmacyPOS:
 
         button_frame = tk.Frame(self.summary_frame, bg="#ffffff")
         button_frame.pack(pady=10, fill="x")
-        tk.Button(button_frame, text="Clear Cart", command=self.confirm_clear_cart,
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack(pady=5, fill="x")
-        tk.Button(button_frame, text="Checkout", command=self.confirm_checkout,
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack(pady=5, fill="x")
 
     def clear_search(self) -> None:
         self.search_entry.delete(0, tk.END)
@@ -585,7 +590,7 @@ class PharmacyPOS:
 
             if suggestions:
                 for name, price, quantity, supplier in suggestions:
-                    display_text = f"{name} - ${price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'})"
+                    display_text = f"{name} - ₱{price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'})"
                     self.suggestion_listbox.insert(tk.END, display_text)
                 search_width = self.search_entry.winfo_width()
                 self.suggestion_window.geometry(f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}")
@@ -859,7 +864,7 @@ class PharmacyPOS:
 
     def process_checkout(self, cash_paid: float, final_total: float) -> None:
         try:
-            transaction_id = self.generate_transaction_id()  # Use new method instead of uuid
+            transaction_id = self.generate_transaction_id()
             items = ";".join([f"{item['id']}:{item['quantity']}" for item in self.cart])
             change = cash_paid - final_total
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -888,10 +893,19 @@ class PharmacyPOS:
 
                 self.conn.commit()
 
+            # Check for low inventory after updating stock
+            self.check_low_inventory()
+
+            # Update and clear fields
             self.summary_entries["Change "].config(state="normal")
             self.summary_entries["Change "].delete(0, tk.END)
             self.summary_entries["Change "].insert(0, f"{change:.2f}")
             self.summary_entries["Change "].config(state="readonly")
+
+            # Clear the Cash Paid field
+            self.summary_entries["Cash Paid "].delete(0, tk.END)
+            self.summary_entries["Cash Paid "].insert(0, "0.00")
+
             messagebox.showinfo("Success", f"Transaction completed! ID: {transaction_id}", parent=self.root)
             self.customer_id_label.config(text="None Selected")
             self.cart.clear()
@@ -936,13 +950,25 @@ class PharmacyPOS:
         content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True, padx=(10, 0))
 
+        # Search and filter frame
         search_frame = tk.Frame(content_frame, bg="#ffffff")
         search_frame.pack(fill="x", pady=10)
+
         tk.Label(search_frame, text="Search by Name:", font=("Helvetica", 14),
                 bg="#ffffff", fg="#1a1a1a").pack(side="left")
         self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", 14), bg="#f5f6f5")
         self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.inventory_search_entry.bind("<KeyRelease>", self.update_inventory_table)
+
+        tk.Label(search_frame, text="Filter by Type:", font=("Helvetica", 14),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=(10, 5))
+        self.type_filter_var = tk.StringVar()
+        self.type_filter_combobox = ttk.Combobox(search_frame, textvariable=self.type_filter_var,
+                                                values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                                                state="readonly", font=("Helvetica", 14))
+        self.type_filter_combobox.pack(side="left", padx=5)
+        self.type_filter_combobox.set("All")
+        self.type_filter_combobox.bind("<<ComboboxSelected>>", self.update_inventory_table)
 
         tk.Button(search_frame, text="Add New Item",
                 command=self.show_add_item,
@@ -953,8 +979,8 @@ class PharmacyPOS:
         inventory_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
         inventory_frame.pack(fill="both", expand=True, pady=10)
 
-        columns = ("Name", "Price", "Quantity", "Supplier")
-        headers = ("NAME", "PRICE", "QUANTITY", "SUPPLIER")
+        columns = ("Name", "Type", "Price", "Quantity", "Supplier")
+        headers = ("NAME", "TYPE", "PRICE", "QUANTITY", "SUPPLIER")
         self.inventory_table = ttk.Treeview(inventory_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.inventory_table.heading(col, text=head)
@@ -1050,7 +1076,7 @@ class PharmacyPOS:
         type_var = tk.StringVar()
         tk.Label(add_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
         ttk.Combobox(add_box, textvariable=type_var,
-                    values=["Medicine", "Supplement", "Medical Device", "Other"],
+                    values = ["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
 
         tk.Button(add_box, text="Add Item",
@@ -1088,6 +1114,9 @@ class PharmacyPOS:
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", "Item added successfully", parent=self.root)
+                # Check for low inventory after adding
+                if quantity <= 5:
+                    self.check_low_inventory()
         except ValueError:
             messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
         except sqlite3.IntegrityError:
@@ -1132,19 +1161,28 @@ class PharmacyPOS:
 
         fields = ["Item ID (Barcode)", "Product Name", "Price", "Quantity", "Supplier"]
         entries = {}
-        for i, field in enumerate(fields):
+        # Map fields to their corresponding indices in the item tuple
+        field_indices = {
+            "Item ID (Barcode)": 0,  # item_id
+            "Product Name": 1,      # name
+            "Price": 3,             # price
+            "Quantity": 4,          # quantity
+            "Supplier": 5           # supplier
+        }
+        for field in fields:
             frame = tk.Frame(update_box, bg="#ffffff")
             frame.pack(fill="x", pady=5)
             tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
-            entry.insert(0, item[i] if i < len(item) else "")  # Handle cases where item may not have supplier yet
+            # Insert the correct value from the item tuple
+            entry.insert(0, item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else "")
 
-        type_var = tk.StringVar(value=item[2])
+        type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")  # Default to "Medicine" if type is None
         tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
         ttk.Combobox(update_box, textvariable=type_var,
-                    values=["Medicine", "Supplement", "Medical Device", "Other"],
+                    values = ["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
 
         tk.Button(update_box, text="Update Item",
@@ -1155,7 +1193,7 @@ class PharmacyPOS:
                     entries["Price"].get(),
                     entries["Quantity"].get(),
                     entries["Supplier"].get(),
-                    item[0],
+                    item[0],  # original_item_id
                     window
                 ),
                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
@@ -1188,12 +1226,15 @@ class PharmacyPOS:
                     WHERE item_id = ?
                 """, (item_id, name, item_type, price, quantity, supplier, original_item_id))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
+                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Price: {price:.2f}, Supplier: {supplier}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", f"Item '{name}' updated successfully", parent=self.root)
+                # Check for low inventory after updating
+                if quantity <= 5:
+                    self.check_low_inventory()
         except ValueError:
             messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
         except sqlite3.IntegrityError as e:
@@ -1207,16 +1248,55 @@ class PharmacyPOS:
         self.update_item_btn.config(state=state)
         self.delete_item_btn.config(state=state)
 
+    def check_low_inventory(self) -> None:
+        with self.conn:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT name, quantity FROM inventory WHERE quantity <= 5")
+            low_items = cursor.fetchall()
+            if low_items:
+                message = "Low inventory warning:\n" + "\n".join([f"{item[0]}: {item[1]} units remaining" for item in low_items])
+                messagebox.showwarning("Low Inventory Alert", message, parent=self.root)
+                # Optionally log the low inventory event
+                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                            (str(uuid.uuid4()), "Low Inventory Check", message,
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                self.conn.commit()
+
     def update_inventory_table(self, event: Optional[tk.Event] = None) -> None:
         for item in self.inventory_table.get_children():
             self.inventory_table.delete(item)
         with self.conn:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()
-            sql = "SELECT name, price, quantity, supplier FROM inventory WHERE name LIKE ?" if query else "SELECT name, price, quantity, supplier FROM inventory"
-            cursor.execute(sql, (f"%{query}%",) if query else ())
+            type_filter = self.type_filter_var.get()
+
+            # Build SQL query based on search query and type filter
+            sql = "SELECT name, type, price, quantity, supplier FROM inventory"
+            params = []
+            conditions = []
+
+            if query:
+                conditions.append("name LIKE ?")
+                params.append(f"%{query}%")
+            if type_filter and type_filter != "All":
+                conditions.append("type = ?")
+                params.append(type_filter)
+
+            if conditions:
+                sql += " WHERE " + " AND ".join(conditions)
+
+            cursor.execute(sql, params)
             for item in cursor.fetchall():
-                self.inventory_table.insert("", "end", values=(item[0], f"{item[1]:.2f}", item[2], item[3] or "Unknown"))
+                item_id = self.inventory_table.insert("", "end", values=(item[0], item[1], f"{item[2]:.2f}", item[3], item[4] or "Unknown"))
+                # Highlight row if quantity <= 5
+                if item[3] <= 5:
+                    self.inventory_table.item(item_id, tags=("low_stock",))
+            
+            # Define tag for low stock with red background
+            self.inventory_table.tag_configure("low_stock", background="#ffcccc")
+
+        # Check for low inventory after updating the table
+        self.check_low_inventory()
 
     def show_transactions(self) -> None:
         if self.get_user_role() == "Drug Lord":
@@ -1997,41 +2077,58 @@ class PharmacyPOS:
                  padx=12, pady=8, bd=0).pack(pady=10)
 
     def opening_closing_fund(self, event: Optional[tk.Event] = None) -> None:
-        if self.get_user_role() != "Drug Lord":
-            messagebox.showerror("Access Denied", "Only admins can manage funds.", parent=self.root)
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to manage funds.", parent=self.root)
             return
-        window = tk.Toplevel(self.root)
-        window.title("Manage Fund")
-        window.geometry("400x300")
-        window.configure(bg="#f5f6f5")
+        self.create_password_auth_window(
+            "Authenticate Fund Access",
+            "Enter admin password to access fund management",
+            self.validate_fund_access_auth
+        )
 
-        fund_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
-        fund_box.pack(pady=20)
+    def validate_fund_access_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
+        with self.conn:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
+            admin_password = cursor.fetchone()
+            if admin_password and password == admin_password[0]:
+                window.destroy()
+                # Show the fund management window
+                fund_window = tk.Toplevel(self.root)
+                fund_window.title("Manage Fund")
+                fund_window.geometry("400x300")
+                fund_window.configure(bg="#f5f6f5")
 
-        tk.Label(fund_box, text="Manage Fund", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=15)
+                fund_box = tk.Frame(fund_window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
+                fund_box.pack(pady=20)
 
-        tk.Label(fund_box, text="Amount", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
-        amount_entry = tk.Entry(fund_box, font=("Helvetica", 14), bg="#f5f6f5")
-        amount_entry.pack(pady=5, fill="x")
+                tk.Label(fund_box, text="Manage Fund", font=("Helvetica", 18, "bold"),
+                        bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-        type_var = tk.StringVar()
-        tk.Label(fund_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
-        ttk.Combobox(fund_box, textvariable=type_var, values=["Opening Fund", "Closing Fund"],
-                    state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                tk.Label(fund_box, text="Amount", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
+                amount_entry = tk.Entry(fund_box, font=("Helvetica", 14), bg="#f5f6f5")
+                amount_entry.pack(pady=5, fill="x")
 
-        tk.Button(fund_box, text="Submit",
-                 command=lambda: self.create_password_auth_window(
-                     "Authenticate Fund", "Enter admin password to record fund",
-                     self.validate_fund_auth, amount=amount_entry.get(), fund_type=type_var.get(), window=window),
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                 activebackground="#27ae60", activeforeground="#ffffff",
-                 padx=12, pady=8, bd=0).pack(pady=15)
+                type_var = tk.StringVar()
+                tk.Label(fund_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
+                ttk.Combobox(fund_box, textvariable=type_var, values=["Opening Fund", "Closing Fund"],
+                            state="readonly", font=("Helvetica", 14)).pack(pady=5)
 
-    def validate_fund_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        amount = kwargs.get("amount")
-        fund_type = kwargs.get("fund_type")
-        fund_window = kwargs.get("window")
+                tk.Button(fund_box, text="Submit",
+                        command=lambda: self.validate_fund_auth(
+                            password=password,  # Pass validated password
+                            amount=amount_entry.get(),
+                            fund_type=type_var.get(),
+                            window=fund_window  # Pass fund_window as the window to close
+                        ),
+                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                        activebackground="#27ae60", activeforeground="#ffffff",
+                        padx=12, pady=8, bd=0).pack(pady=15)
+            else:
+                window.destroy()
+                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+
+    def validate_fund_auth(self, password: str, amount: str, fund_type: str, window: tk.Toplevel) -> None:
         try:
             amount = float(amount)
             if amount < 0:
@@ -2041,15 +2138,14 @@ class PharmacyPOS:
                 cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
                 admin_password = cursor.fetchone()
                 if admin_password and password == admin_password[0]:
-                    cursor.execute("INSERT INTO funds VALUES (?, ?, ?, ?, ?)",
-                                  (str(uuid.uuid4()), fund_type, amount, 
-                                   datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                    cursor.execute("INSERT INTO funds (fund_id, type, amount, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                                (str(uuid.uuid4()), fund_type, amount,
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                     cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                  (str(uuid.uuid4()), f"{fund_type}", f"Recorded {fund_type} of {amount}",
-                                   datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                                (str(uuid.uuid4()), f"{fund_type}", f"Recorded {fund_type} of {amount}",
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                     self.conn.commit()
                     window.destroy()
-                    fund_window.destroy()
                     messagebox.showinfo("Success", f"{fund_type} recorded successfully", parent=self.root)
                 else:
                     window.destroy()
@@ -2226,7 +2322,7 @@ class PharmacyPOS:
             return
         window = tk.Toplevel(self.root)
         window.title("Select Payment Method")
-        window.geometry("400x300")
+        window.geometry("400x450")
         window.configure(bg="#f5f6f5")
 
         payment_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
@@ -2350,17 +2446,19 @@ class PharmacyPOS:
                 cursor = self.conn.cursor()
                 for item in return_items:
                     cursor.execute("UPDATE inventory SET quantity = quantity + ? WHERE item_id = ?",
-                                  (item["quantity"], item["id"]))
+                                (item["quantity"], item["id"]))
                 cursor.execute("UPDATE transactions SET status = 'Returned' WHERE transaction_id = ?",
-                              (transaction_id,))
+                            (transaction_id,))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Return Transaction", f"Returned transaction {transaction_id}",
-                               datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                            (str(uuid.uuid4()), "Return Transaction", f"Returned transaction {transaction_id}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 window.destroy()
                 messagebox.showinfo("Success", "Transaction returned successfully", parent=self.root)
                 if hasattr(self, 'transactions_table'):
                     self.update_transactions_table()
+                # Check for low inventory after return
+                self.check_low_inventory()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to process return: {e}", parent=self.root)
 
