@@ -1311,9 +1311,9 @@ class PharmacyPOS:
         search_frame.pack(fill="x", pady=10)
         tk.Entry(search_frame, font=("Helvetica", 14), bg="#f5f6f5").pack(side="left", fill="x", expand=True, padx=5)
         tk.Button(search_frame, text="Refresh Transactions", command=self.update_transactions_table,
-                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                  activebackground="#27ae60", activeforeground="#ffffff",
-                  padx=12, pady=8, bd=0).pack(side="left", padx=5)
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
         transactions_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
         transactions_frame.pack(fill="both", expand=True, pady=10)
@@ -1321,7 +1321,7 @@ class PharmacyPOS:
         transactions_frame.grid_columnconfigure(0, weight=1)
 
         canvas = tk.Canvas(transactions_frame, bg="#ffffff")
-        canvas.grid(row=1, column=0, sticky="nsew")
+        canvas.grid(row=1, column=0, sticky="nsew")  # Ensure canvas expands in all directions
 
         h_scrollbar = ttk.Scrollbar(transactions_frame, orient="horizontal", command=canvas.xview)
         h_scrollbar.grid(row=2, column=0, sticky="ew")
@@ -1331,23 +1331,25 @@ class PharmacyPOS:
 
         columns = ("TransactionID", "ItemsList", "TotalAmount", "CashPaid", "ChangeAmount", "Timestamp", "Status", "PaymentMethod", "CustomerID")
         headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT ", "CASH PAID ", "CHANGE ", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER ID")
-        self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings")
+        self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20)  # Set explicit height
         for col, head in zip(columns, headers):
             self.transactions_table.heading(col, text=head)
             width = 300 if col == "ItemsList" else 150
             self.transactions_table.column(col, width=width, anchor="center" if col != "ItemsList" else "w")
-        self.transactions_table.pack(fill="both", expand=True)
+        self.transactions_table.pack(fill="both", expand=True)  # Ensure Treeview expands within tree_frame
 
         def update_scroll_region(event=None):
             total_width = sum(self.transactions_table.column(col, "width") for col in columns)
-            canvas.configure(scrollregion=(0, 0, total_width, self.transactions_table.winfo_height()))
+            # Calculate required height based on number of rows or Treeview height
+            total_height = self.transactions_table.winfo_reqheight()
+            canvas.configure(scrollregion=(0, 0, total_width, total_height))
             canvas.itemconfig(canvas_window, width=total_width)
 
         self.transactions_table.bind("<Configure>", update_scroll_region)
         canvas.configure(xscrollcommand=h_scrollbar.set)
-
+        
         def scroll_horizontal(event):
-            if event.state & 0x1:
+            if event.state & 0x1:  # Shift key pressed
                 if event.delta > 0:
                     canvas.xview_scroll(-1, "units")
                 elif event.delta < 0:
@@ -1355,7 +1357,7 @@ class PharmacyPOS:
             return "break"
 
         def scroll_horizontal_unix(event):
-            if event.state & 0x1:
+            if event.state & 0x1:  # Shift key pressed
                 if event.num == 4:
                     canvas.xview_scroll(-1, "units")
                 elif event.num == 5:
@@ -1372,14 +1374,14 @@ class PharmacyPOS:
         self.transaction_button_frame = tk.Frame(transactions_frame, bg="#ffffff")
         self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=10)
         self.print_btn = tk.Button(self.transaction_button_frame, text="Print Receipt", command=self.print_receipt,
-                                   bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                                   activebackground="#27ae60", activeforeground="#ffffff",
-                                   padx=12, pady=8, bd=0, state="disabled")
+                                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                                activebackground="#27ae60", activeforeground="#ffffff",
+                                padx=12, pady=8, bd=0, state="disabled")
         self.print_btn.pack(side="left", padx=5)
         self.save_pdf_btn = tk.Button(self.transaction_button_frame, text="Save PDF", command=self.save_receipt_pdf,
-                                      bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
-                                      activebackground="#2980b9", activeforeground="#ffffff",
-                                      padx=12, pady=8, bd=0, state="disabled")
+                                    bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
+                                    activebackground="#2980b9", activeforeground="#ffffff",
+                                    padx=12, pady=8, bd=0, state="disabled")
         self.save_pdf_btn.pack(side="left", padx=5)
         self.refund_btn = tk.Button(self.transaction_button_frame, text="Refund",
                                     command=lambda: self.create_password_auth_window(
