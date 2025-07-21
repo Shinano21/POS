@@ -1472,18 +1472,27 @@ class PharmacyPOS:
         # Prepare table data
         data = [["Name", "Qty", "Price"]]
         total_qty = 0
+        missing_items = []
         for item in items:
             if item:
                 name, qty = item.rsplit(" (x", 1) if " (x" in item else (item, "0")
                 qty = int(qty.strip(")")) if qty != "0" else 0
+                item_name = name.strip()
+                price = 0.0
                 with self.conn:
                     cursor = self.conn.cursor()
-                    item_name = name.strip()
                     cursor.execute("SELECT price FROM inventory WHERE name = ?", (item_name,))
                     result = cursor.fetchone()
-                    price = float(result[0]) if result else 0.0
+                    if result:
+                        price = float(result[0])
+                    else:
+                        missing_items.append(item_name)
                 data.append([item_name, str(qty), f"{price:.2f}"])
                 total_qty += qty
+
+        # Show warning for missing items
+        if missing_items:
+            messagebox.showwarning("Warning", f"Items not found in inventory: {', '.join(missing_items)}", parent=self.root)
 
         # Add total row
         data.append(["Total", str(total_qty), f"{total_amount:.2f}"])
@@ -1491,60 +1500,32 @@ class PharmacyPOS:
         # Create table
         table = Table(data)
         table.setStyle(TableStyle([
-            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 12),
-            ('FONT', (0, 1), (-1, -1), 'Helvetica', 12),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('BOX', (0, 0), (-1, -1), 1, colors.black),
-            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-            ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
-            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
-            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 12),  # Bold header
+            ('FONT', (0, -1), (-1, -1), 'Helvetica-Bold', 12),  # Bold total row
+            ('FONT', (0, 1), (-1, -2), 'Helvetica', 12),      # Regular font for body
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),           # Center all text
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),          # Vertically center text
+            ('PADDING', (0, 0), (-1, -1), 6),                # Unified padding
         ]))
 
-        # Calculate table width and position
+        # Calculate table position
         table_width = 400
         table_x = (letter[0] - table_width) / 2  # Center table horizontally
-        table_y = 600  # Adjust starting y position
+        table_y = 600
         table.wrapOn(c, table_width, 400)
         table.drawOn(c, table_x, table_y - len(data) * 20)
 
-        # Additional information below the table
+        # Footer information
         y = table_y - len(data) * 20 - 20
-        c.drawString(100, y, f"PROD CNT: {len([item for item in items if item])} TOT QTY: {total_qty}")
-        c.drawString(100, y - 20, f"TOTAL PESO: {total_amount:.2f}")
+        # c.drawString(100, y, f"PROD CNT: {len([item for item in items if item])} TOT QTY: {total_qty}")
+        # c.drawString(100, y - 20, f"TOTAL PESO: {total_amount:.2f}")
         c.drawString(100, y - 40, f"CASH: {cash_paid:.2f}")
         c.drawString(100, y - 60, f"CHANGE: {change:.2f}")
         c.drawString(100, y - 80, f"VAT SALE: {(total_amount * 0.12):.2f}")
         c.drawString(100, y - 100, f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
 
         c.save()
-
         messagebox.showinfo("Success", f"Receipt saved to {pdf_path}", parent=self.root)
-
-    def validate_refund_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        selected_item = kwargs.get("selected_item")
-        if not selected_item:
-            window.destroy()
-            messagebox.showerror("Error", "No transaction selected", parent=self.root)
-            return
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
-                transaction_id = self.transactions_table.item(selected_item)["values"][0]
-                self.show_return_transaction(transaction_id)
-                window.destroy()
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
 
     def show_sales_summary(self) -> None:
         if self.get_user_role() == "Drug Lord":
