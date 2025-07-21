@@ -533,7 +533,7 @@ class PharmacyPOS:
                 activebackground="#2980b9", activeforeground="#ffffff",
                 padx=8, pady=4, bd=0).pack(pady=5, fill="x")
 
-        tk.Label(self.summary_frame, text="Selected Item Quantity", font=("Helvetica", 18),
+        tk.Label(self.summary_frame, text="Item Quantity", font=("Helvetica", 18),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=2, anchor="w")
         self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", 18), bg="#f5f6f5", state="disabled")
         self.quantity_entry.pack(pady=2, fill="x")
@@ -881,7 +881,7 @@ class PharmacyPOS:
 
                 cursor.execute("INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             (transaction_id, items, final_total, cash_paid, change, timestamp,
-                            "Completed", payment_method, customer_id))
+                             "Completed", payment_method, customer_id))
 
                 for item in self.cart:
                     cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
@@ -889,11 +889,11 @@ class PharmacyPOS:
 
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
                             (str(uuid.uuid4()), "Checkout", f"Completed transaction {transaction_id}",
-                            timestamp, self.current_user))
+                             timestamp, self.current_user))
 
                 self.conn.commit()
 
-            # Check for low inventory after updating stock
+            # Check for low inventory after commit
             self.check_low_inventory()
 
             # Update and clear fields
@@ -1251,16 +1251,12 @@ class PharmacyPOS:
     def check_low_inventory(self) -> None:
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT name, quantity FROM inventory WHERE quantity <= 5")
-            low_items = cursor.fetchall()
-            if low_items:
-                message = "Low inventory warning:\n" + "\n".join([f"{item[0]}: {item[1]} units remaining" for item in low_items])
-                messagebox.showwarning("Low Inventory Alert", message, parent=self.root)
-                # Optionally log the low inventory event
-                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Low Inventory Check", message,
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
-                self.conn.commit()
+            cursor.execute("SELECT item_id, quantity FROM inventory")
+            for item_id, quantity in cursor.fetchall():
+                if quantity <= 5:
+                    cursor.execute("SELECT name FROM inventory WHERE item_id = ?", (item_id,))
+                    name = cursor.fetchone()[0]
+                    messagebox.showwarning("Inventory Alert", f"Low stock for {name}: Only {quantity} units left", parent=self.root)
 
     def update_inventory_table(self, event: Optional[tk.Event] = None) -> None:
         for item in self.inventory_table.get_children():
@@ -1878,6 +1874,34 @@ class PharmacyPOS:
         self.update_customer_btn.config(state=state)
         self.delete_customer_btn.config(state=state)
 
+    def generate_customer_id(self) -> str:
+   
+        current_time = datetime.now()
+        month_year = current_time.strftime("%m-%Y")  # Format: MM-YYYY
+        
+        with self.conn:
+            cursor = self.conn.cursor()
+            # Query the latest customer ID for the current month and year
+            cursor.execute("""
+                SELECT customer_id 
+                FROM customers 
+                WHERE customer_id LIKE ? 
+                ORDER BY customer_id DESC 
+                LIMIT 1
+            """, (f"{month_year}-C%",))
+            last_customer = cursor.fetchone()
+            
+            if last_customer:
+                # Extract the sequential number from the last customer ID
+                last_seq = int(last_customer[0][-5:])  # Last 5 digits
+                new_seq = last_seq + 1
+            else:
+                new_seq = 1  # Start at 1 if no customers exist for this month/year
+            
+            # Format the new customer ID
+            customer_id = f"{month_year}-C{new_seq:05d}"  # Ensures 5-digit padding
+            return customer_id
+
     def show_add_customer(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Customer")
@@ -1897,17 +1921,18 @@ class PharmacyPOS:
             frame.pack(fill="x", pady=5)
             tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
+            if field == "Customer ID":
+                entry.insert(0, self.generate_customer_id())
+                entry.config(state="readonly")  # Make Customer ID read-only
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
-            if field == "Customer ID":
-                entry.insert(0, str(uuid.uuid4()))
 
         tk.Button(add_box, text="Add Customer",
-                 command=lambda: self.add_customer(entries["Customer ID"].get(), entries["Name"].get(),
-                                                 entries["Contact"].get(), entries["Address"].get(), window),
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                 activebackground="#27ae60", activeforeground="#ffffff",
-                 padx=12, pady=8, bd=0).pack(pady=15)
+                command=lambda: self.add_customer(entries["Customer ID"].get(), entries["Name"].get(),
+                                                entries["Contact"].get(), entries["Address"].get(), window),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=12, pady=8, bd=0).pack(pady=15)
 
     def add_customer(self, customer_id: str, name: str, contact: str, address: str, window: tk.Toplevel) -> None:
         if not name:
@@ -1917,10 +1942,10 @@ class PharmacyPOS:
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute("INSERT INTO customers VALUES (?, ?, ?, ?)",
-                              (customer_id, name, contact, address))
+                            (customer_id, name, contact, address))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Add Customer", f"Added customer {name}",
-                               datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                            (str(uuid.uuid4()), "Add Customer", f"Added customer {name} with ID {customer_id}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_customer_table()
                 window.destroy()
@@ -1982,10 +2007,10 @@ class PharmacyPOS:
                         messagebox.showerror("Error", "Customer ID already exists", parent=self.root)
                         return
                 cursor.execute("UPDATE customers SET customer_id = ?, name = ?, contact = ?, address = ? WHERE customer_id = ?",
-                              (customer_id, name, contact, address, original_customer_id))
+                            (customer_id, name, contact, address, original_customer_id))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Update Customer", f"Updated customer {name}",
-                               datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                            (str(uuid.uuid4()), "Update Customer", f"Updated customer {name} with ID {customer_id}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_customer_table()
                 window.destroy()
