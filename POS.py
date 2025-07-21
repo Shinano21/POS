@@ -1439,6 +1439,9 @@ class PharmacyPOS:
             messagebox.showerror("Error", f"Failed to print receipt: {e}", parent=self.root)
 
     def save_receipt_pdf(self):
+        from reportlab.platypus import Table, TableStyle
+        from reportlab.lib import colors
+
         selected_item = self.transactions_table.selection()
         if not selected_item:
             messagebox.showerror("Error", "No transaction selected", parent=self.root)
@@ -1457,27 +1460,69 @@ class PharmacyPOS:
         c = canvas.Canvas(pdf_path, pagesize=letter)
         c.setFont("Helvetica", 12)
 
+        # Header
         c.drawString(100, 750, "Shinano POS")
         c.drawString(100, 732, "ARI PHARMACEUTICALS INC.")
         c.drawString(100, 714, "VAT REG TIN: 123-456-789-000")
         c.drawString(100, 696, "SN: 987654321 MIN: 123456789")
         c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
-
         c.drawString(100, 650, f"Date: {timestamp}")
-        c.drawString(100, 632, "TRANSACTION CODE 1")
+        c.drawString(100, 632, f"TRANSACTION CODE: {transaction_id}")
 
-        y = 610
+        # Prepare table data
+        data = [["Name", "Qty", "Price"]]
+        total_qty = 0
         for item in items:
             if item:
-                c.drawString(120, y, item)
-                y -= 20
+                name, qty = item.rsplit(" (x", 1) if " (x" in item else (item, "0")
+                qty = int(qty.strip(")")) if qty != "0" else 0
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    item_name = name.strip()
+                    cursor.execute("SELECT price FROM inventory WHERE name = ?", (item_name,))
+                    result = cursor.fetchone()
+                    price = float(result[0]) if result else 0.0
+                data.append([item_name, str(qty), f"{price:.2f}"])
+                total_qty += qty
 
-        c.drawString(100, y-20, f"PROD CNT: {len(items)} TOT QTY: {sum(int(item.split('x')[-1].strip(')')) for item in items if 'x' in item)}")
-        c.drawString(100, y-40, f"TOTAL PESO: {total_amount:.2f}")
-        c.drawString(100, y-60, f"CASH: {cash_paid:.2f}")
+        # Add total row
+        data.append(["Total", str(total_qty), f"{total_amount:.2f}"])
 
-        c.drawString(100, y-80, f"VAT SALE: {(total_amount * 0.12):.2f}")
-        c.drawString(100, y-100, f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
+        # Create table
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 12),
+            ('FONT', (0, 1), (-1, -1), 'Helvetica', 12),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BOX', (0, 0), (-1, -1), 1, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.black),
+            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+
+        # Calculate table width and position
+        table_width = 400
+        table_x = (letter[0] - table_width) / 2  # Center table horizontally
+        table_y = 600  # Adjust starting y position
+        table.wrapOn(c, table_width, 400)
+        table.drawOn(c, table_x, table_y - len(data) * 20)
+
+        # Additional information below the table
+        y = table_y - len(data) * 20 - 20
+        c.drawString(100, y, f"PROD CNT: {len([item for item in items if item])} TOT QTY: {total_qty}")
+        c.drawString(100, y - 20, f"TOTAL PESO: {total_amount:.2f}")
+        c.drawString(100, y - 40, f"CASH: {cash_paid:.2f}")
+        c.drawString(100, y - 60, f"CHANGE: {change:.2f}")
+        c.drawString(100, y - 80, f"VAT SALE: {(total_amount * 0.12):.2f}")
+        c.drawString(100, y - 100, f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
 
         c.save()
 
