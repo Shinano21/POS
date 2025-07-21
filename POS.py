@@ -384,29 +384,29 @@ class PharmacyPOS:
         login_box.pack(pady=20)
 
         tk.Label(login_box, text="Login", font=("Helvetica", 18, "bold"),
-                 bg="#ffffff", fg="#1a1a1a").pack(pady=12)
+                bg="#ffffff", fg="#1a1a1a").pack(pady=12)
         tk.Label(login_box, text="Welcome to the POS! Please enter your credentials.",
-                 font=("Helvetica", 12), bg="#ffffff", fg="#666").pack(pady=8)
+                font=("Helvetica", 12), bg="#ffffff", fg="#666").pack(pady=8)
 
         tk.Label(login_box, text="Username", font=("Helvetica", 14),
-                 bg="#ffffff", fg="#1a1a1a").pack()
+                bg="#ffffff", fg="#1a1a1a").pack(anchor="w")  # Changed to left align
         username_entry = tk.Entry(login_box, font=("Helvetica", 14), bg="#f5f6f5")
         username_entry.pack(pady=5, fill="x")
 
         tk.Label(login_box, text="Password", font=("Helvetica", 14),
-                 bg="#ffffff", fg="#1a1a1a").pack()
+                bg="#ffffff", fg="#1a1a1a").pack(anchor="w")  # Changed to left align
         password_entry = tk.Entry(login_box, show="*", font=("Helvetica", 14), bg="#f5f6f5")
         password_entry.pack(pady=5, fill="x")
 
         show_password_var = tk.BooleanVar()
         tk.Checkbutton(login_box, text="Show Password", variable=show_password_var,
-                       command=lambda: password_entry.config(show="" if show_password_var.get() else "*"),
-                       font=("Helvetica", 12), bg="#ffffff", fg="#1a1a1a").pack(pady=8)
+                    command=lambda: password_entry.config(show="" if show_password_var.get() else "*"),
+                    font=("Helvetica", 12), bg="#ffffff", fg="#1a1a1a").pack(anchor="w", pady=8)  # Changed to left align
 
         tk.Button(login_box, text="Login", command=lambda: self.validate_login(username_entry.get(), password_entry.get()),
-                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                  activebackground="#27ae60", activeforeground="#ffffff",
-                  padx=12, pady=8, bd=0).pack(pady=12)
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=12, pady=8, bd=0).pack(pady=12)
 
         username_entry.bind("<Return>", lambda e: self.validate_login(username_entry.get(), password_entry.get()))
         password_entry.bind("<Return>", lambda e: self.validate_login(username_entry.get(), password_entry.get()))
