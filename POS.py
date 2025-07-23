@@ -130,22 +130,30 @@ class PharmacyPOS:
                     )
                 ''')
                 cursor.execute('''
-                CREATE TABLE IF NOT EXISTS inventory (
-                    item_id TEXT PRIMARY KEY,
-                    name TEXT,
-                    type TEXT,
-                    price REAL,
-                    quantity INTEGER,
-                    supplier TEXT
-                )
-            ''')
-            # Check if supplier column exists in inventory table
-            cursor.execute("PRAGMA table_info(inventory)")
-            columns = [col[1] for col in cursor.fetchall()]
-            if 'supplier' not in columns:
-                cursor.execute("ALTER TABLE inventory ADD COLUMN supplier TEXT")
-                print("Added supplier column to inventory table.")
-            
+                    CREATE TABLE IF NOT EXISTS inventory (
+                        item_id TEXT PRIMARY KEY,
+                        name TEXT,
+                        type TEXT,
+                        retail_price REAL,
+                        unit_price REAL,
+                        quantity INTEGER,
+                        supplier TEXT
+                    )
+                ''')
+                # Check if columns exist and add/rename if missing
+                cursor.execute("PRAGMA table_info(inventory)")
+                columns = [col[1] for col in cursor.fetchall()]
+                if 'retail_price' not in columns and 'price' in columns:
+                    cursor.execute("ALTER TABLE inventory RENAME COLUMN price TO retail_price")
+                    print("Renamed price to retail_price in inventory table.")
+                if 'unit_price' not in columns:
+                    cursor.execute("ALTER TABLE inventory ADD COLUMN unit_price REAL")
+                    print("Added unit_price column to inventory table.")
+                if 'supplier' not in columns:
+                    cursor.execute("ALTER TABLE inventory ADD COLUMN supplier TEXT")
+                    print("Added supplier column to inventory table.")
+                
+                # Rest of the table creation remains unchanged
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS transactions (
                         transaction_id TEXT PRIMARY KEY,
@@ -224,15 +232,15 @@ class PharmacyPOS:
 
     def initialize_inventory_with_receipt(self):
         sample_items = [
-            ("MED001", "Pain Reliever", "Medicine", 10.00, 100, "PharmaCorp"),
-            ("SUP001", "Vitamin C", "Supplement", 5.00, 200, "HealthSupplies Inc"),
-            ("DEV001", "Thermometer", "Medical Device", 15.00, 50, "MediTech Ltd"),
+            ("MED001", "Pain Reliever", "Medicine", 10.00, 8.00, 100, "PharmaCorp"),
+            ("SUP001", "Vitamin C", "Supplement", 5.00, 4.00, 200, "HealthSupplies Inc"),
+            ("DEV001", "Thermometer", "Medical Device", 15.00, 12.00, 50, "MediTech Ltd"),
         ]
         with self.conn:
             cursor = self.conn.cursor()
-            for item_id, name, item_type, price, quantity, supplier in sample_items:
-                cursor.execute("INSERT OR IGNORE INTO inventory (item_id, name, type, price, quantity, supplier) VALUES (?, ?, ?, ?, ?, ?)",
-                            (item_id, name, item_type, price, quantity, supplier))
+            for item_id, name, item_type, retail_price, unit_price, quantity, supplier in sample_items:
+                cursor.execute("INSERT OR IGNORE INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
             self.conn.commit()
 
     def setup_gui(self) -> None:
@@ -985,8 +993,8 @@ class PharmacyPOS:
         inventory_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
         inventory_frame.pack(fill="both", expand=True, pady=10)
 
-        columns = ("Name", "Type", "Price", "Quantity", "Supplier")
-        headers = ("NAME", "TYPE", "PRICE", "QUANTITY", "SUPPLIER")
+        columns = ("Name", "Type", "RetailPrice", "Quantity", "Supplier")
+        headers = ("NAME", "TYPE", "RETAIL PRICE", "QUANTITY", "SUPPLIER")
         self.inventory_table = ttk.Treeview(inventory_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.inventory_table.heading(col, text=head)
@@ -1060,7 +1068,7 @@ class PharmacyPOS:
     def show_add_item(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
-        window.geometry("400x550")  # Adjusted size for new field
+        window.geometry("400x600")  # Increased size for new field
         window.configure(bg="#f5f6f5")
 
         add_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
@@ -1069,7 +1077,7 @@ class PharmacyPOS:
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-        fields = ["Item ID (Barcode)", "Product Name", "Price", "Quantity", "Supplier"]
+        fields = ["Item ID (Barcode)", "Product Name", "Retail Price", "Unit Price", "Quantity", "Supplier"]
         entries = {}
         for field in fields:
             frame = tk.Frame(add_box, bg="#ffffff")
@@ -1090,7 +1098,8 @@ class PharmacyPOS:
                     entries["Item ID (Barcode)"].get(),
                     entries["Product Name"].get(),
                     type_var.get(),
-                    entries["Price"].get(),
+                    entries["Retail Price"].get(),
+                    entries["Unit Price"].get(),
                     entries["Quantity"].get(),
                     entries["Supplier"].get(),
                     window
@@ -1099,12 +1108,19 @@ class PharmacyPOS:
                 activebackground="#27ae60", activeforeground="#ffffff",
                 padx=12, pady=8, bd=0).pack(pady=15)
 
-    def add_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, supplier: str, window: tk.Toplevel) -> None:
+    def add_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, window: tk.Toplevel) -> None:
         try:
-            price = float(price)
+            retail_price = float(retail_price)
+            unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
             quantity = int(quantity)
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Product Name and Type are required", parent=self.root)
+                return
+            if retail_price <= 0:
+                messagebox.showerror("Error", "Retail Price must be greater than zero", parent=self.root)
+                return
+            if unit_price < 0:
+                messagebox.showerror("Error", "Unit Price cannot be negative", parent=self.root)
                 return
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
@@ -1112,8 +1128,8 @@ class PharmacyPOS:
 
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?)",
-                            (item_id, name, item_type, price, quantity, supplier))
+                cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
                             (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
@@ -1125,7 +1141,7 @@ class PharmacyPOS:
                 if quantity <= 5:
                     self.check_low_inventory()
         except ValueError:
-            messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
+            messagebox.showerror("Error", "Invalid retail price, unit price, or quantity", parent=self.root)
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Item ID already exists", parent=self.root)
 
@@ -1278,7 +1294,7 @@ class PharmacyPOS:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()
             type_filter = self.type_filter_var.get()
-            sql = "SELECT name, type, price, quantity, supplier FROM inventory"
+            sql = "SELECT name, type, retail_price, quantity, supplier FROM inventory"
             params = []
             conditions = []
             if query:
@@ -1291,7 +1307,7 @@ class PharmacyPOS:
                 sql += " WHERE " + " AND ".join(conditions)
             cursor.execute(sql, params)
             for item in cursor.fetchall():
-                name, item_type, price, quantity, supplier = item
+                name, item_type, retail_price, quantity, supplier = item
                 # Ensure quantity is an integer
                 try:
                     quantity = int(float(quantity))  # Handle potential float values
@@ -1301,7 +1317,7 @@ class PharmacyPOS:
                 tags = ('low_stock',) if quantity <= 5 else ()
                 # Insert item into Treeview with appropriate tag
                 self.inventory_table.insert("", "end", values=(
-                    name, item_type, f"{price:.2f}", quantity, supplier or "Unknown"
+                    name, item_type, f"{retail_price:.2f}", quantity, supplier or "Unknown"
                 ), tags=tags)
                 # Debug print to verify tagging
                 print(f"Item: {name}, Quantity: {quantity}, Tags: {tags}")
