@@ -136,14 +136,16 @@ class PharmacyPOS:
                     type TEXT,
                     price REAL,
                     quantity INTEGER,
-                    supplier TEXT,
-                    expiry_date TEXT
+                    supplier TEXT
                 )
             ''')
+            # Check if supplier column exists in inventory table
             cursor.execute("PRAGMA table_info(inventory)")
             columns = [col[1] for col in cursor.fetchall()]
-            if 'expiry_date' not in columns:
-                cursor.execute("ALTER TABLE inventory ADD COLUMN expiry_date TEXT")
+            if 'supplier' not in columns:
+                cursor.execute("ALTER TABLE inventory ADD COLUMN supplier TEXT")
+                print("Added supplier column to inventory table.")
+            
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS transactions (
                         transaction_id TEXT PRIMARY KEY,
@@ -588,13 +590,13 @@ class PharmacyPOS:
         if query:
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("SELECT name, price, quantity, supplier, expiry_date FROM inventory WHERE name LIKE ? OR supplier LIKE ?",
-                            (f"%{query}%", f"%{query}%"))
-                suggestions = cursor.fetchall()
+                cursor.execute("SELECT name, price, quantity, supplier FROM inventory WHERE name LIKE ? OR supplier LIKE ?",
+                        (f"%{query}%", f"%{query}%"))
+            suggestions = cursor.fetchall()
 
             if suggestions:
-                for name, price, quantity, supplier, expiry_date in suggestions:
-                    display_text = f"{name} - ₱{price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'}, Expiry: {expiry_date or 'None'})"
+                for name, price, quantity, supplier in suggestions:
+                    display_text = f"{name} - ₱{price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'})"
                     self.suggestion_listbox.insert(tk.END, display_text)
                 search_width = self.search_entry.winfo_width()
                 self.suggestion_window.geometry(f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}")
@@ -983,8 +985,8 @@ class PharmacyPOS:
         inventory_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
         inventory_frame.pack(fill="both", expand=True, pady=10)
 
-        columns = ("Name", "Type", "Price", "Quantity", "Supplier", "ExpiryDate")
-        headers = ("NAME", "TYPE", "PRICE", "QUANTITY", "SUPPLIER", "EXPIRY DATE")
+        columns = ("Name", "Type", "Price", "Quantity", "Supplier")
+        headers = ("NAME", "TYPE", "PRICE", "QUANTITY", "SUPPLIER")
         self.inventory_table = ttk.Treeview(inventory_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.inventory_table.heading(col, text=head)
@@ -1067,7 +1069,7 @@ class PharmacyPOS:
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-        fields = ["Item ID (Barcode)", "Product Name", "Price", "Quantity", "Supplier", "Expiry Date (YYYY-MM-DD)"]
+        fields = ["Item ID (Barcode)", "Product Name", "Price", "Quantity", "Supplier"]
         entries = {}
         for field in fields:
             frame = tk.Frame(add_box, bg="#ffffff")
@@ -1091,14 +1093,13 @@ class PharmacyPOS:
                     entries["Price"].get(),
                     entries["Quantity"].get(),
                     entries["Supplier"].get(),
-                    entries["Expiry Date (YYYY-MM-DD)"].get(),
                     window
                 ),
                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
                 activebackground="#27ae60", activeforeground="#ffffff",
                 padx=12, pady=8, bd=0).pack(pady=15)
 
-    def add_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, supplier: str, expiry_date: str, window: tk.Toplevel) -> None:
+    def add_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, supplier: str, window: tk.Toplevel) -> None:
         try:
             price = float(price)
             quantity = int(quantity)
@@ -1108,35 +1109,23 @@ class PharmacyPOS:
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else str(uuid.uuid4())
-            
-            # Validate expiry date format if provided
-            if expiry_date.strip():
-                try:
-                    datetime.strptime(expiry_date, "%Y-%m-%d")
-                except ValueError:
-                    messagebox.showerror("Error", "Invalid expiry date format. Use YYYY-MM-DD", parent=self.root)
-                    return
-            else:
-                expiry_date = None  # Set to None if empty
 
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (item_id, name, item_type, price, quantity, supplier, expiry_date))
+                cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?)",
+                            (item_id, name, item_type, price, quantity, supplier))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}, Expiry: {expiry_date or 'None'}",
+                            (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", "Item added successfully", parent=self.root)
-                # Check for low inventory and expiry after adding
+                # Check for low inventory after adding
                 if quantity <= 5:
                     self.check_low_inventory()
-                if expiry_date:
-                    self.check_expiry_dates()
         except ValueError:
-            messagebox.showerror("Error", "Invalid price, quantity, or expiry date", parent=self.root)
+            messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Item ID already exists", parent=self.root)
 
@@ -1168,7 +1157,7 @@ class PharmacyPOS:
     def show_update_item(self, item: tuple) -> None:
         window = tk.Toplevel(self.root)
         window.title("Update Item")
-        window.geometry("400x550")  # Adjusted size for new field
+        window.geometry("400x500")  # Adjusted size for fewer fields
         window.configure(bg="#f5f6f5")
 
         update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
@@ -1177,7 +1166,7 @@ class PharmacyPOS:
         tk.Label(update_box, text="Update Item", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-        fields = ["Item ID", "Product Name", "Price", "Quantity", "Supplier", "Expiry Date (YYYY-MM-DD)"]
+        fields = ["Item ID", "Product Name", "Price", "Quantity", "Supplier"]
         entries = {}
         for i, field in enumerate(fields):
             frame = tk.Frame(update_box, bg="#ffffff")
@@ -1202,7 +1191,6 @@ class PharmacyPOS:
                     entries["Price"].get(),
                     entries["Quantity"].get(),
                     entries["Supplier"].get(),
-                    entries["Expiry Date (YYYY-MM-DD)"].get(),
                     item[0],
                     window
                 ),
@@ -1210,7 +1198,7 @@ class PharmacyPOS:
                 activebackground="#27ae60", activeforeground="#ffffff",
                 padx=12, pady=8, bd=0).pack(pady=15)
 
-    def update_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, supplier: str, expiry_date: str, original_item_id: str, window: tk.Toplevel) -> None:
+    def update_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, supplier: str, original_item_id: str, window: tk.Toplevel) -> None:
         try:
             price = float(price)
             quantity = int(quantity)
@@ -1220,35 +1208,23 @@ class PharmacyPOS:
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else str(uuid.uuid4())
-            
-            # Validate expiry date format if provided
-            if expiry_date.strip():
-                try:
-                    datetime.strptime(expiry_date, "%Y-%m-%d")
-                except ValueError:
-                    messagebox.showerror("Error", "Invalid expiry date format. Use YYYY-MM-DD", parent=self.root)
-                    return
-            else:
-                expiry_date = None  # Set to None if empty
 
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("UPDATE inventory SET item_id = ?, name = ?, type = ?, price = ?, quantity = ?, supplier = ?, expiry_date = ? WHERE item_id = ?",
-                            (item_id, name, item_type, price, quantity, supplier, expiry_date, original_item_id))
+                cursor.execute("UPDATE inventory SET item_id = ?, name = ?, type = ?, price = ?, quantity = ?, supplier = ? WHERE item_id = ?",
+                            (item_id, name, item_type, price, quantity, supplier, original_item_id))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Supplier: {supplier}, Expiry: {expiry_date or 'None'}",
+                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", "Item updated successfully", parent=self.root)
-                # Check for low inventory and expiry after updating
+                # Check for low inventory after updating
                 if quantity <= 5:
                     self.check_low_inventory()
-                if expiry_date:
-                    self.check_expiry_dates()
         except ValueError:
-            messagebox.showerror("Error", "Invalid price, quantity, or expiry date", parent=self.root)
+            messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Item ID already exists", parent=self.root)
 
@@ -1268,31 +1244,6 @@ class PharmacyPOS:
                     name = cursor.fetchone()[0]
                     messagebox.showwarning("Inventory Alert", f"Low stock for {name}: Only {quantity} units left", parent=self.root)
     
-    def check_expiry_dates(self) -> None:
-        today = date.today()
-        expired_items = []
-        near_expiry_items = []
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT name, expiry_date FROM inventory WHERE expiry_date IS NOT NULL")
-            for name, expiry_date in cursor.fetchall():
-                try:
-                    expiry = datetime.strptime(expiry_date, "%Y-%m-%d").date()
-                    days_to_expiry = (expiry - today).days
-                    if days_to_expiry < 0:
-                        expired_items.append(name)
-                    elif days_to_expiry <= 30:
-                        near_expiry_items.append(f"{name} (Expires: {expiry_date})")
-                except ValueError:
-                    continue  # Skip invalid date formats
-
-        if expired_items or near_expiry_items:
-            message = ""
-            if expired_items:
-                message += "Expired Items:\n" + "\n".join(f"- {item}" for item in expired_items) + "\n\n"
-            if near_expiry_items:
-                message += "Items Nearing Expiry (within 30 days):\n" + "\n".join(f"- {item}" for item in near_expiry_items)
-            messagebox.showwarning("Expiry Alert", message, parent=self.root)
 
     def update_inventory_table(self, event: Optional[tk.Event] = None) -> None:
         for item in self.inventory_table.get_children():
@@ -1301,7 +1252,7 @@ class PharmacyPOS:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()
             type_filter = self.type_filter_var.get()
-            sql = "SELECT name, type, price, quantity, supplier, expiry_date FROM inventory"
+            sql = "SELECT name, type, price, quantity, supplier FROM inventory"
             params = []
             conditions = []
             if query:
@@ -1313,25 +1264,9 @@ class PharmacyPOS:
             if conditions:
                 sql += " WHERE " + " AND ".join(conditions)
             cursor.execute(sql, params)
-            today = date.today()
             for item in cursor.fetchall():
-                name, item_type, price, quantity, supplier, expiry_date = item
-                tags = []
-                if expiry_date:
-                    try:
-                        expiry = datetime.strptime(expiry_date, "%Y-%m-%d").date()
-                        days_to_expiry = (expiry - today).days
-                        if days_to_expiry < 0:
-                            tags.append("expired")
-                        elif days_to_expiry <= 30:
-                            tags.append("near_expiry")
-                    except ValueError:
-                        expiry_date = "Invalid"
-                self.inventory_table.insert("", "end", values=(name, item_type, f"{price:.2f}", quantity, supplier or "Unknown", expiry_date or "None"), tags=tags)
-        
-        # Configure tags for visual indication
-        self.inventory_table.tag_configure("expired", background="#ffcccc", foreground="#a10000")
-        self.inventory_table.tag_configure("near_expiry", background="#fff3cd", foreground="#856404")
+                name, item_type, price, quantity, supplier = item
+                self.inventory_table.insert("", "end", values=(name, item_type, f"{price:.2f}", quantity, supplier or "Unknown"))
 
     def show_transactions(self, event: Optional[tk.Event] = None) -> None:
         if self.get_user_role() == "Drug Lord":
