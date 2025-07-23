@@ -514,8 +514,8 @@ class PharmacyPOS:
         cart_frame = tk.Frame(main_content, bg="#ffffff", bd=1, relief="flat")
         cart_frame.grid(row=0, column=0, sticky="nsew", padx=0)
 
-        columns = ("Product", "UnitPrice", "Quantity", "Subtotal")
-        headers = ("PRODUCT DETAILS", "SRP ", "QUANTITY", "SUBTOTAL ")
+        columns = ("Product", "RetailPrice", "Quantity", "Subtotal")
+        headers = ("PRODUCT DETAILS", "RETAIL PRICE", "QUANTITY", "SUBTOTAL")
         self.cart_table = ttk.Treeview(cart_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.cart_table.heading(col, text=head)
@@ -598,21 +598,21 @@ class PharmacyPOS:
         if query:
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("SELECT name, price, quantity, supplier FROM inventory WHERE name LIKE ? OR supplier LIKE ?",
-                        (f"%{query}%", f"%{query}%"))
-            suggestions = cursor.fetchall()
+                cursor.execute("SELECT name, retail_price, quantity, supplier FROM inventory WHERE name LIKE ?",
+                            (f"%{query}%",))
+                suggestions = cursor.fetchall()
 
-            if suggestions:
-                for name, price, quantity, supplier in suggestions:
-                    display_text = f"{name} - ₱{price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'})"
-                    self.suggestion_listbox.insert(tk.END, display_text)
-                search_width = self.search_entry.winfo_width()
-                self.suggestion_window.geometry(f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}")
-                self.suggestion_window.deiconify()
-                self.clear_btn.pack(side="right", padx=(0, 5))
-            else:
-                self.hide_suggestion_window()
-                self.clear_btn.pack
+                if suggestions:
+                    for name, retail_price, quantity, supplier in suggestions:
+                        display_text = f"{name} - ₱{retail_price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'})"
+                        self.suggestion_listbox.insert(tk.END, display_text)
+                    search_width = self.search_entry.winfo_width()
+                    self.suggestion_window.geometry(f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}")
+                    self.suggestion_window.deiconify()
+                    self.clear_btn.pack(side="right", padx=(0, 5))
+                else:
+                    self.hide_suggestion_window()
+                    self.clear_btn.pack_forget()
 
     def highlight_on_hover(self, event: tk.Event) -> None:
         if self.suggestion_listbox and self.suggestion_listbox.winfo_exists():
@@ -662,21 +662,21 @@ class PharmacyPOS:
                 item_name = selected_text.split(" - ")[0]
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("SELECT * FROM inventory WHERE name = ?", (item_name,))
+                    cursor.execute("SELECT item_id, name, retail_price, quantity FROM inventory WHERE name = ?", (item_name,))
                     item = cursor.fetchone()
                     if item:
                         for cart_item in self.cart:
                             if cart_item["id"] == item[0]:
                                 cart_item["quantity"] += 1
-                                cart_item["subtotal"] = cart_item["price"] * cart_item["quantity"]
+                                cart_item["subtotal"] = cart_item["retail_price"] * cart_item["quantity"]
                                 break
                         else:
                             self.cart.append({
                                 "id": item[0],
                                 "name": item[1],
-                                "price": item[3],
+                                "retail_price": item[2],
                                 "quantity": 1,
-                                "subtotal": item[3]
+                                "subtotal": item[2]
                             })
                         self.update_cart_table()
                         self.search_entry.delete(0, tk.END)
@@ -748,7 +748,7 @@ class PharmacyPOS:
                 self.cart_table.delete(item)
             for item in self.cart:
                 self.cart_table.insert("", "end", values=(
-                    item["name"], f"{item['price']:.2f}", item["quantity"], f"{item['subtotal']:.2f}"
+                    item["name"], f"{item['retail_price']:.2f}", item["quantity"], f"{item['subtotal']:.2f}"
                 ))
             self.update_cart_totals()
             self.update_quantity_display()
@@ -792,7 +792,7 @@ class PharmacyPOS:
                     self.update_quantity_display()
                     return
                 item["quantity"] = new_quantity
-                item["subtotal"] = item["price"] * new_quantity
+                item["subtotal"] = item["retail_price"] * new_quantity
                 if new_quantity == 0:
                     self.cart.pop(self.selected_item_index)
                 self.update_cart_table()
@@ -1162,73 +1162,85 @@ class PharmacyPOS:
         if not selected_item:
             messagebox.showerror("Error", "No item selected", parent=self.root)
             return
-        item_name = self.inventory_table.item(selected_item)["values"][0]
+        item_id = selected_item[0]  # Get the item_id from the Treeview's iid
+        self.show_update_item(item_id)
+
+    def show_update_item(self, item_id: str) -> None:
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT * FROM inventory WHERE name = ?", (item_name,))
+            cursor.execute("SELECT item_id, name, type, retail_price, unit_price, quantity, supplier FROM inventory WHERE item_id = ?", (item_id,))
             item = cursor.fetchone()
             if item:
-                self.show_update_item(item)
+                window = tk.Toplevel(self.root)
+                window.title("Update Item")
+                window.geometry("400x600")  # Increased size for unit_price field
+                window.configure(bg="#f5f6f5")
 
-    def show_update_item(self, item: tuple) -> None:
-        window = tk.Toplevel(self.root)
-        window.title("Update Item")
-        window.geometry("400x500")
-        window.configure(bg="#f5f6f5")
+                update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
+                update_box.pack(pady=20)
 
-        update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
-        update_box.pack(pady=20)
+                tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
+                        bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-        tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=15)
+                fields = ["Item ID (Barcode)", "Product Name", "Retail Price", "Unit Price", "Quantity", "Supplier"]
+                entries = {}
+                # Map fields to their corresponding indices in the item tuple
+                field_indices = {
+                    "Item ID (Barcode)": 0,  # item_id
+                    "Product Name": 1,      # name
+                    "Retail Price": 3,      # retail_price
+                    "Unit Price": 4,        # unit_price
+                    "Quantity": 5,          # quantity
+                    "Supplier": 6           # supplier
+                }
+                for field in fields:
+                    frame = tk.Frame(update_box, bg="#ffffff")
+                    frame.pack(fill="x", pady=5)
+                    tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
+                    entry.pack(side="left", fill="x", expand=True, padx=5)
+                    entries[field] = entry
+                    # Convert value to string to avoid TclError
+                    value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
+                    entry.insert(0, str(value))
 
-        fields = ["Item ID (Barcode)", "Product Name", "Price", "Quantity", "Supplier"]
-        entries = {}
-        # Map fields to their corresponding indices in the item tuple
-        field_indices = {
-            "Item ID (Barcode)": 0,  # item_id
-            "Product Name": 1,      # name
-            "Price": 3,             # price
-            "Quantity": 4,          # quantity
-            "Supplier": 5           # supplier
-        }
-        for field in fields:
-            frame = tk.Frame(update_box, bg="#ffffff")
-            frame.pack(fill="x", pady=5)
-            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
-            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
-            entry.pack(side="left", fill="x", expand=True, padx=5)
-            entries[field] = entry
-            # Insert the correct value from the item tuple
-            entry.insert(0, item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else "")
+                type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")  # Default to "Medicine" if type is None
+                tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
+                ttk.Combobox(update_box, textvariable=type_var,
+                            values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                            state="readonly", font=("Helvetica", 14)).pack(pady=5)
 
-        type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")  # Default to "Medicine" if type is None
-        tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
-        ttk.Combobox(update_box, textvariable=type_var,
-                    values = ["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                    state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                tk.Button(update_box, text="Update Item",
+                        command=lambda: self.update_item(
+                            entries["Item ID (Barcode)"].get(),
+                            entries["Product Name"].get(),
+                            type_var.get(),
+                            entries["Retail Price"].get(),
+                            entries["Unit Price"].get(),
+                            entries["Quantity"].get(),
+                            entries["Supplier"].get(),
+                            item[0],  # original_item_id
+                            window
+                        ),
+                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                        activebackground="#27ae60", activeforeground="#ffffff",
+                        padx=12, pady=8, bd=0).pack(pady=15)
+            else:
+                messagebox.showerror("Error", f"Item with ID {item_id} not found", parent=self.root)
 
-        tk.Button(update_box, text="Update Item",
-                command=lambda: self.update_item(
-                    entries["Item ID (Barcode)"].get(),
-                    entries["Product Name"].get(),
-                    type_var.get(),
-                    entries["Price"].get(),
-                    entries["Quantity"].get(),
-                    entries["Supplier"].get(),
-                    item[0],  # original_item_id
-                    window
-                ),
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack(pady=15)
-
-    def update_item(self, item_id: str, name: str, item_type: str, price: str, quantity: str, supplier: str, original_item_id: str, window: tk.Toplevel) -> None:
+    def update_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, original_item_id: str, window: tk.Toplevel) -> None:
         try:
-            price = float(price)
-            quantity = int(quantity)
-            if price < 0 or quantity < 0:
-                messagebox.showerror("Error", "Price and quantity cannot be negative", parent=self.root)
+            retail_price = float(retail_price) if retail_price.strip() else 0.0
+            unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
+            quantity = int(quantity) if quantity.strip() else 0
+            if retail_price <= 0:
+                messagebox.showerror("Error", "Retail Price must be greater than zero", parent=self.root)
+                return
+            if unit_price < 0:
+                messagebox.showerror("Error", "Unit Price cannot be negative", parent=self.root)
+                return
+            if quantity < 0:
+                messagebox.showerror("Error", "Quantity cannot be negative", parent=self.root)
                 return
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Product Name and Type are required", parent=self.root)
@@ -1245,11 +1257,11 @@ class PharmacyPOS:
                         return
                 cursor.execute("""
                     UPDATE inventory
-                    SET item_id = ?, name = ?, type = ?, price = ?, quantity = ?, supplier = ?
+                    SET item_id = ?, name = ?, type = ?, retail_price = ?, unit_price = ?, quantity = ?, supplier = ?
                     WHERE item_id = ?
-                """, (item_id, name, item_type, price, quantity, supplier, original_item_id))
+                """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier, original_item_id))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Price: {price:.2f}, Supplier: {supplier}",
+                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Retail Price: {retail_price:.2f}, Supplier: {supplier}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_inventory_table()
@@ -1259,17 +1271,21 @@ class PharmacyPOS:
                 if quantity <= 5:
                     self.check_low_inventory()
         except ValueError:
-            messagebox.showerror("Error", "Invalid price or quantity", parent=self.root)
+            messagebox.showerror("Error", "Invalid retail price, unit price, or quantity", parent=self.root)
         except sqlite3.IntegrityError as e:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to update item: {e}", parent=self.root)
 
-    def on_inventory_select(self, event: tk.Event) -> None:
-        selected_item = self.inventory_table.selection()
-        state = "normal" if selected_item else "disabled"
-        self.update_item_btn.config(state=state)
-        self.delete_item_btn.config(state=state)
+
+    def on_inventory_select(self, event: Optional[tk.Event] = None) -> None:
+        selected = self.inventory_table.selection()
+        if selected:
+            self.update_item_btn.config(state="normal")
+            self.delete_item_btn.config(state="normal")
+        else:
+            self.update_item_btn.config(state="disabled")
+            self.delete_item_btn.config(state="disabled")
 
     def check_low_inventory(self) -> None:
         with self.conn:
@@ -1294,12 +1310,12 @@ class PharmacyPOS:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()
             type_filter = self.type_filter_var.get()
-            sql = "SELECT name, type, retail_price, quantity, supplier FROM inventory"
+            sql = "SELECT item_id, name, type, retail_price, quantity, supplier FROM inventory"
             params = []
             conditions = []
             if query:
-                conditions.append("(name LIKE ? OR supplier LIKE ?)")
-                params.extend([f"%{query}%", f"%{query}%"])
+                conditions.append("(name LIKE ?)")
+                params.append(f"%{query}%")
             if type_filter != "All":
                 conditions.append("type = ?")
                 params.append(type_filter)
@@ -1307,7 +1323,7 @@ class PharmacyPOS:
                 sql += " WHERE " + " AND ".join(conditions)
             cursor.execute(sql, params)
             for item in cursor.fetchall():
-                name, item_type, retail_price, quantity, supplier = item
+                item_id, name, item_type, retail_price, quantity, supplier = item
                 # Ensure quantity is an integer
                 try:
                     quantity = int(float(quantity))  # Handle potential float values
@@ -1315,12 +1331,12 @@ class PharmacyPOS:
                     quantity = 0  # Fallback if quantity is invalid
                 # Apply 'low_stock' tag if quantity <= 5
                 tags = ('low_stock',) if quantity <= 5 else ()
-                # Insert item into Treeview with appropriate tag
-                self.inventory_table.insert("", "end", values=(
+                # Insert item into Treeview with item_id as iid
+                self.inventory_table.insert("", "end", iid=item_id, values=(
                     name, item_type, f"{retail_price:.2f}", quantity, supplier or "Unknown"
                 ), tags=tags)
                 # Debug print to verify tagging
-                print(f"Item: {name}, Quantity: {quantity}, Tags: {tags}")
+                print(f"Item: {name}, ID: {item_id}, Quantity: {quantity}, Tags: {tags}")
 
     def show_transactions(self, event: Optional[tk.Event] = None) -> None:
         if self.get_user_role() == "Drug Lord":
@@ -2799,10 +2815,10 @@ class PharmacyPOS:
                 if item_data:
                     try:
                         item_id, qty = item_data.split(":")
-                        cursor.execute("SELECT name, price FROM inventory WHERE item_id = ?", (item_id,))
+                        cursor.execute("SELECT name, retail_price FROM inventory WHERE item_id = ?", (item_id,))
                         item = cursor.fetchone()
                         if item:
-                            return_items.append({"id": item_id, "name": item[0], "quantity": int(qty), "price": float(item[1])})
+                            return_items.append({"id": item_id, "name": item[0], "quantity": int(qty), "retail_price": float(item[1])})
                         else:
                             missing_items.append(item_id)
                     except ValueError:
@@ -2825,8 +2841,8 @@ class PharmacyPOS:
             tk.Label(content_frame, text=f"Return Transaction {transaction_id}", font=("Helvetica", 18, "bold"),
                     bg="#ffffff", fg="#1a1a1a").pack(pady=10)
 
-            columns = ("Item", "Quantity", "Price")
-            headers = ("ITEM", "QUANTITY", "PRICE")
+            columns = ("Item", "Quantity", "RetailPrice")
+            headers = ("ITEM", "QUANTITY", "RETAIL PRICE")
             return_table = ttk.Treeview(content_frame, columns=columns, show="headings")
             for col, head in zip(columns, headers):
                 return_table.heading(col, text=head)
@@ -2834,7 +2850,7 @@ class PharmacyPOS:
             return_table.pack(fill="both", expand=True)
 
             for item in return_items:
-                return_table.insert("", "end", values=(item["name"], item["quantity"], f"{item['price']:.2f}"))
+                return_table.insert("", "end", values=(item["name"], item["quantity"], f"{item['retail_price']:.2f}"))
 
             tk.Button(content_frame, text="Confirm Return",
                     command=lambda: self.process_return(transaction_id, return_items, window),
@@ -2846,7 +2862,6 @@ class PharmacyPOS:
         try:
             with self.conn:
                 cursor = self.conn.cursor()
-                # Verify transaction is not already returned
                 cursor.execute("SELECT status FROM transactions WHERE transaction_id = ?", (transaction_id,))
                 status = cursor.fetchone()
                 if not status:
@@ -2856,7 +2871,6 @@ class PharmacyPOS:
                     messagebox.showerror("Error", "Transaction has already been returned", parent=self.root)
                     return
 
-                # Update inventory for each returned item
                 for item in return_items:
                     cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item["id"],))
                     result = cursor.fetchone()
@@ -2866,7 +2880,6 @@ class PharmacyPOS:
                     cursor.execute("UPDATE inventory SET quantity = quantity + ? WHERE item_id = ?",
                                 (item["quantity"], item["id"]))
 
-                # Mark transaction as returned
                 cursor.execute("UPDATE transactions SET status = 'Returned' WHERE transaction_id = ?",
                             (transaction_id,))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
