@@ -1157,7 +1157,7 @@ class PharmacyPOS:
     def show_update_item(self, item: tuple) -> None:
         window = tk.Toplevel(self.root)
         window.title("Update Item")
-        window.geometry("400x500")  # Adjusted size for fewer fields
+        window.geometry("400x500")
         window.configure(bg="#f5f6f5")
 
         update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
@@ -1166,22 +1166,36 @@ class PharmacyPOS:
         tk.Label(update_box, text="Update Item", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
+        # Fetch item_id from database using name as a unique identifier
+        with self.conn:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT item_id FROM inventory WHERE name = ?", (item[0],))
+            result = cursor.fetchone()
+            item_id = result[0] if result else str(uuid.uuid4())  # Generate new ID if not found
+
         fields = ["Item ID", "Product Name", "Price", "Quantity", "Supplier"]
         entries = {}
-        for i, field in enumerate(fields):
+        for field in fields:
             frame = tk.Frame(update_box, bg="#ffffff")
             frame.pack(fill="x", pady=5)
             tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
-            entry.insert(0, item[i] or "")
 
-        type_var = tk.StringVar(value=item[2])
+        # Populate fields with correct values from the item tuple
+        entries["Item ID"].insert(0, item_id or "")
+        entries["Product Name"].insert(0, item[0] or "")  # name
+        entries["Price"].insert(0, str(item[2]) if item[2] is not None else "")  # price
+        entries["Quantity"].insert(0, str(item[3]) if item[3] is not None else "")  # quantity
+        entries["Supplier"].insert(0, item[4] or "")  # supplier
+
+        type_var = tk.StringVar(value=item[1] or "")  # type
         tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
-        ttk.Combobox(update_box, textvariable=type_var,
-                    values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                    state="readonly", font=("Helvetica", 14)).pack(pady=5)
+        type_combobox = ttk.Combobox(update_box, textvariable=type_var,
+                                    values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                                    state="readonly", font=("Helvetica", 14))
+        type_combobox.pack(pady=5)
 
         tk.Button(update_box, text="Update Item",
                 command=lambda: self.update_item(
@@ -1191,7 +1205,7 @@ class PharmacyPOS:
                     entries["Price"].get(),
                     entries["Quantity"].get(),
                     entries["Supplier"].get(),
-                    item[0],
+                    item_id,  # Original item_id from database
                     window
                 ),
                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
@@ -1246,8 +1260,13 @@ class PharmacyPOS:
     
 
     def update_inventory_table(self, event: Optional[tk.Event] = None) -> None:
+        # Clear existing items in the Treeview
         for item in self.inventory_table.get_children():
             self.inventory_table.delete(item)
+        
+        # Configure tag for low inventory (red background, white text for visibility)
+        self.inventory_table.tag_configure('low_stock', background='#FF5555', foreground='white')
+        
         with self.conn:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()
@@ -1266,7 +1285,19 @@ class PharmacyPOS:
             cursor.execute(sql, params)
             for item in cursor.fetchall():
                 name, item_type, price, quantity, supplier = item
-                self.inventory_table.insert("", "end", values=(name, item_type, f"{price:.2f}", quantity, supplier or "Unknown"))
+                # Ensure quantity is an integer
+                try:
+                    quantity = int(float(quantity))  # Handle potential float values
+                except (ValueError, TypeError):
+                    quantity = 0  # Fallback if quantity is invalid
+                # Apply 'low_stock' tag if quantity <= 5
+                tags = ('low_stock',) if quantity <= 5 else ()
+                # Insert item into Treeview with appropriate tag
+                self.inventory_table.insert("", "end", values=(
+                    name, item_type, f"{price:.2f}", quantity, supplier or "Unknown"
+                ), tags=tags)
+                # Debug print to verify tagging
+                print(f"Item: {name}, Quantity: {quantity}, Tags: {tags}")
 
     def show_transactions(self, event: Optional[tk.Event] = None) -> None:
         if self.get_user_role() == "Drug Lord":
