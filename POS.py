@@ -2644,11 +2644,14 @@ class PharmacyPOS:
                 item_names = []
                 for item_data in items_str.split(";"):
                     if item_data:
-                        item_id, qty = item_data.split(":")
-                        cursor.execute("SELECT name FROM inventory WHERE item_id = ?", (item_id,))
-                        name = cursor.fetchone()
-                        if name:
-                            item_names.append(f"{name[0]} (x{qty})")
+                        try:
+                            item_id, qty = item_data.split(":")
+                            cursor.execute("SELECT name FROM inventory WHERE item_id = ?", (item_id,))
+                            name = cursor.fetchone()
+                            if name:
+                                item_names.append(f"{name[0]} (x{qty})")
+                        except ValueError:
+                            continue  # Skip malformed item data
                 items_display = ", ".join(item_names)[:100] + "..." if len(", ".join(item_names)) > 100 else ", ".join(item_names)
                 unpaid_table.insert("", "end", values=(transaction[0], items_display, f"{transaction[2]:.2f}", transaction[3]))
 
@@ -2657,13 +2660,20 @@ class PharmacyPOS:
         button_frame = tk.Frame(content_frame, bg="#ffffff")
         button_frame.pack(fill="x", pady=10)
 
-        self.resume_btn = tk.Button(button_frame, text="Resume Transaction", command=lambda: self.resume_transaction(unpaid_table, window),
+        self.resume_btn = tk.Button(button_frame, text="Resume Transaction", 
+                                    command=lambda: self.resume_transaction(unpaid_table, window),
                                     bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
                                     activebackground="#27ae60", activeforeground="#ffffff",
                                     padx=12, pady=8, bd=0, state="disabled")
         self.resume_btn.pack(side="left", padx=5)
 
-
+        self.delete_btn = tk.Button(button_frame, text="Delete Transaction",
+                                    command=lambda: self.delete_unpaid_transaction(unpaid_table, window),
+                                    bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
+                                    activebackground="#c0392b", activeforeground="#ffffff",
+                                    padx=12, pady=8, bd=0, state="disabled")
+        self.delete_btn.pack(side="left", padx=5)
+        
     def on_unpaid_transaction_select(self, unpaid_table: ttk.Treeview) -> None:
         selected_item = unpaid_table.selection()
         state = "normal" if selected_item else "disabled"
@@ -2687,19 +2697,22 @@ class PharmacyPOS:
                     return
                 for item_data in transaction[0].split(";"):
                     if item_data:
-                        item_id, qty = item_data.split(":")
-                        cursor.execute("SELECT item_id, name, price FROM inventory WHERE item_id = ?", (item_id,))
-                        item = cursor.fetchone()
-                        if item:
-                            self.cart.append({
-                                "id": item[0],
-                                "name": item[1],
-                                "price": item[2],
-                                "quantity": int(qty),
-                                "subtotal": item[2] * int(qty)
-                            })
-                        else:
-                            messagebox.showwarning("Warning", f"Item ID {item_id} not found in inventory", parent=window)
+                        try:
+                            item_id, qty = item_data.split(":")
+                            cursor.execute("SELECT item_id, name, price FROM inventory WHERE item_id = ?", (item_id,))
+                            item = cursor.fetchone()
+                            if item:
+                                self.cart.append({
+                                    "id": item[0],
+                                    "name": item[1],
+                                    "price": item[2],
+                                    "quantity": int(qty),
+                                    "subtotal": item[2] * int(qty)
+                                })
+                            else:
+                                messagebox.showwarning("Warning", f"Item ID {item_id} not found in inventory", parent=window)
+                        except ValueError:
+                            continue  # Skip malformed item data
                 self.current_customer_id = transaction[2]
                 if self.current_customer_id:
                     cursor.execute("SELECT name FROM customers WHERE customer_id = ?", (self.current_customer_id,))
@@ -2755,45 +2768,40 @@ class PharmacyPOS:
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to resume transaction: {e}", parent=self.root)
 
-
-    def validate_delete_unpaid_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        unpaid_table = kwargs.get("unpaid_table")
-        parent_window = kwargs.get("window")
-        
+    def delete_unpaid_transaction(self, unpaid_table: ttk.Treeview, window: tk.Toplevel) -> None:
         if not unpaid_table or not isinstance(unpaid_table, ttk.Treeview):
-            window.destroy()
+            if window:
+                window.destroy()
             messagebox.showerror("Error", "Invalid transaction table", parent=self.root)
             return
 
         selected_item = unpaid_table.selection()
         if not selected_item:
-            window.destroy()
+            if window:
+                window.destroy()
             messagebox.showerror("Error", "No unpaid transaction selected", parent=self.root)
             return
 
         transaction_id = unpaid_table.item(selected_item)["values"][0]
+        if not messagebox.askyesno("Confirm Deletion",
+                                f"Are you sure you want to delete transaction {transaction_id}?",
+                                parent=self.root):
+            return
+
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
-                try:
-                    cursor.execute("DELETE FROM transactions WHERE transaction_id = ?", (transaction_id,))
-                    log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"
-                    cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                (log_id, "Delete Unpaid Transaction", f"Deleted unpaid transaction {transaction_id}",
-                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
-                    self.conn.commit()
-                    window.destroy()
-                    parent_window.destroy()
-                    messagebox.showinfo("Success", f"Unpaid transaction {transaction_id} deleted successfully", parent=self.root)
-                except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to delete unpaid transaction: {e}", parent=self.root)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
-
-       
+            try:
+                cursor.execute("DELETE FROM transactions WHERE transaction_id = ?", (transaction_id,))
+                log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"
+                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                            (log_id, "Delete Unpaid Transaction", f"Deleted unpaid transaction {transaction_id}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                self.conn.commit()
+                if window:
+                    window.destroy()  # Close the unpaid transactions window
+                messagebox.showinfo("Success", f"Unpaid transaction {transaction_id} deleted successfully", parent=self.root)
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to delete unpaid transaction: {e}", parent=self.root)
 
     def mode_of_payment(self, event: Optional[tk.Event] = None) -> None:
         if not self.cart:
