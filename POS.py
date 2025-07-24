@@ -1743,16 +1743,16 @@ class PharmacyPOS:
                 name, qty = item.rsplit(" (x", 1) if " (x" in item else (item, "0")
                 qty = int(qty.strip(")")) if qty != "0" else 0
                 item_name = name.strip()
-                price = 0.0
+                retail_price = 0.0
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("SELECT price FROM inventory WHERE name = ?", (item_name,))
+                    cursor.execute("SELECT retail_price FROM inventory WHERE name = ?", (item_name,))
                     result = cursor.fetchone()
                     if result:
-                        price = float(result[0])
+                        retail_price = float(result[0])
                     else:
                         missing_items.append(item_name)
-                data.append([item_name, str(qty), f"{price:.2f}"])
+                data.append([item_name, str(qty), f"{retail_price:.2f}"])
                 total_qty += qty
 
         # Show warning for missing items
