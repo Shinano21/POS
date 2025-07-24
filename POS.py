@@ -1068,7 +1068,7 @@ class PharmacyPOS:
     def show_add_item(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
-        window.geometry("400x600")  # Increased size for new field
+        window.geometry("400x600")
         window.configure(bg="#f5f6f5")
 
         add_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
@@ -1092,6 +1092,24 @@ class PharmacyPOS:
         ttk.Combobox(add_box, textvariable=type_var,
                     values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
+
+        # Error label for price validation
+        price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
+        price_error_label.pack(pady=5)
+
+        def validate_prices(event: Optional[tk.Event] = None) -> None:
+            try:
+                retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
+                unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
+                if retail_price <= unit_price and retail_price != 0.0:
+                    price_error_label.config(text="Retail Price must be greater than Unit Price")
+                else:
+                    price_error_label.config(text="")
+            except ValueError:
+                price_error_label.config(text="Invalid price format")
+
+        entries["Retail Price"].bind("<KeyRelease>", validate_prices)
+        entries["Unit Price"].bind("<KeyRelease>", validate_prices)
 
         tk.Button(add_box, text="Add Item",
                 command=lambda: self.add_item(
@@ -1173,7 +1191,7 @@ class PharmacyPOS:
             if item:
                 window = tk.Toplevel(self.root)
                 window.title("Update Item")
-                window.geometry("400x600")  # Increased size for unit_price field
+                window.geometry("400x600")
                 window.configure(bg="#f5f6f5")
 
                 update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
@@ -1184,14 +1202,13 @@ class PharmacyPOS:
 
                 fields = ["Item ID (Barcode)", "Product Name", "Retail Price", "Unit Price", "Quantity", "Supplier"]
                 entries = {}
-                # Map fields to their corresponding indices in the item tuple
                 field_indices = {
-                    "Item ID (Barcode)": 0,  # item_id
-                    "Product Name": 1,      # name
-                    "Retail Price": 3,      # retail_price
-                    "Unit Price": 4,        # unit_price
-                    "Quantity": 5,          # quantity
-                    "Supplier": 6           # supplier
+                    "Item ID (Barcode)": 0,
+                    "Product Name": 1,
+                    "Retail Price": 3,
+                    "Unit Price": 4,
+                    "Quantity": 5,
+                    "Supplier": 6
                 }
                 for field in fields:
                     frame = tk.Frame(update_box, bg="#ffffff")
@@ -1200,15 +1217,32 @@ class PharmacyPOS:
                     entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
                     entry.pack(side="left", fill="x", expand=True, padx=5)
                     entries[field] = entry
-                    # Convert value to string to avoid TclError
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
                     entry.insert(0, str(value))
 
-                type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")  # Default to "Medicine" if type is None
+                type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")
                 tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
                 ttk.Combobox(update_box, textvariable=type_var,
                             values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
                             state="readonly", font=("Helvetica", 14)).pack(pady=5)
+
+                # Error label for price validation
+                price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
+                price_error_label.pack(pady=5)
+
+                def validate_prices(event: Optional[tk.Event] = None) -> None:
+                    try:
+                        retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
+                        unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
+                        if retail_price <= unit_price and retail_price != 0.0:
+                            price_error_label.config(text="Retail Price must be greater than Unit Price")
+                        else:
+                            price_error_label.config(text="")
+                    except ValueError:
+                        price_error_label.config(text="Invalid price format")
+
+                entries["Retail Price"].bind("<KeyRelease>", validate_prices)
+                entries["Unit Price"].bind("<KeyRelease>", validate_prices)
 
                 tk.Button(update_box, text="Update Item",
                         command=lambda: self.update_item(
@@ -1219,7 +1253,7 @@ class PharmacyPOS:
                             entries["Unit Price"].get(),
                             entries["Quantity"].get(),
                             entries["Supplier"].get(),
-                            item[0],  # original_item_id
+                            item[0],
                             window
                         ),
                         bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
@@ -1436,7 +1470,7 @@ class PharmacyPOS:
         self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="Delete Transaction",
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Deletion", "Enter admin password to delete transaction",
-                                                self.validate_delete_transaction_auth, selected_item=self.transactions_table.selection()),
+                                                self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
                                             bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
                                             activebackground="#c0392b", activeforeground="#ffffff",
                                             padx=12, pady=8, bd=0, state="disabled")
@@ -1483,12 +1517,13 @@ class PharmacyPOS:
         self.refund_btn.config(state=state)
 
 
-    def validate_delete_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
+    def validate_delete_main_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         selected_item = kwargs.get("selected_item")
         if not selected_item:
             window.destroy()
             messagebox.showerror("Error", "No transaction selected", parent=self.root)
             return
+
         transaction_id = self.transactions_table.item(selected_item)["values"][0]
         with self.conn:
             cursor = self.conn.cursor()
@@ -1496,29 +1531,26 @@ class PharmacyPOS:
             admin_password = cursor.fetchone()
             if admin_password and password == admin_password[0]:
                 try:
-                    # Verify transaction exists and get items for inventory update
-                    cursor.execute("SELECT items, status FROM transactions WHERE transaction_id = ?", (transaction_id,))
-                    transaction = cursor.fetchone()
-                    if not transaction:
+                    cursor.execute("SELECT status FROM transactions WHERE transaction_id = ?", (transaction_id,))
+                    status = cursor.fetchone()
+                    if not status:
                         window.destroy()
                         messagebox.showerror("Error", "Transaction not found", parent=self.root)
                         return
-                    if transaction[1] == "Returned":
+                    if status[0] == "Held":
                         window.destroy()
-                        messagebox.showerror("Error", "Cannot delete a returned transaction", parent=self.root)
+                        messagebox.showerror("Error", "Cannot delete unpaid transactions from this view. Use Unpaid Transactions view.", parent=self.root)
                         return
-                    # Delete the transaction
                     cursor.execute("DELETE FROM transactions WHERE transaction_id = ?", (transaction_id,))
                     log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"
                     cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                (log_id, "Delete Transaction", f"Deleted transaction {transaction_id}",
+                                (log_id, "Delete Main Transaction", f"Deleted main transaction {transaction_id}",
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                     self.conn.commit()
                     self.update_transactions_table()
                     window.destroy()
                     messagebox.showinfo("Success", f"Transaction {transaction_id} deleted successfully", parent=self.root)
                 except sqlite3.Error as e:
-                    window.destroy()
                     messagebox.showerror("Error", f"Failed to delete transaction: {e}", parent=self.root)
             else:
                 window.destroy()
@@ -1763,67 +1795,127 @@ class PharmacyPOS:
             messagebox.showerror("Error", f"Failed to print receipt: {e}", parent=self.root)
 
     def show_sales_summary(self) -> None:
-            if self.get_user_role() == "Drug Lord":
-                messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
-                self.show_account_management()
-                return
-            self.clear_frame()
-            main_frame = tk.Frame(self.main_frame, bg="#f5f6f5")
-            main_frame.pack(fill="both", expand=True)
-            self.setup_navigation(main_frame)
+        if self.get_user_role() == "Drug Lord":
+            messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
+            self.show_account_management()
+            return
+        self.clear_frame()
+        main_frame = tk.Frame(self.main_frame, bg="#f5f6f5")
+        main_frame.pack(fill="both", expand=True)
+        self.setup_navigation(main_frame)
 
-            content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
-            content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
+        content_frame.pack(fill="both", expand=True, padx=(10, 0))
 
-            tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", 18, "bold"),
-                    bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
-            monthly_table = ttk.Treeview(content_frame, columns=("Month", "TotalSales", "TotalExpenses", "Profit"), show="headings")
-            monthly_table.heading("Month", text="Month")
-            monthly_table.heading("TotalSales", text="Total Sales")
-            monthly_table.heading("TotalExpenses", text="Total Expenses")
-            monthly_table.heading("Profit", text="Profit")
-            monthly_table.column("Month", width=200, anchor="w")
-            monthly_table.column("TotalSales", width=150, anchor="center")
-            monthly_table.column("TotalExpenses", width=150, anchor="center")
-            monthly_table.column("Profit", width=150, anchor="center")
-            monthly_table.pack(fill="x", pady=5)
+        tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", 18, "bold"),
+                bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
+        monthly_table = ttk.Treeview(content_frame, columns=("Month", "UnitSales", "GrandSales", "NetProfit", "Expenses", "ProfitAfterExpenses"), show="headings")
+        monthly_table.heading("Month", text="Month")
+        monthly_table.heading("UnitSales", text="Total Unit Sales")
+        monthly_table.heading("GrandSales", text="Total Grand Sales")
+        monthly_table.heading("NetProfit", text="Net Profit")
+        monthly_table.heading("Expenses", text="Total Expenses")
+        monthly_table.heading("ProfitAfterExpenses", text="Profit After Expenses")
+        monthly_table.column("Month", width=150, anchor="w")
+        monthly_table.column("UnitSales", width=150, anchor="center")
+        monthly_table.column("GrandSales", width=150, anchor="center")
+        monthly_table.column("NetProfit", width=150, anchor="center")
+        monthly_table.column("Expenses", width=150, anchor="center")
+        monthly_table.column("ProfitAfterExpenses", width=150, anchor="center")
+        monthly_table.pack(fill="x", pady=5)
 
-            tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", 18, "bold"),
-                    bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
-            daily_table = ttk.Treeview(content_frame, columns=("Date", "DailySales", "DailyExpenses", "DailyProfit"), show="headings")
-            daily_table.heading("Date", text="Date")
-            daily_table.heading("DailySales", text="Total Sales")
-            daily_table.heading("DailyExpenses", text="Total Expenses")
-            daily_table.heading("DailyProfit", text="Profit")
-            daily_table.column("Date", width=200, anchor="w")
-            daily_table.column("DailySales", width=150, anchor="center")
-            daily_table.column("DailyExpenses", width=150, anchor="center")
-            daily_table.column("DailyProfit", width=150, anchor="center")
-            daily_table.pack(fill="x", pady=5)
+        tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", 18, "bold"),
+                bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
+        daily_table = ttk.Treeview(content_frame, columns=("Date", "UnitSales", "GrandSales", "NetProfit", "Expenses", "ProfitAfterExpenses"), show="headings")
+        daily_table.heading("Date", text="Date")
+        daily_table.heading("UnitSales", text="Total Unit Sales")
+        daily_table.heading("GrandSales", text="Total Grand Sales")
+        daily_table.heading("NetProfit", text="Net Profit")
+        daily_table.heading("Expenses", text="Total Expenses")
+        daily_table.heading("ProfitAfterExpenses", text="Profit After Expenses")
+        daily_table.column("Date", width=150, anchor="w")
+        daily_table.column("UnitSales", width=150, anchor="center")
+        daily_table.column("GrandSales", width=150, anchor="center")
+        daily_table.column("NetProfit", width=150, anchor="center")
+        daily_table.column("Expenses", width=150, anchor="center")
+        daily_table.column("ProfitAfterExpenses", width=150, anchor="center")
+        daily_table.pack(fill="x", pady=5)
 
-            with self.conn:
-                cursor = self.conn.cursor()
-                cursor.execute("SELECT strftime('%Y-%m', timestamp) AS month, SUM(total_amount) FROM transactions WHERE status = 'Completed' GROUP BY month")
-                monthly_sales = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
-                cursor.execute("SELECT strftime('%Y-%m', timestamp) AS month, SUM(amount) FROM expenses GROUP BY month")
-                monthly_expenses = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
+        with self.conn:
+            cursor = self.conn.cursor()
+            # Monthly calculations
+            cursor.execute("""
+                SELECT strftime('%Y-%m', timestamp) AS month, items
+                FROM transactions
+                WHERE status = 'Completed'
+                GROUP BY month
+            """)
+            monthly_sales = {}
+            for month, items in cursor.fetchall():
+                unit_sales = 0.0
+                grand_sales = 0.0
+                for item_data in items.split(";"):
+                    if item_data:
+                        item_id, qty = item_data.split(":")
+                        qty = int(qty)
+                        cursor.execute("SELECT unit_price, retail_price FROM inventory WHERE item_id = ?", (item_id,))
+                        item = cursor.fetchone()
+                        if item:
+                            unit_sales += item[0] * qty
+                            grand_sales += item[1] * qty
+                monthly_sales[month] = {"unit_sales": unit_sales, "grand_sales": grand_sales}
 
-                for month in sorted(set(monthly_sales.keys()) | set(monthly_expenses.keys())):
-                    sales = monthly_sales.get(month, 0.0)
-                    expenses = monthly_expenses.get(month, 0.0)
-                    profit = sales - expenses
-                    monthly_table.insert("", "end", values=(month, f"{sales:.2f}", f"{expenses:.2f}", f"{profit:.2f}"))
+            cursor.execute("SELECT strftime('%Y-%m', timestamp) AS month, SUM(amount) FROM expenses GROUP BY month")
+            monthly_expenses = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
 
-                cursor.execute("SELECT strftime('%Y-%m-%d', timestamp) AS date, SUM(total_amount) FROM transactions WHERE status = 'Completed' GROUP BY date")
-                daily_sales = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
-                cursor.execute("SELECT strftime('%Y-%m-%d', timestamp) AS date, SUM(amount) FROM expenses GROUP BY date")
-                daily_expenses = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
+            for month in sorted(set(monthly_sales.keys()) | set(monthly_expenses.keys())):
+                sales_data = monthly_sales.get(month, {"unit_sales": 0.0, "grand_sales": 0.0})
+                unit_sales = sales_data["unit_sales"]
+                grand_sales = sales_data["grand_sales"]
+                net_profit = grand_sales - unit_sales
+                expenses = monthly_expenses.get(month, 0.0)
+                profit_after_expenses = grand_sales - expenses
+                monthly_table.insert("", "end", values=(
+                    month, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}",
+                    f"{expenses:.2f}", f"{profit_after_expenses:.2f}"
+                ))
 
-                for date in sorted(set(daily_sales.keys()) | set(daily_expenses.keys())):
-                    sales = daily_sales.get(date, 0.0)
-                    expenses = daily_expenses.get(date, 0.0)
-                    profit = sales - expenses
-                    daily_table.insert("", "end", values=(date, f"{sales:.2f}", f"{expenses:.2f}", f"{profit:.2f}"))
+            # Daily calculations
+            cursor.execute("""
+                SELECT strftime('%Y-%m-%d', timestamp) AS date, items
+                FROM transactions
+                WHERE status = 'Completed'
+                GROUP BY date
+            """)
+            daily_sales = {}
+            for date, items in cursor.fetchall():
+                unit_sales = 0.0
+                grand_sales = 0.0
+                for item_data in items.split(";"):
+                    if item_data:
+                        item_id, qty = item_data.split(":")
+                        qty = int(qty)
+                        cursor.execute("SELECT unit_price, retail_price FROM inventory WHERE item_id = ?", (item_id,))
+                        item = cursor.fetchone()
+                        if item:
+                            unit_sales += item[0] * qty
+                            grand_sales += item[1] * qty
+                daily_sales[date] = {"unit_sales": unit_sales, "grand_sales": grand_sales}
+
+            cursor.execute("SELECT strftime('%Y-%m-%d', timestamp) AS date, SUM(amount) FROM expenses GROUP BY date")
+            daily_expenses = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
+
+            for date in sorted(set(daily_sales.keys()) | set(daily_expenses.keys())):
+                sales_data = daily_sales.get(date, {"unit_sales": 0.0, "grand_sales": 0.0})
+                unit_sales = sales_data["unit_sales"]
+                grand_sales = sales_data["grand_sales"]
+                net_profit = grand_sales - unit_sales
+                expenses = daily_expenses.get(date, 0.0)
+                profit_after_expenses = grand_sales - expenses
+                daily_table.insert("", "end", values=(
+                    date, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}",
+                    f"{expenses:.2f}", f"{profit_after_expenses:.2f}"
+                ))
 
     def show_account_management(self) -> None:
         if self.get_user_role() != "Drug Lord":
@@ -2566,19 +2658,10 @@ class PharmacyPOS:
         button_frame.pack(fill="x", pady=10)
 
         self.resume_btn = tk.Button(button_frame, text="Resume Transaction", command=lambda: self.resume_transaction(unpaid_table, window),
-                                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                                activebackground="#27ae60", activeforeground="#ffffff",
-                                padx=12, pady=8, bd=0, state="disabled")
+                                    bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                                    activebackground="#27ae60", activeforeground="#ffffff",
+                                    padx=12, pady=8, bd=0, state="disabled")
         self.resume_btn.pack(side="left", padx=5)
-
-        self.delete_btn = tk.Button(button_frame, text="Delete Transaction",
-                                command=lambda: self.create_password_auth_window(
-                                    "Authenticate Deletion", "Enter admin password to delete transaction",
-                                    self.validate_delete_transaction_auth, unpaid_table=unpaid_table, window=window),
-                                bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
-                                activebackground="#c0392b", activeforeground="#ffffff",
-                                padx=12, pady=8, bd=0, state="disabled")
-        self.delete_btn.pack(side="left", padx=5)
 
 
     def on_unpaid_transaction_select(self, unpaid_table: ttk.Treeview) -> None:
@@ -2673,14 +2756,21 @@ class PharmacyPOS:
             messagebox.showerror("Error", f"Failed to resume transaction: {e}", parent=self.root)
 
 
-    def validate_delete_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
+    def validate_delete_unpaid_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         unpaid_table = kwargs.get("unpaid_table")
         parent_window = kwargs.get("window")
+        
+        if not unpaid_table or not isinstance(unpaid_table, ttk.Treeview):
+            window.destroy()
+            messagebox.showerror("Error", "Invalid transaction table", parent=self.root)
+            return
+
         selected_item = unpaid_table.selection()
         if not selected_item:
             window.destroy()
-            messagebox.showerror("Error", "No transaction selected", parent=self.root)
+            messagebox.showerror("Error", "No unpaid transaction selected", parent=self.root)
             return
+
         transaction_id = unpaid_table.item(selected_item)["values"][0]
         with self.conn:
             cursor = self.conn.cursor()
@@ -2689,16 +2779,16 @@ class PharmacyPOS:
             if admin_password and password == admin_password[0]:
                 try:
                     cursor.execute("DELETE FROM transactions WHERE transaction_id = ?", (transaction_id,))
-                    log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"  # Example: 07-2025-abc123
+                    log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"
                     cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                (log_id, "Delete Transaction", f"Deleted unpaid transaction {transaction_id}",
+                                (log_id, "Delete Unpaid Transaction", f"Deleted unpaid transaction {transaction_id}",
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                     self.conn.commit()
                     window.destroy()
                     parent_window.destroy()
-                    messagebox.showinfo("Success", f"Transaction {transaction_id} deleted successfully", parent=self.root)
+                    messagebox.showinfo("Success", f"Unpaid transaction {transaction_id} deleted successfully", parent=self.root)
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to delete transaction: {e}", parent=self.root)
+                    messagebox.showerror("Error", f"Failed to delete unpaid transaction: {e}", parent=self.root)
             else:
                 window.destroy()
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
