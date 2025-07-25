@@ -107,6 +107,18 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageColor.py',
    'PYMODULE'),
+  ('PIL.ImageDraw',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageDraw.py',
+   'PYMODULE'),
+  ('PIL.ImageDraw2',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageDraw2.py',
+   'PYMODULE'),
+  ('PIL.ImageEnhance',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageEnhance.py',
+   'PYMODULE'),
   ('PIL.ImageFile',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageFile.py',
@@ -114,6 +126,10 @@
   ('PIL.ImageFilter',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageFilter.py',
+   'PYMODULE'),
+  ('PIL.ImageFont',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageFont.py',
    'PYMODULE'),
   ('PIL.ImageMath',
    'C:\\Users\\U S E R '
@@ -131,6 +147,10 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImagePalette.py',
    'PYMODULE'),
+  ('PIL.ImagePath',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImagePath.py',
+   'PYMODULE'),
   ('PIL.ImageQt',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageQt.py',
@@ -142,6 +162,10 @@
   ('PIL.ImageShow',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageShow.py',
+   'PYMODULE'),
+  ('PIL.ImageStat',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PIL\\ImageStat.py',
    'PYMODULE'),
   ('PIL.ImageTk',
    'C:\\Users\\U S E R '
@@ -591,6 +615,50 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\asyncio\\windows_utils.py',
    'PYMODULE'),
+  ('babel',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\__init__.py',
+   'PYMODULE'),
+  ('babel.core',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\core.py',
+   'PYMODULE'),
+  ('babel.dates',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\dates.py',
+   'PYMODULE'),
+  ('babel.localedata',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localedata.py',
+   'PYMODULE'),
+  ('babel.localtime',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\__init__.py',
+   'PYMODULE'),
+  ('babel.localtime._fallback',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_fallback.py',
+   'PYMODULE'),
+  ('babel.localtime._helpers',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_helpers.py',
+   'PYMODULE'),
+  ('babel.localtime._unix',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_unix.py',
+   'PYMODULE'),
+  ('babel.localtime._win32',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_win32.py',
+   'PYMODULE'),
+  ('babel.numbers',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\numbers.py',
+   'PYMODULE'),
+  ('babel.plural',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\plural.py',
+   'PYMODULE'),
   ('backports',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\backports\\__init__.py',
@@ -786,6 +854,38 @@
   ('chardet.version',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\chardet\\version.py',
+   'PYMODULE'),
+  ('charset_normalizer',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\__init__.py',
+   'PYMODULE'),
+  ('charset_normalizer.api',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\api.py',
+   'PYMODULE'),
+  ('charset_normalizer.cd',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\cd.py',
+   'PYMODULE'),
+  ('charset_normalizer.constant',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\constant.py',
+   'PYMODULE'),
+  ('charset_normalizer.legacy',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\legacy.py',
+   'PYMODULE'),
+  ('charset_normalizer.models',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\models.py',
+   'PYMODULE'),
+  ('charset_normalizer.utils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\utils.py',
+   'PYMODULE'),
+  ('charset_normalizer.version',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\charset_normalizer\\version.py',
    'PYMODULE'),
   ('cmd',
    'C:\\Users\\U S E R '
@@ -990,6 +1090,10 @@
   ('email.utils',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\email\\utils.py',
+   'PYMODULE'),
+  ('fileinput',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\fileinput.py',
    'PYMODULE'),
   ('fnmatch',
    'C:\\Users\\U S E R '
@@ -1288,6 +1392,567 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\numbers.py',
    'PYMODULE'),
+  ('numpy',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\__init__.py',
+   'PYMODULE'),
+  ('numpy.__config__',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\__config__.py',
+   'PYMODULE'),
+  ('numpy._array_api_info',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_array_api_info.py',
+   'PYMODULE'),
+  ('numpy._core',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\__init__.py',
+   'PYMODULE'),
+  ('numpy._core._add_newdocs',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_add_newdocs.py',
+   'PYMODULE'),
+  ('numpy._core._add_newdocs_scalars',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_add_newdocs_scalars.py',
+   'PYMODULE'),
+  ('numpy._core._asarray',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_asarray.py',
+   'PYMODULE'),
+  ('numpy._core._dtype',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_dtype.py',
+   'PYMODULE'),
+  ('numpy._core._dtype_ctypes',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_dtype_ctypes.py',
+   'PYMODULE'),
+  ('numpy._core._exceptions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_exceptions.py',
+   'PYMODULE'),
+  ('numpy._core._internal',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_internal.py',
+   'PYMODULE'),
+  ('numpy._core._machar',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_machar.py',
+   'PYMODULE'),
+  ('numpy._core._methods',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_methods.py',
+   'PYMODULE'),
+  ('numpy._core._string_helpers',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_string_helpers.py',
+   'PYMODULE'),
+  ('numpy._core._type_aliases',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_type_aliases.py',
+   'PYMODULE'),
+  ('numpy._core._ufunc_config',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\_ufunc_config.py',
+   'PYMODULE'),
+  ('numpy._core.arrayprint',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\arrayprint.py',
+   'PYMODULE'),
+  ('numpy._core.defchararray',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\defchararray.py',
+   'PYMODULE'),
+  ('numpy._core.einsumfunc',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\einsumfunc.py',
+   'PYMODULE'),
+  ('numpy._core.fromnumeric',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\fromnumeric.py',
+   'PYMODULE'),
+  ('numpy._core.function_base',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\function_base.py',
+   'PYMODULE'),
+  ('numpy._core.getlimits',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\getlimits.py',
+   'PYMODULE'),
+  ('numpy._core.memmap',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\memmap.py',
+   'PYMODULE'),
+  ('numpy._core.multiarray',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\multiarray.py',
+   'PYMODULE'),
+  ('numpy._core.numeric',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\numeric.py',
+   'PYMODULE'),
+  ('numpy._core.numerictypes',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\numerictypes.py',
+   'PYMODULE'),
+  ('numpy._core.overrides',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\overrides.py',
+   'PYMODULE'),
+  ('numpy._core.printoptions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\printoptions.py',
+   'PYMODULE'),
+  ('numpy._core.records',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\records.py',
+   'PYMODULE'),
+  ('numpy._core.shape_base',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\shape_base.py',
+   'PYMODULE'),
+  ('numpy._core.strings',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\strings.py',
+   'PYMODULE'),
+  ('numpy._core.tests', '-', 'PYMODULE'),
+  ('numpy._core.tests._natype',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\tests\\_natype.py',
+   'PYMODULE'),
+  ('numpy._core.umath',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_core\\umath.py',
+   'PYMODULE'),
+  ('numpy._distributor_init',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_distributor_init.py',
+   'PYMODULE'),
+  ('numpy._expired_attrs_2_0',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_expired_attrs_2_0.py',
+   'PYMODULE'),
+  ('numpy._globals',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_globals.py',
+   'PYMODULE'),
+  ('numpy._pytesttester',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_pytesttester.py',
+   'PYMODULE'),
+  ('numpy._typing',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\__init__.py',
+   'PYMODULE'),
+  ('numpy._typing._add_docstring',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_add_docstring.py',
+   'PYMODULE'),
+  ('numpy._typing._array_like',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_array_like.py',
+   'PYMODULE'),
+  ('numpy._typing._char_codes',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_char_codes.py',
+   'PYMODULE'),
+  ('numpy._typing._dtype_like',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_dtype_like.py',
+   'PYMODULE'),
+  ('numpy._typing._nbit',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_nbit.py',
+   'PYMODULE'),
+  ('numpy._typing._nbit_base',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_nbit_base.py',
+   'PYMODULE'),
+  ('numpy._typing._nested_sequence',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_nested_sequence.py',
+   'PYMODULE'),
+  ('numpy._typing._scalars',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_scalars.py',
+   'PYMODULE'),
+  ('numpy._typing._shape',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_shape.py',
+   'PYMODULE'),
+  ('numpy._typing._ufunc',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_typing\\_ufunc.py',
+   'PYMODULE'),
+  ('numpy._utils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_utils\\__init__.py',
+   'PYMODULE'),
+  ('numpy._utils._convertions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_utils\\_convertions.py',
+   'PYMODULE'),
+  ('numpy._utils._inspect',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\_utils\\_inspect.py',
+   'PYMODULE'),
+  ('numpy.char',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\char\\__init__.py',
+   'PYMODULE'),
+  ('numpy.core',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\core\\__init__.py',
+   'PYMODULE'),
+  ('numpy.core._utils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\core\\_utils.py',
+   'PYMODULE'),
+  ('numpy.ctypeslib',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\ctypeslib.py',
+   'PYMODULE'),
+  ('numpy.dtypes',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\dtypes.py',
+   'PYMODULE'),
+  ('numpy.exceptions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\exceptions.py',
+   'PYMODULE'),
+  ('numpy.f2py',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\__init__.py',
+   'PYMODULE'),
+  ('numpy.f2py.__version__',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\__version__.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\_backends\\__init__.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends._backend',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\_backends\\_backend.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends._distutils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\_backends\\_distutils.py',
+   'PYMODULE'),
+  ('numpy.f2py._backends._meson',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\_backends\\_meson.py',
+   'PYMODULE'),
+  ('numpy.f2py._isocbind',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\_isocbind.py',
+   'PYMODULE'),
+  ('numpy.f2py.auxfuncs',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\auxfuncs.py',
+   'PYMODULE'),
+  ('numpy.f2py.capi_maps',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\capi_maps.py',
+   'PYMODULE'),
+  ('numpy.f2py.cb_rules',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\cb_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.cfuncs',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\cfuncs.py',
+   'PYMODULE'),
+  ('numpy.f2py.common_rules',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\common_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.crackfortran',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\crackfortran.py',
+   'PYMODULE'),
+  ('numpy.f2py.diagnose',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\diagnose.py',
+   'PYMODULE'),
+  ('numpy.f2py.f2py2e',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\f2py2e.py',
+   'PYMODULE'),
+  ('numpy.f2py.f90mod_rules',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\f90mod_rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.func2subr',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\func2subr.py',
+   'PYMODULE'),
+  ('numpy.f2py.rules',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\rules.py',
+   'PYMODULE'),
+  ('numpy.f2py.symbolic',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\symbolic.py',
+   'PYMODULE'),
+  ('numpy.f2py.use_rules',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\f2py\\use_rules.py',
+   'PYMODULE'),
+  ('numpy.fft',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\fft\\__init__.py',
+   'PYMODULE'),
+  ('numpy.fft._helper',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\fft\\_helper.py',
+   'PYMODULE'),
+  ('numpy.fft._pocketfft',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\fft\\_pocketfft.py',
+   'PYMODULE'),
+  ('numpy.fft.helper',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\fft\\helper.py',
+   'PYMODULE'),
+  ('numpy.lib',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\__init__.py',
+   'PYMODULE'),
+  ('numpy.lib._array_utils_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_array_utils_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._arraypad_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_arraypad_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._arraysetops_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_arraysetops_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._arrayterator_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_arrayterator_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._datasource',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_datasource.py',
+   'PYMODULE'),
+  ('numpy.lib._function_base_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_function_base_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._histograms_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_histograms_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._index_tricks_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_index_tricks_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._iotools',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_iotools.py',
+   'PYMODULE'),
+  ('numpy.lib._nanfunctions_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_nanfunctions_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._npyio_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_npyio_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._polynomial_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_polynomial_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._scimath_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_scimath_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._shape_base_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_shape_base_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._stride_tricks_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_stride_tricks_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._twodim_base_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_twodim_base_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._type_check_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_type_check_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._ufunclike_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_ufunclike_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._utils_impl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_utils_impl.py',
+   'PYMODULE'),
+  ('numpy.lib._version',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\_version.py',
+   'PYMODULE'),
+  ('numpy.lib.array_utils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\array_utils.py',
+   'PYMODULE'),
+  ('numpy.lib.format',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\format.py',
+   'PYMODULE'),
+  ('numpy.lib.introspect',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\introspect.py',
+   'PYMODULE'),
+  ('numpy.lib.mixins',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\mixins.py',
+   'PYMODULE'),
+  ('numpy.lib.npyio',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\npyio.py',
+   'PYMODULE'),
+  ('numpy.lib.recfunctions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\recfunctions.py',
+   'PYMODULE'),
+  ('numpy.lib.scimath',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\scimath.py',
+   'PYMODULE'),
+  ('numpy.lib.stride_tricks',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\lib\\stride_tricks.py',
+   'PYMODULE'),
+  ('numpy.linalg',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\linalg\\__init__.py',
+   'PYMODULE'),
+  ('numpy.linalg._linalg',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\linalg\\_linalg.py',
+   'PYMODULE'),
+  ('numpy.linalg.linalg',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\linalg\\linalg.py',
+   'PYMODULE'),
+  ('numpy.ma',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\ma\\__init__.py',
+   'PYMODULE'),
+  ('numpy.ma.core',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\ma\\core.py',
+   'PYMODULE'),
+  ('numpy.ma.extras',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\ma\\extras.py',
+   'PYMODULE'),
+  ('numpy.ma.mrecords',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\ma\\mrecords.py',
+   'PYMODULE'),
+  ('numpy.matlib',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\matlib.py',
+   'PYMODULE'),
+  ('numpy.matrixlib',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\matrixlib\\__init__.py',
+   'PYMODULE'),
+  ('numpy.matrixlib.defmatrix',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\matrixlib\\defmatrix.py',
+   'PYMODULE'),
+  ('numpy.polynomial',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\__init__.py',
+   'PYMODULE'),
+  ('numpy.polynomial._polybase',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\_polybase.py',
+   'PYMODULE'),
+  ('numpy.polynomial.chebyshev',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\chebyshev.py',
+   'PYMODULE'),
+  ('numpy.polynomial.hermite',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\hermite.py',
+   'PYMODULE'),
+  ('numpy.polynomial.hermite_e',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\hermite_e.py',
+   'PYMODULE'),
+  ('numpy.polynomial.laguerre',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\laguerre.py',
+   'PYMODULE'),
+  ('numpy.polynomial.legendre',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\legendre.py',
+   'PYMODULE'),
+  ('numpy.polynomial.polynomial',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\polynomial.py',
+   'PYMODULE'),
+  ('numpy.polynomial.polyutils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\polynomial\\polyutils.py',
+   'PYMODULE'),
+  ('numpy.random',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\random\\__init__.py',
+   'PYMODULE'),
+  ('numpy.random._pickle',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\random\\_pickle.py',
+   'PYMODULE'),
+  ('numpy.rec',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\rec\\__init__.py',
+   'PYMODULE'),
+  ('numpy.strings',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\strings\\__init__.py',
+   'PYMODULE'),
+  ('numpy.testing',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\testing\\__init__.py',
+   'PYMODULE'),
+  ('numpy.testing._private',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\testing\\_private\\__init__.py',
+   'PYMODULE'),
+  ('numpy.testing._private.extbuild',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\testing\\_private\\extbuild.py',
+   'PYMODULE'),
+  ('numpy.testing._private.utils',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\testing\\_private\\utils.py',
+   'PYMODULE'),
+  ('numpy.testing.overrides',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\testing\\overrides.py',
+   'PYMODULE'),
+  ('numpy.typing',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\typing\\__init__.py',
+   'PYMODULE'),
+  ('numpy.version',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy\\version.py',
+   'PYMODULE'),
   ('opcode',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\opcode.py',
@@ -1396,6 +2061,18 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pprint.py',
    'PYMODULE'),
+  ('psutil',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psutil\\__init__.py',
+   'PYMODULE'),
+  ('psutil._common',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psutil\\_common.py',
+   'PYMODULE'),
+  ('psutil._pswindows',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\psutil\\_pswindows.py',
+   'PYMODULE'),
   ('py_compile',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\py_compile.py',
@@ -1411,6 +2088,26 @@
   ('pydoc_data.topics',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pydoc_data\\topics.py',
+   'PYMODULE'),
+  ('pytz',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\__init__.py',
+   'PYMODULE'),
+  ('pytz.exceptions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\exceptions.py',
+   'PYMODULE'),
+  ('pytz.lazy',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\lazy.py',
+   'PYMODULE'),
+  ('pytz.tzfile',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\tzfile.py',
+   'PYMODULE'),
+  ('pytz.tzinfo',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\tzinfo.py',
    'PYMODULE'),
   ('queue',
    'C:\\Users\\U S E R '
@@ -1836,10 +2533,6 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_core_metadata.py',
    'PYMODULE'),
-  ('setuptools._discovery',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_discovery.py',
-   'PYMODULE'),
   ('setuptools._distutils',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_distutils\\__init__.py',
@@ -2196,10 +2889,6 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\tomli\\_types.py',
    'PYMODULE'),
-  ('setuptools._vendor.typing_extensions',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\typing_extensions.py',
-   'PYMODULE'),
   ('setuptools._vendor.wheel',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\wheel\\__init__.py',
@@ -2548,6 +3237,26 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\threading.py',
    'PYMODULE'),
+  ('threadpoolctl',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\threadpoolctl.py',
+   'PYMODULE'),
+  ('tkcalendar',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\__init__.py',
+   'PYMODULE'),
+  ('tkcalendar.calendar_',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\calendar_.py',
+   'PYMODULE'),
+  ('tkcalendar.dateentry',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\dateentry.py',
+   'PYMODULE'),
+  ('tkcalendar.tooltip',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\tooltip.py',
+   'PYMODULE'),
   ('tkinter',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\__init__.py',
@@ -2560,9 +3269,25 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\constants.py',
    'PYMODULE'),
+  ('tkinter.dialog',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\dialog.py',
+   'PYMODULE'),
+  ('tkinter.filedialog',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\filedialog.py',
+   'PYMODULE'),
+  ('tkinter.font',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\font.py',
+   'PYMODULE'),
   ('tkinter.messagebox',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\messagebox.py',
+   'PYMODULE'),
+  ('tkinter.simpledialog',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\simpledialog.py',
    'PYMODULE'),
   ('tkinter.ttk',
    'C:\\Users\\U S E R '
@@ -2603,6 +3328,98 @@
   ('typing',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\typing.py',
+   'PYMODULE'),
+  ('typing_extensions',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\typing_extensions.py',
+   'PYMODULE'),
+  ('tzdata',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Africa',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Africa\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.America',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.America.Argentina',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\Argentina\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.America.Indiana',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\Indiana\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.America.Kentucky',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\Kentucky\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.America.North_Dakota',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\North_Dakota\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Antarctica',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Antarctica\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Arctic',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Arctic\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Asia',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Asia\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Atlantic',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Atlantic\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Australia',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Australia\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Brazil',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Brazil\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Canada',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Canada\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Chile',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Chile\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Etc',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Etc\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Europe',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Europe\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Indian',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Indian\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Mexico',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Mexico\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.Pacific',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Pacific\\__init__.py',
+   'PYMODULE'),
+  ('tzdata.zoneinfo.US',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\US\\__init__.py',
    'PYMODULE'),
   ('unittest',
    'C:\\Users\\U S E R '
@@ -2776,6 +3593,74 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\xmlrpc\\client.py',
    'PYMODULE'),
+  ('yaml',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\__init__.py',
+   'PYMODULE'),
+  ('yaml.composer',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\composer.py',
+   'PYMODULE'),
+  ('yaml.constructor',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\constructor.py',
+   'PYMODULE'),
+  ('yaml.cyaml',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\cyaml.py',
+   'PYMODULE'),
+  ('yaml.dumper',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\dumper.py',
+   'PYMODULE'),
+  ('yaml.emitter',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\emitter.py',
+   'PYMODULE'),
+  ('yaml.error',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\error.py',
+   'PYMODULE'),
+  ('yaml.events',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\events.py',
+   'PYMODULE'),
+  ('yaml.loader',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\loader.py',
+   'PYMODULE'),
+  ('yaml.nodes',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\nodes.py',
+   'PYMODULE'),
+  ('yaml.parser',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\parser.py',
+   'PYMODULE'),
+  ('yaml.reader',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\reader.py',
+   'PYMODULE'),
+  ('yaml.representer',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\representer.py',
+   'PYMODULE'),
+  ('yaml.resolver',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\resolver.py',
+   'PYMODULE'),
+  ('yaml.scanner',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\scanner.py',
+   'PYMODULE'),
+  ('yaml.serializer',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\serializer.py',
+   'PYMODULE'),
+  ('yaml.tokens',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\yaml\\tokens.py',
+   'PYMODULE'),
   ('zipfile',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zipfile\\__init__.py',
@@ -2791,4 +3676,20 @@
   ('zipimport',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zipimport.py',
+   'PYMODULE'),
+  ('zoneinfo',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\__init__.py',
+   'PYMODULE'),
+  ('zoneinfo._common',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\_common.py',
+   'PYMODULE'),
+  ('zoneinfo._tzpath',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\_tzpath.py',
+   'PYMODULE'),
+  ('zoneinfo._zoneinfo',
+   'C:\\Users\\U S E R '
+   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\_zoneinfo.py',
    'PYMODULE')])

@@ -20,12 +20,23 @@ class PharmacyPOS:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Shinano POS")
-        self.root.geometry("1280x720")
+        
+        # Detect system DPI scaling
+        self.scaling_factor = self.get_scaling_factor()
+        base_width = 1280
+        base_height = 720
+        scaled_width = int(base_width * self.scaling_factor)
+        scaled_height = int(base_height * self.scaling_factor)
+        self.root.geometry(f"{scaled_width}x{scaled_height}")
         self.root.configure(bg="#f5f6f5")
 
         try:
-            icon_image = ImageTk.PhotoImage(Image.open("images/medkitpos.png"))
-            self.root.iconphoto(True, icon_image)
+            # Scale the icon image
+            icon_image = Image.open("images/medkitpos.png")
+            icon_size = (int(32 * self.scaling_factor), int(32 * self.scaling_factor))
+            icon_image = icon_image.resize(icon_size, Image.Resampling.LANCZOS)
+            self.icon_image = ImageTk.PhotoImage(icon_image)  # Store reference to avoid garbage collection
+            self.root.iconphoto(True, self.icon_image)
         except Exception as e:
             print(f"Error loading icon: {e}")
 
@@ -63,9 +74,23 @@ class PharmacyPOS:
         self.root.bind("<F5>", self.view_unpaid_transactions)
         self.root.bind("<F6>", self.mode_of_payment)
         self.root.bind("<F7>", self.handle_discount_toggle_event)
-        # self.root.bind("<F8>", self.return_transaction)
         self.root.bind("<F9>", self.select_customer)
         self.root.bind("<Shift_R>", self.focus_cash_paid)
+
+
+    def get_scaling_factor(self) -> float:
+    
+        default_dpi = 96  # Standard DPI for 100% scaling
+        current_dpi = self.root.winfo_fpixels('1i')  # Pixels per inch
+        scaling_factor = current_dpi / default_dpi
+        # Apply scaling only for 175% or 200% (or higher)
+        if scaling_factor >= 1.75:
+            return scaling_factor
+        return 1.0  # No scaling for < 175%
+
+    def scale_size(self, size: int) -> int:
+        """Scale a size (e.g., font size, width, height) based on the scaling factor."""
+        return int(size * self.scaling_factor)
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA') or os.path.expanduser("~")
@@ -182,16 +207,7 @@ class PharmacyPOS:
                         user TEXT
                     )
                 ''')
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS expenses (
-                        expense_id TEXT PRIMARY KEY,
-                        description TEXT,
-                        amount REAL,
-                        category TEXT,
-                        timestamp TEXT,
-                        user TEXT
-                    )
-                ''')
+                
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS customers (
                         customer_id TEXT PRIMARY KEY,
@@ -450,51 +466,51 @@ class PharmacyPOS:
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=self.scale_size(20), pady=self.scale_size(20))
+        content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
 
-        search_container = tk.Frame(content_frame, bg="#f5f6f5", padx=8, pady=8)
-        search_container.pack(fill="x", pady=10)
+        search_container = tk.Frame(content_frame, bg="#f5f6f5", padx=self.scale_size(8), pady=self.scale_size(8))
+        search_container.pack(fill="x", pady=self.scale_size(10))
 
         search_frame = tk.Frame(search_container, bg="#ffffff", bd=1, relief="flat")
-        search_frame.pack(fill="x", padx=2, pady=2)
+        search_frame.pack(fill="x", padx=self.scale_size(2), pady=self.scale_size(2))
 
-        tk.Label(search_frame, text="Search Item:", font=("Helvetica", 14),
-                bg="#ffffff", fg="#333").pack(side="left", padx=12)
+        tk.Label(search_frame, text="Search Item:", font=("Helvetica", self.scale_size(14)),
+                 bg="#ffffff", fg="#333").pack(side="left", padx=self.scale_size(12))
 
         entry_frame = tk.Frame(search_frame, bg="#f5f6f5")
-        entry_frame.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=5)
+        entry_frame.pack(side="left", fill="x", expand=True, padx=(0, self.scale_size(12)), pady=self.scale_size(5))
 
-        self.search_entry = tk.Entry(entry_frame, font=("Helvetica", 14), bg="#f5f6f5", bd=0, highlightthickness=0)
-        self.search_entry.pack(side="left", fill="x", expand=True, ipady=5)
+        self.search_entry = tk.Entry(entry_frame, font=("Helvetica", self.scale_size(14)), bg="#f5f6f5", bd=0, highlightthickness=0)
+        self.search_entry.pack(side="left", fill="x", expand=True, ipady=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_suggestions)
         self.search_entry.bind("<FocusOut>", lambda e: self.hide_suggestion_window())
 
         self.clear_btn = tk.Button(entry_frame, text="✕", command=self.clear_search,
-                                bg="#f5f6f5", fg="#666", font=("Helvetica", 12),
-                                activebackground="#e0e0e0", activeforeground="#1a1a1a",
-                                bd=0, padx=2, pady=2)
-        self.clear_btn.pack(side="right", padx=(0, 5))
+                                   bg="#f5f6f5", fg="#666", font=("Helvetica", self.scale_size(12)),
+                                   activebackground="#e0e0e0", activeforeground="#1a1a1a",
+                                   bd=0, padx=self.scale_size(2), pady=self.scale_size(2))
+        self.clear_btn.pack(side="right", padx=(0, self.scale_size(5)))
         self.clear_btn.pack_forget()
 
         tk.Button(search_frame, text="🛒", command=self.select_suggestion,
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                activebackground="#27ae60", activeforeground="#ffffff",
-                padx=8, pady=4, bd=0).pack(side="left", padx=5)
+                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
+                  activebackground="#27ae60", activeforeground="#ffffff",
+                  padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(side="left", padx=self.scale_size(5))
 
         if self.get_user_role() == "Drug Lord":
             tk.Button(search_frame, text="🗑️", command=lambda: self.create_password_auth_window(
                 "Authenticate Deletion", "Enter admin password to delete item", self.validate_delete_item_auth),
-                bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
+                bg="#e74c3c", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
                 activebackground="#c0392b", activeforeground="#ffffff",
-                padx=8, pady=4, bd=0).pack(side="left", padx=5)
+                padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(side="left", padx=self.scale_size(5))
 
         if not self.suggestion_window:
             self.suggestion_window = tk.Toplevel(self.root)
             self.suggestion_window.wm_overrideredirect(True)
             self.suggestion_window.configure(bg="#ffffff")
             self.suggestion_window.withdraw()
-            self.suggestion_listbox = tk.Listbox(self.suggestion_window, height=5, font=("Helvetica", 12),
+            self.suggestion_listbox = tk.Listbox(self.suggestion_window, height=5, font=("Helvetica", self.scale_size(12)),
                                                 bg="#ffffff", fg="#000000", selectbackground="#2ecc71",
                                                 selectforeground="#ffffff", highlightthickness=0, bd=0,
                                                 relief="flat")
@@ -512,53 +528,62 @@ class PharmacyPOS:
         main_content.grid_columnconfigure(1, weight=1)
 
         cart_frame = tk.Frame(main_content, bg="#ffffff", bd=1, relief="flat")
-        cart_frame.grid(row=0, column=0, sticky="nsew", padx=0)
+        cart_frame.grid(row=0, column=0, sticky="nsew", padx=self.scale_size(5), pady=self.scale_size(5))
+        cart_frame.grid_rowconfigure(1, weight=1)
+        cart_frame.grid_columnconfigure(0, weight=1)
 
         columns = ("Product", "RetailPrice", "Quantity", "Subtotal")
         headers = ("PRODUCT DETAILS", "RETAIL PRICE", "QUANTITY", "SUBTOTAL")
         self.cart_table = ttk.Treeview(cart_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.cart_table.heading(col, text=head)
-            self.cart_table.column(col, width=150 if col != "Product" else 300,
-                                anchor="center" if col != "Product" else "w")
+            self.cart_table.column(col, 
+                                 width=self.scale_size(200) if col != "Product" else self.scale_size(400),
+                                 anchor="center" if col != "Product" else "w",
+                                 stretch=True)
         self.cart_table.grid(row=1, column=0, columnspan=4, sticky="nsew")
         self.cart_table.bind("<<TreeviewSelect>>", self.on_item_select)
-        cart_frame.grid_rowconfigure(1, weight=1)
-        cart_frame.grid_columnconfigure(0, weight=1)
+
+        # Add scrollbar for cart table
+        scrollbar = ttk.Scrollbar(cart_frame, orient="vertical", command=self.cart_table.yview)
+        scrollbar.grid(row=1, column=4, sticky="ns")
+        self.cart_table.configure(yscrollcommand=scrollbar.set)
 
         self.summary_frame = tk.Frame(main_content, bg="#ffffff", bd=1, relief="flat")
-        self.summary_frame.grid(row=0, column=1, sticky="ns", padx=(10, 0))
+        self.summary_frame.grid(row=0, column=1, sticky="ns", padx=(self.scale_size(10), 0))
         self.summary_frame.grid_propagate(False)
-        self.summary_frame.configure(width=300)
+        self.summary_frame.configure(width=self.scale_size(300))
 
         self.discount_status_label = tk.Label(self.summary_frame, text="Discount: Not Applied",
-                                            font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a")
-        self.discount_status_label.pack(pady=5)
+                                            font=("Helvetica", self.scale_size(14)), bg="#ffffff", fg="#1a1a1a")
+        self.discount_status_label.pack(pady=self.scale_size(5))
 
-        tk.Label(self.summary_frame, text="Customer ID", font=("Helvetica", 14),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=2, anchor="w")
-        self.customer_id_label = tk.Label(self.summary_frame, text="None Selected", font=("Helvetica", 12),
+        tk.Label(self.summary_frame, text="Customer ID", font=("Helvetica", self.scale_size(14)),
+                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
+        self.customer_id_label = tk.Label(self.summary_frame, text="None Selected", 
+                                        font=("Helvetica", self.scale_size(12)),
                                         bg="#ffffff", fg="#666")
-        self.customer_id_label.pack(pady=2, anchor="w")
+        self.customer_id_label.pack(pady=self.scale_size(2), anchor="w")
         tk.Button(self.summary_frame, text="Select Customer", command=self.select_customer,
-                bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
-                activebackground="#2980b9", activeforeground="#ffffff",
-                padx=8, pady=4, bd=0).pack(pady=5, fill="x")
+                  bg="#3498db", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
+                  activebackground="#2980b9", activeforeground="#ffffff",
+                  padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(pady=self.scale_size(5), fill="x")
 
-        tk.Label(self.summary_frame, text="Item Quantity", font=("Helvetica", 18),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=2, anchor="w")
-        self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", 18), bg="#f5f6f5", state="disabled")
-        self.quantity_entry.pack(pady=2, fill="x")
+        tk.Label(self.summary_frame, text="Item Quantity", font=("Helvetica", self.scale_size(18)),
+                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
+        self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), 
+                                     bg="#f5f6f5", state="disabled")
+        self.quantity_entry.pack(pady=self.scale_size(2), fill="x")
         self.quantity_entry.bind("<Return>", self.adjust_quantity)
         self.quantity_entry.bind("<FocusOut>", self.adjust_quantity)
 
         fields = ["Subtotal ", "Discount ", "Final Total ", "Cash Paid ", "Change "]
         self.summary_entries = {}
         for field in fields:
-            tk.Label(self.summary_frame, text=field, font=("Helvetica", 18),
-                    bg="#ffffff", fg="#1a1a1a").pack(pady=2, anchor="w")
-            entry = tk.Entry(self.summary_frame, font=("Helvetica", 18), bg="#f5f6f5")
-            entry.pack(pady=2, fill="x")
+            tk.Label(self.summary_frame, text=field, font=("Helvetica", self.scale_size(18)),
+                     bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
+            entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), bg="#f5f6f5")
+            entry.pack(pady=self.scale_size(2), fill="x")
             self.summary_entries[field] = entry
             if field != "Cash Paid ":
                 entry.config(state="readonly")
@@ -568,7 +593,7 @@ class PharmacyPOS:
                 entry.bind("<KeyRelease>", self.update_change)
 
         button_frame = tk.Frame(self.summary_frame, bg="#ffffff")
-        button_frame.pack(pady=10, fill="x")
+        button_frame.pack(pady=self.scale_size(10), fill="x")
         
         self.update_cart_table()
 
@@ -1795,127 +1820,220 @@ class PharmacyPOS:
             messagebox.showerror("Error", f"Failed to print receipt: {e}", parent=self.root)
 
     def show_sales_summary(self) -> None:
-        if self.get_user_role() == "Drug Lord":
-            messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
-            self.show_account_management()
+        if not hasattr(self, 'root') or self.root is None:
+            print("Error: self.root is not defined")
             return
-        self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#f5f6f5")
-        main_frame.pack(fill="both", expand=True)
-        self.setup_navigation(main_frame)
+        try:
+            if self.get_user_role() == "Drug Lord":
+                messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
+                self.show_account_management()
+                return
+        except AttributeError as e:
+            messagebox.showerror("Error", f"User role could not be determined: {e}", parent=self.root)
+            return
+        try:
+            self.clear_frame()
+        except AttributeError as e:
+            messagebox.showerror("Error", f"Unable to clear frame: {e}", parent=self.root)
+            return
+        try:
+            main_frame = tk.Frame(self.main_frame, bg="#f5f6f5")
+            main_frame.pack(fill="both", expand=True)
+        except AttributeError as e:
+            messagebox.showerror("Error", f"Main frame setup failed: {e}", parent=self.root)
+            return
+        try:
+            self.setup_navigation(main_frame)
+        except AttributeError as e:
+            messagebox.showwarning("Warning", f"Navigation setup failed: {e}; continuing without navigation.", parent=self.root)
 
         content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True, padx=(10, 0))
 
+        filter_frame = tk.Frame(content_frame, bg="#ffffff")
+        filter_frame.pack(fill="x", pady=10)
+        tk.Label(filter_frame, text="Month:", font=("Helvetica", 14),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=5)
+        month_var = tk.StringVar(value=str(datetime.now().month))
+        month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
+                                    font=("Helvetica", 14), width=5, state="readonly")
+        month_combobox.pack(side="left", padx=5)
+        tk.Label(filter_frame, text="Year:", font=("Helvetica", 14),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=5)
+        year_var = tk.StringVar(value=str(datetime.now().year))
+        year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
+                                    values=[str(i) for i in range(2020, datetime.now().year + 1)],
+                                    font=("Helvetica", 14), width=7, state="readonly")
+        year_combobox.pack(side="left", padx=5)
+
         tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
-        monthly_table = ttk.Treeview(content_frame, columns=("Month", "UnitSales", "GrandSales", "NetProfit", "Expenses", "ProfitAfterExpenses"), show="headings")
-        monthly_table.heading("Month", text="Month")
-        monthly_table.heading("UnitSales", text="Total Unit Sales")
-        monthly_table.heading("GrandSales", text="Total Grand Sales")
-        monthly_table.heading("NetProfit", text="Net Profit")
-        monthly_table.heading("Expenses", text="Total Expenses")
-        monthly_table.heading("ProfitAfterExpenses", text="Profit After Expenses")
+        monthly_frame = tk.Frame(content_frame, bg="#ffffff")
+        monthly_frame.pack(fill="x", pady=5)
+        monthly_table = ttk.Treeview(monthly_frame, columns=("Month", "UnitSales", "GrandSales", "NetProfit"),
+                                    show="headings", height=5)
+        monthly_table.heading("Month", text="MONTH")
+        monthly_table.heading("UnitSales", text="TOTAL UNIT SALES")
+        monthly_table.heading("GrandSales", text="TOTAL GRAND SALES")
+        monthly_table.heading("NetProfit", text="NET PROFIT")
         monthly_table.column("Month", width=150, anchor="w")
         monthly_table.column("UnitSales", width=150, anchor="center")
         monthly_table.column("GrandSales", width=150, anchor="center")
         monthly_table.column("NetProfit", width=150, anchor="center")
-        monthly_table.column("Expenses", width=150, anchor="center")
-        monthly_table.column("ProfitAfterExpenses", width=150, anchor="center")
-        monthly_table.pack(fill="x", pady=5)
+        monthly_table.pack(side="left", fill="x", expand=True)
+        monthly_scrollbar = ttk.Scrollbar(monthly_frame, orient="vertical", command=monthly_table.yview)
+        monthly_scrollbar.pack(side="right", fill="y")
+        monthly_table.configure(yscrollcommand=monthly_scrollbar.set)
 
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
-        daily_table = ttk.Treeview(content_frame, columns=("Date", "UnitSales", "GrandSales", "NetProfit", "Expenses", "ProfitAfterExpenses"), show="headings")
-        daily_table.heading("Date", text="Date")
-        daily_table.heading("UnitSales", text="Total Unit Sales")
-        daily_table.heading("GrandSales", text="Total Grand Sales")
-        daily_table.heading("NetProfit", text="Net Profit")
-        daily_table.heading("Expenses", text="Total Expenses")
-        daily_table.heading("ProfitAfterExpenses", text="Profit After Expenses")
+        daily_frame = tk.Frame(content_frame, bg="#ffffff")
+        daily_frame.pack(fill="x", pady=5)
+        daily_table = ttk.Treeview(daily_frame, columns=("Date", "UnitSales", "GrandSales", "NetProfit"),
+                                show="headings", height=5)
+        daily_table.heading("Date", text="DATE")
+        daily_table.heading("UnitSales", text="TOTAL UNIT SALES")
+        daily_table.heading("GrandSales", text="TOTAL GRAND SALES")
+        daily_table.heading("NetProfit", text="NET PROFIT")
         daily_table.column("Date", width=150, anchor="w")
         daily_table.column("UnitSales", width=150, anchor="center")
         daily_table.column("GrandSales", width=150, anchor="center")
         daily_table.column("NetProfit", width=150, anchor="center")
-        daily_table.column("Expenses", width=150, anchor="center")
-        daily_table.column("ProfitAfterExpenses", width=150, anchor="center")
-        daily_table.pack(fill="x", pady=5)
+        daily_table.pack(side="left", fill="x", expand=True)
+        daily_scrollbar = ttk.Scrollbar(daily_frame, orient="vertical", command=daily_table.yview)
+        daily_scrollbar.pack(side="right", fill="y")
+        daily_table.configure(yscrollcommand=daily_scrollbar.set)
 
-        with self.conn:
-            cursor = self.conn.cursor()
-            # Monthly calculations
-            cursor.execute("""
-                SELECT strftime('%Y-%m', timestamp) AS month, items
-                FROM transactions
-                WHERE status = 'Completed'
-                GROUP BY month
-            """)
-            monthly_sales = {}
-            for month, items in cursor.fetchall():
-                unit_sales = 0.0
-                grand_sales = 0.0
-                for item_data in items.split(";"):
-                    if item_data:
-                        item_id, qty = item_data.split(":")
-                        qty = int(qty)
-                        cursor.execute("SELECT unit_price, retail_price FROM inventory WHERE item_id = ?", (item_id,))
-                        item = cursor.fetchone()
-                        if item:
-                            unit_sales += item[0] * qty
-                            grand_sales += item[1] * qty
-                monthly_sales[month] = {"unit_sales": unit_sales, "grand_sales": grand_sales}
+        tk.Button(filter_frame, text="Apply Filter",
+                command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
-            cursor.execute("SELECT strftime('%Y-%m', timestamp) AS month, SUM(amount) FROM expenses GROUP BY month")
-            monthly_expenses = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
+        self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
 
-            for month in sorted(set(monthly_sales.keys()) | set(monthly_expenses.keys())):
-                sales_data = monthly_sales.get(month, {"unit_sales": 0.0, "grand_sales": 0.0})
-                unit_sales = sales_data["unit_sales"]
-                grand_sales = sales_data["grand_sales"]
-                net_profit = grand_sales - unit_sales
-                expenses = monthly_expenses.get(month, 0.0)
-                profit_after_expenses = grand_sales - expenses
-                monthly_table.insert("", "end", values=(
-                    month, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}",
-                    f"{expenses:.2f}", f"{profit_after_expenses:.2f}"
-                ))
+    def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
+        for item in monthly_table.get_children():
+            monthly_table.delete(item)
+        for item in daily_table.get_children():
+            daily_table.delete(item)
 
-            # Daily calculations
-            cursor.execute("""
-                SELECT strftime('%Y-%m-%d', timestamp) AS date, items
-                FROM transactions
-                WHERE status = 'Completed'
-                GROUP BY date
-            """)
-            daily_sales = {}
-            for date, items in cursor.fetchall():
-                unit_sales = 0.0
-                grand_sales = 0.0
-                for item_data in items.split(";"):
-                    if item_data:
-                        item_id, qty = item_data.split(":")
-                        qty = int(qty)
-                        cursor.execute("SELECT unit_price, retail_price FROM inventory WHERE item_id = ?", (item_id,))
-                        item = cursor.fetchone()
-                        if item:
-                            unit_sales += item[0] * qty
-                            grand_sales += item[1] * qty
-                daily_sales[date] = {"unit_sales": unit_sales, "grand_sales": grand_sales}
+        for widget in monthly_frame.winfo_children():
+            if isinstance(widget, tk.Label) and widget.cget("fg") == "#ff0000":
+                widget.destroy()
+        for widget in daily_frame.winfo_children():
+            if isinstance(widget, tk.Label) and widget.cget("fg") == "#ff0000":
+                widget.destroy()
 
-            cursor.execute("SELECT strftime('%Y-%m-%d', timestamp) AS date, SUM(amount) FROM expenses GROUP BY date")
-            daily_expenses = {row[0]: row[1] or 0.0 for row in cursor.fetchall()}
+        try:
+            month = int(month_var.get())
+            year = int(year_var.get())
+        except ValueError:
+            messagebox.showerror("Error", "Invalid month or year selected.", parent=self.root)
+            return
 
-            for date in sorted(set(daily_sales.keys()) | set(daily_expenses.keys())):
-                sales_data = daily_sales.get(date, {"unit_sales": 0.0, "grand_sales": 0.0})
-                unit_sales = sales_data["unit_sales"]
-                grand_sales = sales_data["grand_sales"]
-                net_profit = grand_sales - unit_sales
-                expenses = daily_expenses.get(date, 0.0)
-                profit_after_expenses = grand_sales - expenses
-                daily_table.insert("", "end", values=(
-                    date, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}",
-                    f"{expenses:.2f}", f"{profit_after_expenses:.2f}"
-                ))
+        start_date = f"{year}-{month:02d}-01"
+        next_month = month + 1 if month < 12 else 1
+        next_year = year if month < 12 else year + 1
+        end_date = f"{next_year}-{next_month:02d}-01"
+
+        try:
+            if not hasattr(self, 'conn') or self.conn is None:
+                raise AttributeError("Database connection not available")
+            with self.conn:
+                cursor = self.conn.cursor()
+                # Monthly calculations
+                cursor.execute("""
+                    SELECT strftime('%Y-%m', timestamp) AS month, items, total_amount
+                    FROM transactions
+                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
+                """, (start_date, end_date))
+                monthly_sales = {}
+                for month_str, items, total_amount in cursor.fetchall():
+                    if month_str not in monthly_sales:
+                        monthly_sales[month_str] = {"unit_sales": 0.0, "grand_sales": 0.0}
+                    unit_sales = 0.0
+                    for item_data in items.split(";"):
+                        if item_data:
+                            try:
+                                item_id, qty = item_data.split(":")
+                                qty = int(qty)
+                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
+                                            (item_id,))
+                                item = cursor.fetchone()
+                                if item:
+                                    unit_sales += item[0] * qty
+                            except (ValueError, IndexError):
+                                continue
+                    monthly_sales[month_str]["unit_sales"] += unit_sales
+                    monthly_sales[month_str]["grand_sales"] += total_amount
+
+                for month_str in sorted(monthly_sales.keys()):
+                    unit_sales = monthly_sales[month_str]["unit_sales"]
+                    grand_sales = monthly_sales[month_str]["grand_sales"]
+                    net_profit = grand_sales - unit_sales
+                    monthly_table.insert("", "end", values=(
+                        month_str, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}"
+                    ))
+
+                # Daily calculations
+                cursor.execute("""
+                    SELECT strftime('%Y-%m-%d', timestamp) AS date, items, total_amount
+                    FROM transactions
+                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
+                """, (start_date, end_date))
+                daily_sales = {}
+                total_unit_sales = 0.0
+                total_grand_sales = 0.0
+                for date, items, total_amount in cursor.fetchall():
+                    if date not in daily_sales:
+                        daily_sales[date] = {"unit_sales": 0.0, "grand_sales": 0.0}
+                    unit_sales = 0.0
+                    for item_data in items.split(";"):
+                        if item_data:
+                            try:
+                                item_id, qty = item_data.split(":")
+                                qty = int(qty)
+                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
+                                            (item_id,))
+                                item = cursor.fetchone()
+                                if item:
+                                    unit_sales += item[0] * qty
+                            except (ValueError, IndexError):
+                                continue
+                    daily_sales[date]["unit_sales"] += unit_sales
+                    daily_sales[date]["grand_sales"] += total_amount
+                    total_unit_sales += unit_sales
+                    total_grand_sales += total_amount
+
+                for date in sorted(daily_sales.keys()):
+                    unit_sales = daily_sales[date]["unit_sales"]
+                    grand_sales = daily_sales[date]["grand_sales"]
+                    net_profit = grand_sales - unit_sales
+                    daily_table.insert("", "end", values=(
+                        date, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}"
+                    ))
+
+                if daily_sales:
+                    total_net_profit = total_grand_sales - total_unit_sales
+                    daily_table.insert("", "end", values=(
+                        "Total", f"{total_unit_sales:.2f}", f"{total_grand_sales:.2f}", f"{total_net_profit:.2f}"
+                    ))
+                else:
+                    tk.Label(daily_frame, text="No transactions found for the selected period.",
+                            font=("Helvetica", 14), bg="#ffffff", fg="#ff0000").pack(pady=5)
+
+                if not monthly_sales:
+                    tk.Label(monthly_frame, text="No transactions found for the selected period.",
+                            font=("Helvetica", 14), bg="#ffffff", fg="#ff0000").pack(pady=5)
+
+        except AttributeError as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
+
+
+    
 
     def show_account_management(self) -> None:
         if self.get_user_role() != "Drug Lord":
@@ -2822,7 +2940,7 @@ class PharmacyPOS:
         payment_options = ["Cash", "Credit Card", "Debit Card", "Mobile Payment"]
         for option in payment_options:
             tk.Radiobutton(payment_box, text=option, variable=payment_var, value=option,
-                          font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(anchor="w", pady=5)
+                          font=("Helvetica", 16), bg="#ffffff", fg="#1a1a1a").pack(anchor="w", pady=5)
 
         tk.Button(payment_box, text="Confirm",
                  command=lambda: self.set_payment_method(payment_var.get(), window),
