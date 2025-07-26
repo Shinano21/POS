@@ -559,14 +559,15 @@ class PharmacyPOS:
         self.summary_frame.grid_propagate(False)
         self.summary_frame.configure(width=self.scale_size(300))
 
-        # MODIFIED: Removed "Item Quantity" label and entry field
+        # MODIFIED: Updated font sizes and entry styling
         fields = ["Subtotal ", "Final Total ", "Cash Paid ", "Change "]
         self.summary_entries = {}
         for field in fields:
-            tk.Label(self.summary_frame, text=field, font=("Helvetica", self.scale_size(18)),
+            tk.Label(self.summary_frame, text=field, font=("Helvetica", self.scale_size(20)),
                     bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
-            entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), bg="#f5f6f5")
-            entry.pack(pady=self.scale_size(2), fill="x")
+            entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), bg="#f5f6f5",
+                            highlightthickness=1, relief="flat")
+            entry.pack(pady=self.scale_size(2), fill="x", ipady=self.scale_size(5))
             self.summary_entries[field] = entry
             if field != "Cash Paid ":
                 entry.config(state="readonly")
