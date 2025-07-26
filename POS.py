@@ -20,8 +20,6 @@ class PharmacyPOS:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Shinano POS")
-        
-        # Detect system DPI scaling
         self.scaling_factor = self.get_scaling_factor()
         base_width = 1280
         base_height = 720
@@ -31,11 +29,10 @@ class PharmacyPOS:
         self.root.configure(bg="#f5f6f5")
 
         try:
-            # Scale the icon image
             icon_image = Image.open("images/medkitpos.png")
             icon_size = (int(32 * self.scaling_factor), int(32 * self.scaling_factor))
             icon_image = icon_image.resize(icon_size, Image.Resampling.LANCZOS)
-            self.icon_image = ImageTk.PhotoImage(icon_image)  # Store reference to avoid garbage collection
+            self.icon_image = ImageTk.PhotoImage(icon_image)
             self.root.iconphoto(True, self.icon_image)
         except Exception as e:
             print(f"Error loading icon: {e}")
@@ -67,7 +64,7 @@ class PharmacyPOS:
         self.setup_gui()
         self.root.bind("<F11>", self.toggle_fullscreen)
         self.root.bind("<Escape>", lambda e: self.root.attributes('-fullscreen', False))
-        self.root.bind("<F1>", self.opening_closing_fund)
+        self.root.bind("<F1>", self.edit_quantity_window)
         self.root.bind("<F2>", self.void_selected_items)
         self.root.bind("<F3>", self.void_order)
         self.root.bind("<F4>", self.hold_transaction)
@@ -469,6 +466,7 @@ class PharmacyPOS:
         content_frame = tk.Frame(main_frame, bg="#ffffff", padx=self.scale_size(20), pady=self.scale_size(20))
         content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
 
+        # UNTOUCHED: Search bar section preserved exactly as provided
         search_container = tk.Frame(content_frame, bg="#f5f6f5", padx=self.scale_size(8), pady=self.scale_size(8))
         search_container.pack(fill="x", pady=self.scale_size(10))
 
@@ -538,13 +536,13 @@ class PharmacyPOS:
         for col, head in zip(columns, headers):
             self.cart_table.heading(col, text=head)
             if col == "Product":
-                width = self.scale_size(150)  # Custom width for Product Details
+                width = self.scale_size(150)
             elif col == "RetailPrice":
-                width = self.scale_size(100)  # Custom width for Retail Price
+                width = self.scale_size(100)
             elif col == "Quantity":
-                width = self.scale_size(50)   # Custom width for Quantity
-            else:  # Subtotal
-                width = self.scale_size(150)  # Custom width for Subtotal
+                width = self.scale_size(50)
+            else:
+                width = self.scale_size(150)
             self.cart_table.column(col, 
                                 width=width,
                                 anchor="center" if col != "Product" else "w",
@@ -552,7 +550,6 @@ class PharmacyPOS:
         self.cart_table.grid(row=1, column=0, columnspan=4, sticky="nsew")
         self.cart_table.bind("<<TreeviewSelect>>", self.on_item_select)
 
-        # Add scrollbar for cart table
         scrollbar = ttk.Scrollbar(cart_frame, orient="vertical", command=self.cart_table.yview)
         scrollbar.grid(row=1, column=4, sticky="ns")
         self.cart_table.configure(yscrollcommand=scrollbar.set)
@@ -562,14 +559,7 @@ class PharmacyPOS:
         self.summary_frame.grid_propagate(False)
         self.summary_frame.configure(width=self.scale_size(300))
 
-        tk.Label(self.summary_frame, text="Item Quantity", font=("Helvetica", self.scale_size(18)),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
-        self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), 
-                                    bg="#f5f6f5", state="disabled")
-        self.quantity_entry.pack(pady=self.scale_size(2), fill="x")
-        self.quantity_entry.bind("<Return>", self.adjust_quantity)
-        self.quantity_entry.bind("<FocusOut>", self.adjust_quantity)
-
+        # MODIFIED: Removed "Item Quantity" label and entry field
         fields = ["Subtotal ", "Final Total ", "Cash Paid ", "Change "]
         self.summary_entries = {}
         for field in fields:
@@ -673,6 +663,7 @@ class PharmacyPOS:
                 self.suggestion_listbox.see(0)
 
     def select_suggestion(self, event: Optional[tk.Event] = None) -> None:
+        # CORRECTED: Removed update_quantity_display call
         if self.suggestion_window and self.suggestion_window.winfo_exists():
             selection = self.suggestion_listbox.curselection()
             if selection:
@@ -702,7 +693,6 @@ class PharmacyPOS:
                         self.search_entry.delete(0, tk.END)
                         self.hide_suggestion_window()
                         self.clear_btn.pack_forget()
-                        self.update_quantity_display()
 
     def update_change(self, event: Optional[tk.Event] = None) -> None:
         try:
@@ -775,19 +765,19 @@ class PharmacyPOS:
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
 
     def update_cart_table(self) -> None:
+        # CORRECTED: Removed update_quantity_display call
         if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
             for item in self.cart_table.get_children():
                 self.cart_table.delete(item)
             for item in self.cart:
                 discount = item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0
                 subtotal = (item['retail_price'] * item['quantity']) - discount
-                item['subtotal'] = subtotal  # Update subtotal in cart item
+                item['subtotal'] = subtotal
                 display_name = f"{item['name']} (20% OFF)" if item.get('discount_applied', False) else item['name']
                 self.cart_table.insert("", "end", values=(
                     display_name, f"{item['retail_price']:.2f}", item['quantity'], f"{subtotal:.2f}"
                 ))
             self.update_cart_totals()
-            self.update_quantity_display()
 
 
 
@@ -797,12 +787,63 @@ class PharmacyPOS:
             item_index = self.cart_table.index(selected_item[0])
             if 0 <= item_index < len(self.cart):
                 self.selected_item_index = item_index
-                self.quantity_entry.config(state="normal")
-                self.update_quantity_display()
             else:
                 self.selected_item_index = None
-                self.quantity_entry.config(state="disabled")
-                self.quantity_entry.delete(0, tk.END)
+        else:
+            self.selected_item_index = None
+    
+    def edit_quantity_window(self, event: Optional[tk.Event] = None) -> None:
+        if not self.cart or self.selected_item_index is None:
+            messagebox.showerror("Error", "No item selected or cart is empty", parent=self.root)
+            return
+        item = self.cart[self.selected_item_index]
+        window = tk.Toplevel(self.root)
+        window.title(f"Edit Quantity for {item['name']}")
+        window.geometry("300x200")
+        window.configure(bg="#f5f6f5")
+
+        edit_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
+        edit_box.pack(pady=20)
+
+        tk.Label(edit_box, text=f"Edit Quantity for {item['name']}", font=("Helvetica", 14, "bold"),
+                bg="#ffffff", fg="#1a1a1a").pack(pady=10)
+        tk.Label(edit_box, text="Quantity", font=("Helvetica", 12),
+                bg="#ffffff", fg="#1a1a1a").pack()
+        quantity_entry = tk.Entry(edit_box, font=("Helvetica", 12), bg="#f5f6f5")
+        quantity_entry.pack(pady=5, fill="x")
+        quantity_entry.insert(0, str(item["quantity"]))
+        quantity_entry.focus_set()
+
+
+        def update_quantity():
+            try:
+                new_quantity = int(quantity_entry.get())
+                if new_quantity < 0:
+                    messagebox.showerror("Error", "Quantity cannot be negative.", parent=window)
+                    return
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item["id"],))
+                    inventory_qty = cursor.fetchone()[0]
+                    if new_quantity > inventory_qty:
+                        messagebox.showerror("Error", f"Insufficient stock for {item['name']}. Available: {inventory_qty}", parent=window)
+                        return
+                    item["quantity"] = new_quantity
+                    discount = item['retail_price'] * new_quantity * 0.2 if item.get('discount_applied', False) else 0
+                    item["subtotal"] = (item["retail_price"] * new_quantity) - discount
+                    if new_quantity == 0:
+                        self.cart.pop(self.selected_item_index)
+                    self.selected_item_index = None
+                    self.update_cart_table()
+                    window.destroy()
+            except ValueError:
+                messagebox.showerror("Error", "Invalid quantity.", parent=window)
+
+        tk.Button(edit_box, text="Update", command=update_quantity,
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 12),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=12, pady=8, bd=0).pack(pady=10)
+        quantity_entry.bind("<Return>", lambda e: update_quantity())
 
     def update_quantity_display(self) -> None:
         if self.selected_item_index is not None and 0 <= self.selected_item_index < len(self.cart):
@@ -936,83 +977,103 @@ class PharmacyPOS:
 
             with self.conn:
                 cursor = self.conn.cursor()
-                for item in self.cart:
-                    cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item["id"],))
-                    current_qty = cursor.fetchone()[0]
-                    if current_qty < item["quantity"]:
-                        raise ValueError(f"Insufficient stock for {item['name']}: {current_qty} available, {item['quantity']} requested")
-
-                cursor.execute("INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            (transaction_id, items, final_total, cash_paid, change, timestamp,
-                            "Completed", payment_method, customer_id))
-
+                cursor.execute('''
+                    INSERT INTO transactions (transaction_id, items, total_amount, cash_paid, change_amount, timestamp, status, payment_method, customer_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (transaction_id, items, final_total, cash_paid, change, timestamp, "Completed", payment_method, customer_id))
+                
+                # Updates inventory quantities
                 for item in self.cart:
                     cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
                                 (item["quantity"], item["id"]))
-
-                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Checkout", f"Completed transaction {transaction_id}",
-                            timestamp, self.current_user))
-
+                
+                cursor.execute('''
+                    INSERT INTO transaction_log (log_id, action, details, timestamp, user)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (str(uuid.uuid4()), "Checkout", f"Completed transaction {transaction_id}", timestamp, self.current_user))
+                
                 self.conn.commit()
-
-            # Check for low inventory after commit
-            self.check_low_inventory()
-
-            # Clear cart and reset all related states
-            self.cart.clear()
-            self.selected_item_index = None
-            self.discount_var.set(False)
-            self.discount_authenticated = False
-            self.current_payment_method = None
-            self.current_customer_id = None
-
-            # Clear and reset UI elements
-            if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
-                for item in self.cart_table.get_children():
-                    self.cart_table.delete(item)
-            
-            # Reset summary entries
-            for field in self.summary_entries:
-                self.summary_entries[field].config(state="normal")
-                self.summary_entries[field].delete(0, tk.END)
-                self.summary_entries[field].insert(0, "0.00")
-                if field != "Cash Paid ":
-                    self.summary_entries[field].config(state="readonly")
-
-            # Reset quantity entry
-            if hasattr(self, 'quantity_entry') and self.quantity_entry.winfo_exists():
-                self.quantity_entry.config(state="normal")
-                self.quantity_entry.delete(0, tk.END)
-                self.quantity_entry.config(state="disabled")
-
-            # Reset customer label if it exists
-            if hasattr(self, 'customer_id_label') and self.customer_id_label.winfo_exists():
-                self.customer_id_label.config(text="None Selected")
-
-            # Update discount status label if it exists
-            if hasattr(self, 'discount_status_label') and self.discount_status_label.winfo_exists():
-                self.discount_status_label.config(text="Discount: Not Applied")
-
-            messagebox.showinfo("Success", f"Transaction completed! ID: {transaction_id}", parent=self.root)
-
-        except (sqlite3.OperationalError, ValueError) as e:
+                
+                self.cart.clear()
+                self.selected_item_index = None
+                self.update_cart_table()
+                self.discount_authenticated = False
+                self.discount_var.set(False)
+                self.current_payment_method = None
+                self.current_customer_id = None
+                
+                if hasattr(self, 'customer_label') and self.customer_label.winfo_exists():
+                    self.customer_label.config(text="No Customer Selected")
+                    
+                messagebox.showinfo("Success", f"Transaction completed. Change: ₱{change:.2f}", parent=self.root)
+                
+                self.generate_receipt(transaction_id, timestamp, items, final_total, cash_paid, change)
+                
+        except sqlite3.Error as e:
+            print(f"Database error during checkout: {e}")
             messagebox.showerror("Error", f"Failed to process transaction: {e}", parent=self.root)
+        except Exception as e:
+            print(f"Unexpected error during checkout: {e}")
+            messagebox.showerror("Error", f"An unexpected error occurred: {e}", parent=self.root)
+
+    def generate_receipt(self, transaction_id: str, timestamp: str, items: str, total_amount: float, cash_paid: float, change: float) -> None:
+        try:
+            receipt_dir = os.path.join(os.path.dirname(self.db_path), "receipts")
+            os.makedirs(receipt_dir, exist_ok=True)
+            receipt_path = os.path.join(receipt_dir, f"receipt_{transaction_id}.pdf")
+            
+            c = canvas.Canvas(receipt_path, pagesize=letter)
+            c.setFont("Helvetica", 12)
+            
+            c.drawString(100, 750, "Shinano Pharmacy Receipt")
+            c.drawString(100, 730, f"Transaction ID: {transaction_id}")
+            c.drawString(100, 710, f"Date: {timestamp}")
+            c.drawString(100, 690, "-" * 50)
+            
+            y = 670
+            c.drawString(100, y, "Item | Quantity | Price | Subtotal")
+            y -= 20
+            
+            for item_str in items.split(";"):
+                item_id, qty = item_str.split(":")
+                qty = int(qty)
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    cursor.execute("SELECT name, retail_price FROM inventory WHERE item_id = ?", (item_id,))
+                    item_data = cursor.fetchone()
+                    if item_data:
+                        name, price = item_data
+                        subtotal = price * qty
+                        c.drawString(100, y, f"{name} | {qty} | ₱{price:.2f} | ₱{subtotal:.2f}")
+                        y -= 20
+            
+            c.drawString(100, y - 20, "-" * 50)
+            c.drawString(100, y - 40, f"Total: ₱{total_amount:.2f}")
+            c.drawString(100, y - 60, f"Cash Paid: ₱{cash_paid:.2f}")
+            c.drawString(100, y - 80, f"Change: ₱{change:.2f}")
+            
+            c.showPage()
+            c.save()
+            
+            print(f"Receipt generated at {receipt_path}")
+        except Exception as e:
+            print(f"Error generating receipt: {e}")
+            messagebox.showerror("Error", f"Failed to generate receipt: {e}", parent=self.root)
 
     def update_cart_table(self) -> None:
+        # FIXED: Removed call to update_quantity_display
         if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
             for item in self.cart_table.get_children():
                 self.cart_table.delete(item)
             for item in self.cart:
                 discount = item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0
                 subtotal = (item['retail_price'] * item['quantity']) - discount
-                item['subtotal'] = subtotal  # Update subtotal in cart item
+                item['subtotal'] = subtotal
                 display_name = f"{item['name']} (20% OFF)" if item.get('discount_applied', False) else item['name']
                 self.cart_table.insert("", "end", values=(
                     display_name, f"{item['retail_price']:.2f}", item['quantity'], f"{subtotal:.2f}"
                 ))
             self.update_cart_totals()
-            self.update_quantity_display()
 
 
     def update_cart_totals(self) -> None:
@@ -2717,57 +2778,7 @@ class PharmacyPOS:
                  activebackground="#27ae60", activeforeground="#ffffff",
                  padx=12, pady=8, bd=0).pack(pady=10)
 
-    def opening_closing_fund(self, event: Optional[tk.Event] = None) -> None:
-        if not self.current_user:
-            messagebox.showerror("Error", "You must be logged in to manage funds.", parent=self.root)
-            return
-        self.create_password_auth_window(
-            "Authenticate Fund Access",
-            "Enter admin password to access fund management",
-            self.validate_fund_access_auth
-        )
-
-    def validate_fund_access_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
-                window.destroy()
-                # Show the fund management window
-                fund_window = tk.Toplevel(self.root)
-                fund_window.title("Manage Fund")
-                fund_window.geometry("400x300")
-                fund_window.configure(bg="#f5f6f5")
-
-                fund_box = tk.Frame(fund_window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
-                fund_box.pack(pady=20)
-
-                tk.Label(fund_box, text="Manage Fund", font=("Helvetica", 18, "bold"),
-                        bg="#ffffff", fg="#1a1a1a").pack(pady=15)
-
-                tk.Label(fund_box, text="Amount", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
-                amount_entry = tk.Entry(fund_box, font=("Helvetica", 14), bg="#f5f6f5")
-                amount_entry.pack(pady=5, fill="x")
-
-                type_var = tk.StringVar()
-                tk.Label(fund_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
-                ttk.Combobox(fund_box, textvariable=type_var, values=["Opening Fund", "Closing Fund"],
-                            state="readonly", font=("Helvetica", 14)).pack(pady=5)
-
-                tk.Button(fund_box, text="Submit",
-                        command=lambda: self.validate_fund_auth(
-                            password=password,  # Pass validated password
-                            amount=amount_entry.get(),
-                            fund_type=type_var.get(),
-                            window=fund_window  # Pass fund_window as the window to close
-                        ),
-                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                        activebackground="#27ae60", activeforeground="#ffffff",
-                        padx=12, pady=8, bd=0).pack(pady=15)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+    
 
     def validate_fund_auth(self, password: str, amount: str, fund_type: str, window: tk.Toplevel) -> None:
         try:
@@ -2802,6 +2813,8 @@ class PharmacyPOS:
         self.create_password_auth_window(
             "Authenticate Void", "Enter admin password to void selected item",
             self.validate_void_selected_auth)
+
+
 
     def validate_void_selected_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         with self.conn:
