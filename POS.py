@@ -1072,14 +1072,14 @@ class PharmacyPOS:
         search_frame = tk.Frame(content_frame, bg="#ffffff")
         search_frame.pack(fill="x", pady=10)
 
-        tk.Label(search_frame, text="Search by Name:", font=("Helvetica", 14),
+        tk.Label(search_frame, text="Search:", font=("Helvetica", 14),
                 bg="#ffffff", fg="#1a1a1a").pack(side="left")
         self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", 14), bg="#f5f6f5")
         self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.inventory_search_entry.bind("<KeyRelease>", self.update_inventory_table)
 
-        tk.Label(search_frame, text="Filter by Type:", font=("Helvetica", 14),
-                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=(10, 5))
+        tk.Label(search_frame, text="Filter:", font=("Helvetica", 14),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=(6, 5))
         self.type_filter_var = tk.StringVar()
         self.type_filter_combobox = ttk.Combobox(search_frame, textvariable=self.type_filter_var,
                                                 values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
@@ -1088,7 +1088,7 @@ class PharmacyPOS:
         self.type_filter_combobox.set("All")
         self.type_filter_combobox.bind("<<ComboboxSelected>>", self.update_inventory_table)
 
-        tk.Button(search_frame, text="Add New Item",
+        tk.Button(search_frame, text="Add Item",
                 command=self.show_add_item,
                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
                 activebackground="#27ae60", activeforeground="#ffffff",
@@ -1102,8 +1102,20 @@ class PharmacyPOS:
         self.inventory_table = ttk.Treeview(inventory_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.inventory_table.heading(col, text=head)
-            self.inventory_table.column(col, width=150 if col != "Name" else 300,
-                                    anchor="center" if col != "Name" else "w")
+            if col == "Name":
+                width = self.scale_size(200)  # Custom width for Name
+            elif col == "Type":
+                width = self.scale_size(200)  # Custom width for Type
+            elif col == "RetailPrice":
+                width = self.scale_size(150)  # Custom width for Retail Price
+            elif col == "Quantity":
+                width = self.scale_size(120)  # Custom width for Quantity
+            else:  # Supplier
+                width = self.scale_size(200)  # Custom width for Supplier
+            self.inventory_table.column(col, 
+                                    width=width,
+                                    anchor="center" if col != "Name" else "w",
+                                    stretch=True)
         self.inventory_table.grid(row=1, column=0, columnspan=3, sticky="nsew")
         self.update_inventory_table()
         self.inventory_table.bind("<Double-1>", self.on_inventory_table_click)
