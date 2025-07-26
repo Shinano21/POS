@@ -1090,6 +1090,29 @@ class PharmacyPOS:
                 window.destroy()
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
 
+    def update_markup(self, unit_price_entry: tk.Entry, retail_price_entry: tk.Entry, markup_label: tk.Label, profitability_label: tk.Label, error_label: tk.Label) -> None:
+        try:
+            unit_price = float(unit_price_entry.get() or 0)
+            retail_price = float(retail_price_entry.get() or 0)
+            if unit_price > 0:
+                markup = ((retail_price - unit_price) / unit_price) * 100
+                markup_label.config(text=f"{markup:.2f}%")
+                if markup > 0:
+                    profitability_label.config(text="Profitable", fg="#2ecc71")
+                elif markup == 0:
+                    profitability_label.config(text="Break-even", fg="#f1c40f")
+                else:
+                    profitability_label.config(text="Not Profitable", fg="#e74c3c")
+            else:
+                markup_label.config(text="0.00%")
+                profitability_label.config(text="N/A", fg="#1a1a1a")
+            error_label.config(text="")
+        except ValueError:
+            markup_label.config(text="0.00%")
+            profitability_label.config(text="N/A", fg="#1a1a1a")
+            error_label.config(text="Enter valid prices")
+
+
     def show_add_item(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
@@ -1102,7 +1125,7 @@ class PharmacyPOS:
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-        fields = ["Item ID (Barcode)", "Product Name", "Retail Price", "Unit Price", "Quantity", "Supplier"]
+        fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
         for field in fields:
             frame = tk.Frame(add_box, bg="#ffffff")
@@ -1111,6 +1134,19 @@ class PharmacyPOS:
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
+
+        # Markup and Profitability display
+        markup_frame = tk.Frame(add_box, bg="#ffffff")
+        markup_frame.pack(fill="x", pady=5)
+        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
+        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=10, anchor="w")
+        markup_label.pack(side="left", fill="x", expand=True, padx=5)
+
+        profitability_frame = tk.Frame(add_box, bg="#ffffff")
+        profitability_frame.pack(fill="x", pady=5)
+        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
+        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=15, anchor="w")
+        profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
         type_var = tk.StringVar()
         tk.Label(add_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
@@ -1121,6 +1157,8 @@ class PharmacyPOS:
         # Error label for price validation
         price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
         price_error_label.pack(pady=5)
+
+
 
         def validate_prices(event: Optional[tk.Event] = None) -> None:
             try:
@@ -1225,13 +1263,13 @@ class PharmacyPOS:
                 tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
                         bg="#ffffff", fg="#1a1a1a").pack(pady=15)
 
-                fields = ["Item ID (Barcode)", "Product Name", "Retail Price", "Unit Price", "Quantity", "Supplier"]
+                fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
                 field_indices = {
                     "Item ID (Barcode)": 0,
                     "Product Name": 1,
-                    "Retail Price": 3,
                     "Unit Price": 4,
+                    "Retail Price": 3,
                     "Quantity": 5,
                     "Supplier": 6
                 }
@@ -1245,6 +1283,19 @@ class PharmacyPOS:
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
                     entry.insert(0, str(value))
 
+                # Markup and Profitability display
+                markup_frame = tk.Frame(update_box, bg="#ffffff")
+                markup_frame.pack(fill="x", pady=5)
+                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
+                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=10, anchor="w")
+                markup_label.pack(side="left", fill="x", expand=True, padx=5)
+
+                profitability_frame = tk.Frame(update_box, bg="#ffffff")
+                profitability_frame.pack(fill="x", pady=5)
+                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
+                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=15, anchor="w")
+                profitability_label.pack(side="left", fill="x", expand=True, padx=5)
+
                 type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")
                 tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
                 ttk.Combobox(update_box, textvariable=type_var,
@@ -1254,6 +1305,7 @@ class PharmacyPOS:
                 # Error label for price validation
                 price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
                 price_error_label.pack(pady=5)
+
 
                 def validate_prices(event: Optional[tk.Event] = None) -> None:
                     try:
