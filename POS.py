@@ -133,8 +133,8 @@ class PharmacyPOS:
 
     def style_config(self) -> None:
         style = ttk.Style()
-        style.configure("Treeview", rowheight=30, font=("Helvetica", 14))
-        style.configure("Treeview.Heading", font=("Helvetica", 14, "bold"))
+        style.configure("Treeview", rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(14)))
+        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(14), "bold"))
         style.theme_use("clam")
 
     def toggle_fullscreen(self, event: Optional[tk.Event] = None) -> str:
@@ -476,7 +476,7 @@ class PharmacyPOS:
         search_frame.pack(fill="x", padx=self.scale_size(2), pady=self.scale_size(2))
 
         tk.Label(search_frame, text="Search Item:", font=("Helvetica", self.scale_size(14)),
-                 bg="#ffffff", fg="#333").pack(side="left", padx=self.scale_size(12))
+                bg="#ffffff", fg="#333").pack(side="left", padx=self.scale_size(12))
 
         entry_frame = tk.Frame(search_frame, bg="#f5f6f5")
         entry_frame.pack(side="left", fill="x", expand=True, padx=(0, self.scale_size(12)), pady=self.scale_size(5))
@@ -487,16 +487,16 @@ class PharmacyPOS:
         self.search_entry.bind("<FocusOut>", lambda e: self.hide_suggestion_window())
 
         self.clear_btn = tk.Button(entry_frame, text="✕", command=self.clear_search,
-                                   bg="#f5f6f5", fg="#666", font=("Helvetica", self.scale_size(12)),
-                                   activebackground="#e0e0e0", activeforeground="#1a1a1a",
-                                   bd=0, padx=self.scale_size(2), pady=self.scale_size(2))
+                                bg="#f5f6f5", fg="#666", font=("Helvetica", self.scale_size(12)),
+                                activebackground="#e0e0e0", activeforeground="#1a1a1a",
+                                bd=0, padx=self.scale_size(2), pady=self.scale_size(2))
         self.clear_btn.pack(side="right", padx=(0, self.scale_size(5)))
         self.clear_btn.pack_forget()
 
         tk.Button(search_frame, text="🛒", command=self.select_suggestion,
-                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
-                  activebackground="#27ae60", activeforeground="#ffffff",
-                  padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(side="left", padx=self.scale_size(5))
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(side="left", padx=self.scale_size(5))
 
         if self.get_user_role() == "Drug Lord":
             tk.Button(search_frame, text="🗑️", command=lambda: self.create_password_auth_window(
@@ -533,14 +533,22 @@ class PharmacyPOS:
         cart_frame.grid_columnconfigure(0, weight=1)
 
         columns = ("Product", "RetailPrice", "Quantity", "Subtotal")
-        headers = ("PRODUCT DETAILS", "RETAIL PRICE", "QUANTITY", "SUBTOTAL")
+        headers = ("PRODUCT DETAILS", "RETAIL PRICE", "QTY", "SUBTOTAL")
         self.cart_table = ttk.Treeview(cart_frame, columns=columns, show="headings")
         for col, head in zip(columns, headers):
             self.cart_table.heading(col, text=head)
+            if col == "Product":
+                width = self.scale_size(150)  # Custom width for Product Details
+            elif col == "RetailPrice":
+                width = self.scale_size(100)  # Custom width for Retail Price
+            elif col == "Quantity":
+                width = self.scale_size(50)   # Custom width for Quantity
+            else:  # Subtotal
+                width = self.scale_size(150)  # Custom width for Subtotal
             self.cart_table.column(col, 
-                                 width=self.scale_size(200) if col != "Product" else self.scale_size(400),
-                                 anchor="center" if col != "Product" else "w",
-                                 stretch=True)
+                                width=width,
+                                anchor="center" if col != "Product" else "w",
+                                stretch=True)
         self.cart_table.grid(row=1, column=0, columnspan=4, sticky="nsew")
         self.cart_table.bind("<<TreeviewSelect>>", self.on_item_select)
 
@@ -554,34 +562,19 @@ class PharmacyPOS:
         self.summary_frame.grid_propagate(False)
         self.summary_frame.configure(width=self.scale_size(300))
 
-        self.discount_status_label = tk.Label(self.summary_frame, text="Discount: Not Applied",
-                                            font=("Helvetica", self.scale_size(14)), bg="#ffffff", fg="#1a1a1a")
-        self.discount_status_label.pack(pady=self.scale_size(5))
-
-        tk.Label(self.summary_frame, text="Customer ID", font=("Helvetica", self.scale_size(14)),
-                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
-        self.customer_id_label = tk.Label(self.summary_frame, text="None Selected", 
-                                        font=("Helvetica", self.scale_size(12)),
-                                        bg="#ffffff", fg="#666")
-        self.customer_id_label.pack(pady=self.scale_size(2), anchor="w")
-        tk.Button(self.summary_frame, text="Select Customer", command=self.select_customer,
-                  bg="#3498db", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
-                  activebackground="#2980b9", activeforeground="#ffffff",
-                  padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(pady=self.scale_size(5), fill="x")
-
         tk.Label(self.summary_frame, text="Item Quantity", font=("Helvetica", self.scale_size(18)),
-                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
+                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
         self.quantity_entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), 
-                                     bg="#f5f6f5", state="disabled")
+                                    bg="#f5f6f5", state="disabled")
         self.quantity_entry.pack(pady=self.scale_size(2), fill="x")
         self.quantity_entry.bind("<Return>", self.adjust_quantity)
         self.quantity_entry.bind("<FocusOut>", self.adjust_quantity)
 
-        fields = ["Subtotal ", "Discount ", "Final Total ", "Cash Paid ", "Change "]
+        fields = ["Subtotal ", "Final Total ", "Cash Paid ", "Change "]
         self.summary_entries = {}
         for field in fields:
             tk.Label(self.summary_frame, text=field, font=("Helvetica", self.scale_size(18)),
-                     bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
+                    bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
             entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), bg="#f5f6f5")
             entry.pack(pady=self.scale_size(2), fill="x")
             self.summary_entries[field] = entry
@@ -693,7 +686,8 @@ class PharmacyPOS:
                         for cart_item in self.cart:
                             if cart_item["id"] == item[0]:
                                 cart_item["quantity"] += 1
-                                cart_item["subtotal"] = cart_item["retail_price"] * cart_item["quantity"]
+                                cart_item["subtotal"] = (cart_item["retail_price"] * cart_item["quantity"]) - \
+                                                        (cart_item["retail_price"] * cart_item["quantity"] * 0.2 if cart_item.get('discount_applied', False) else 0)
                                 break
                         else:
                             self.cart.append({
@@ -701,7 +695,8 @@ class PharmacyPOS:
                                 "name": item[1],
                                 "retail_price": item[2],
                                 "quantity": 1,
-                                "subtotal": item[2]
+                                "subtotal": item[2],
+                                "discount_applied": False
                             })
                         self.update_cart_table()
                         self.search_entry.delete(0, tk.END)
@@ -713,7 +708,7 @@ class PharmacyPOS:
         try:
             cash_paid = float(self.summary_entries["Cash Paid "].get())
             final_total = float(self.summary_entries["Final Total "].get())
-            change = max(cash_paid - final_total, 0)
+            change = cash_paid - final_total
             self.summary_entries["Change "].config(state="normal")
             self.summary_entries["Change "].delete(0, tk.END)
             self.summary_entries["Change "].insert(0, f"{change:.2f}")
@@ -728,42 +723,54 @@ class PharmacyPOS:
         if not self.cart:
             messagebox.showerror("Error", "Cart is empty. Cannot apply discount.", parent=self.root)
             return
-        # Toggle the discount variable
-        self.discount_var.set(not self.discount_var.get())
-        if self.discount_var.get() and not self.discount_authenticated:
+        if self.selected_item_index is None:
+            messagebox.showerror("Error", "Please select an item to apply discount.", parent=self.root)
+            return
+        # Toggle discount for the selected item
+        item = self.cart[self.selected_item_index]
+        item['discount_applied'] = not item.get('discount_applied', False)
+        if item['discount_applied'] and not self.discount_authenticated:
             self.create_password_auth_window(
                 "Authenticate Discount",
-                "Enter admin password to apply 20% discount",
-                self.validate_discount_auth
+                f"Enter admin password to apply 20% discount to {item['name']}",
+                self.validate_discount_auth,
+                item_index=self.selected_item_index
             )
         else:
             self.discount_authenticated = False
-            self.update_cart_totals()
-            # Update the discount status label
+            self.update_cart_table()
             self.update_discount_status_label()
 
     def update_discount_status_label(self) -> None:
-        # Update the label in the summary_frame to reflect discount status
-        for widget in self.summary_frame.winfo_children():
-            if isinstance(widget, tk.Label) and widget.cget("text").startswith("Discount:"):
-                widget.config(text=f"Discount: {'Applied' if self.discount_var.get() else 'Not Applied'}")
+        if hasattr(self, 'discount_status_label') and self.discount_status_label.winfo_exists():
+            discounted_items = [item['name'] for item in self.cart if item.get('discount_applied', False)]
+            if discounted_items:
+                self.discount_status_label.config(text=f"Discount Applied to: {', '.join(discounted_items)}")
+            else:
+                self.discount_status_label.config(text="Discount: Not Applied")
 
     def validate_discount_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
+        item_index = kwargs.get('item_index')
+        if item_index is None or not (0 <= item_index < len(self.cart)):
+            window.destroy()
+            messagebox.showerror("Error", "Invalid item selected for discount.", parent=self.root)
+            return
         with self.conn:
             cursor = self.conn.cursor()
             cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
             admin_password = cursor.fetchone()
             if admin_password and password == admin_password[0]:
                 self.discount_authenticated = True
-                self.update_cart_totals()
-                self.update_discount_status_label()  # Update label
+                self.cart[item_index]['discount_applied'] = True
+                self.update_cart_table()
+                self.update_discount_status_label()
                 window.destroy()
-                messagebox.showinfo("Success", "Discount authentication successful", parent=self.root)
+                messagebox.showinfo("Success", f"Discount applied to {self.cart[item_index]['name']}", parent=self.root)
             else:
-                self.discount_var.set(False)
+                self.cart[item_index]['discount_applied'] = False
                 self.discount_authenticated = False
-                self.update_cart_totals()
-                self.update_discount_status_label()  # Update label
+                self.update_cart_table()
+                self.update_discount_status_label()
                 window.destroy()
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
 
@@ -772,11 +779,17 @@ class PharmacyPOS:
             for item in self.cart_table.get_children():
                 self.cart_table.delete(item)
             for item in self.cart:
+                discount = item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0
+                subtotal = (item['retail_price'] * item['quantity']) - discount
+                item['subtotal'] = subtotal  # Update subtotal in cart item
+                display_name = f"{item['name']} (20% OFF)" if item.get('discount_applied', False) else item['name']
                 self.cart_table.insert("", "end", values=(
-                    item["name"], f"{item['retail_price']:.2f}", item["quantity"], f"{item['subtotal']:.2f}"
+                    display_name, f"{item['retail_price']:.2f}", item['quantity'], f"{subtotal:.2f}"
                 ))
             self.update_cart_totals()
             self.update_quantity_display()
+
+
 
     def on_item_select(self, event: tk.Event) -> None:
         selected_item = self.cart_table.selection()
@@ -817,7 +830,8 @@ class PharmacyPOS:
                     self.update_quantity_display()
                     return
                 item["quantity"] = new_quantity
-                item["subtotal"] = item["retail_price"] * new_quantity
+                discount = item['retail_price'] * new_quantity * 0.2 if item.get('discount_applied', False) else 0
+                item["subtotal"] = (item["retail_price"] * new_quantity) - discount
                 if new_quantity == 0:
                     self.cart.pop(self.selected_item_index)
                 self.update_cart_table()
@@ -828,17 +842,26 @@ class PharmacyPOS:
             self.update_quantity_display()
 
     def update_cart_totals(self) -> None:
-        subtotal = sum(item["subtotal"] for item in self.cart)
-        discount = subtotal * 0.2 if self.discount_var.get() and self.discount_authenticated else 0
-        final_total = subtotal - discount
+        subtotal = sum((item['retail_price'] * item['quantity']) - 
+                    (item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0) 
+                    for item in self.cart)
+        final_total = subtotal  # Final total is the sum of discounted subtotals
 
-        for field in ["Subtotal ", "Discount ", "Final Total "]:
-            self.summary_entries[field].config(state="normal")
-            self.summary_entries[field].delete(0, tk.END)
-            self.summary_entries[field].insert(0, f"{subtotal:.2f}" if field == "Subtotal " else
-                                             f"{discount:.2f}" if field == "Discount " else f"{final_total:.2f}")
-            self.summary_entries[field].config(state="readonly")
+        # Update Subtotal
+        if "Subtotal " in self.summary_entries:
+            self.summary_entries["Subtotal "].config(state="normal")
+            self.summary_entries["Subtotal "].delete(0, tk.END)
+            self.summary_entries["Subtotal "].insert(0, f"{subtotal:.2f}")
+            self.summary_entries["Subtotal "].config(state="readonly")
 
+        # Update Final Total
+        if "Final Total " in self.summary_entries:
+            self.summary_entries["Final Total "].config(state="normal")
+            self.summary_entries["Final Total "].delete(0, tk.END)
+            self.summary_entries["Final Total "].insert(0, f"{final_total:.2f}")
+            self.summary_entries["Final Total "].config(state="readonly")
+
+        # Update Change
         self.update_change()
 
     def confirm_clear_cart(self) -> None:
@@ -921,7 +944,7 @@ class PharmacyPOS:
 
                 cursor.execute("INSERT INTO transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             (transaction_id, items, final_total, cash_paid, change, timestamp,
-                             "Completed", payment_method, customer_id))
+                            "Completed", payment_method, customer_id))
 
                 for item in self.cart:
                     cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
@@ -929,35 +952,91 @@ class PharmacyPOS:
 
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
                             (str(uuid.uuid4()), "Checkout", f"Completed transaction {transaction_id}",
-                             timestamp, self.current_user))
+                            timestamp, self.current_user))
 
                 self.conn.commit()
 
             # Check for low inventory after commit
             self.check_low_inventory()
 
-            # Update and clear fields
-            self.summary_entries["Change "].config(state="normal")
-            self.summary_entries["Change "].delete(0, tk.END)
-            self.summary_entries["Change "].insert(0, f"{change:.2f}")
-            self.summary_entries["Change "].config(state="readonly")
-
-            # Clear the Cash Paid field
-            self.summary_entries["Cash Paid "].delete(0, tk.END)
-            self.summary_entries["Cash Paid "].insert(0, "0.00")
-
-            messagebox.showinfo("Success", f"Transaction completed! ID: {transaction_id}", parent=self.root)
-            self.customer_id_label.config(text="None Selected")
+            # Clear cart and reset all related states
             self.cart.clear()
             self.selected_item_index = None
             self.discount_var.set(False)
             self.discount_authenticated = False
             self.current_payment_method = None
             self.current_customer_id = None
-            self.update_cart_table()
+
+            # Clear and reset UI elements
+            if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
+                for item in self.cart_table.get_children():
+                    self.cart_table.delete(item)
+            
+            # Reset summary entries
+            for field in self.summary_entries:
+                self.summary_entries[field].config(state="normal")
+                self.summary_entries[field].delete(0, tk.END)
+                self.summary_entries[field].insert(0, "0.00")
+                if field != "Cash Paid ":
+                    self.summary_entries[field].config(state="readonly")
+
+            # Reset quantity entry
+            if hasattr(self, 'quantity_entry') and self.quantity_entry.winfo_exists():
+                self.quantity_entry.config(state="normal")
+                self.quantity_entry.delete(0, tk.END)
+                self.quantity_entry.config(state="disabled")
+
+            # Reset customer label if it exists
+            if hasattr(self, 'customer_id_label') and self.customer_id_label.winfo_exists():
+                self.customer_id_label.config(text="None Selected")
+
+            # Update discount status label if it exists
+            if hasattr(self, 'discount_status_label') and self.discount_status_label.winfo_exists():
+                self.discount_status_label.config(text="Discount: Not Applied")
+
+            messagebox.showinfo("Success", f"Transaction completed! ID: {transaction_id}", parent=self.root)
+
         except (sqlite3.OperationalError, ValueError) as e:
             messagebox.showerror("Error", f"Failed to process transaction: {e}", parent=self.root)
 
+    def update_cart_table(self) -> None:
+        if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
+            for item in self.cart_table.get_children():
+                self.cart_table.delete(item)
+            for item in self.cart:
+                discount = item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0
+                subtotal = (item['retail_price'] * item['quantity']) - discount
+                item['subtotal'] = subtotal  # Update subtotal in cart item
+                display_name = f"{item['name']} (20% OFF)" if item.get('discount_applied', False) else item['name']
+                self.cart_table.insert("", "end", values=(
+                    display_name, f"{item['retail_price']:.2f}", item['quantity'], f"{subtotal:.2f}"
+                ))
+            self.update_cart_totals()
+            self.update_quantity_display()
+
+
+    def update_cart_totals(self) -> None:
+        subtotal = sum((item['retail_price'] * item['quantity']) - 
+                    (item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0) 
+                    for item in self.cart)
+        final_total = subtotal  # Final total is the sum of discounted subtotals
+
+        # Update Subtotal
+        if "Subtotal " in self.summary_entries and self.summary_entries["Subtotal "].winfo_exists():
+            self.summary_entries["Subtotal "].config(state="normal")
+            self.summary_entries["Subtotal "].delete(0, tk.END)
+            self.summary_entries["Subtotal "].insert(0, f"{subtotal:.2f}")
+            self.summary_entries["Subtotal "].config(state="readonly")
+
+        # Update Final Total
+        if "Final Total " in self.summary_entries and self.summary_entries["Final Total "].winfo_exists():
+            self.summary_entries["Final Total "].config(state="normal")
+            self.summary_entries["Final Total "].delete(0, tk.END)
+            self.summary_entries["Final Total "].insert(0, f"{final_total:.2f}")
+            self.summary_entries["Final Total "].config(state="readonly")
+
+        # Update Change
+        self.update_change()
     def show_inventory(self) -> None:
         if self.get_user_role() == "Drug Lord":
             messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
