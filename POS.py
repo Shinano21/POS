@@ -130,8 +130,9 @@ class PharmacyPOS:
 
     def style_config(self) -> None:
         style = ttk.Style()
-        style.configure("Treeview", rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(14)))
-        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(14), "bold"))
+        # Increase font size for Treeview content (rows) to 16 and headings to 18
+        style.configure("Treeview", rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(16)))
+        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(18), "bold"))
         style.theme_use("clam")
 
     def toggle_fullscreen(self, event: Optional[tk.Event] = None) -> str:
@@ -466,7 +467,6 @@ class PharmacyPOS:
         content_frame = tk.Frame(main_frame, bg="#ffffff", padx=self.scale_size(20), pady=self.scale_size(20))
         content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
 
-        # UNTOUCHED: Search bar section preserved exactly as provided
         search_container = tk.Frame(content_frame, bg="#f5f6f5", padx=self.scale_size(8), pady=self.scale_size(8))
         search_container.pack(fill="x", pady=self.scale_size(10))
 
@@ -559,8 +559,7 @@ class PharmacyPOS:
         self.summary_frame.grid_propagate(False)
         self.summary_frame.configure(width=self.scale_size(300))
 
-        # MODIFIED: Updated font sizes and entry styling
-        fields = ["Subtotal ", "Final Total ", "Cash Paid ", "Change "]
+        fields = ["Final Total ", "Cash Paid ", "Change "]
         self.summary_entries = {}
         for field in fields:
             tk.Label(self.summary_frame, text=field, font=("Helvetica", self.scale_size(20)),
@@ -580,6 +579,7 @@ class PharmacyPOS:
         button_frame.pack(pady=self.scale_size(10), fill="x")
         
         self.update_cart_table()
+
 
     def clear_search(self) -> None:
         self.search_entry.delete(0, tk.END)
@@ -884,26 +884,16 @@ class PharmacyPOS:
             self.update_quantity_display()
 
     def update_cart_totals(self) -> None:
-        subtotal = sum((item['retail_price'] * item['quantity']) - 
-                    (item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0) 
-                    for item in self.cart)
-        final_total = subtotal  # Final total is the sum of discounted subtotals
+        final_total = sum((item['retail_price'] * item['quantity']) - 
+                         (item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0) 
+                         for item in self.cart)
 
-        # Update Subtotal
-        if "Subtotal " in self.summary_entries:
-            self.summary_entries["Subtotal "].config(state="normal")
-            self.summary_entries["Subtotal "].delete(0, tk.END)
-            self.summary_entries["Subtotal "].insert(0, f"{subtotal:.2f}")
-            self.summary_entries["Subtotal "].config(state="readonly")
-
-        # Update Final Total
-        if "Final Total " in self.summary_entries:
+        if "Final Total " in self.summary_entries and self.summary_entries["Final Total "].winfo_exists():
             self.summary_entries["Final Total "].config(state="normal")
             self.summary_entries["Final Total "].delete(0, tk.END)
             self.summary_entries["Final Total "].insert(0, f"{final_total:.2f}")
             self.summary_entries["Final Total "].config(state="readonly")
 
-        # Update Change
         self.update_change()
 
     def confirm_clear_cart(self) -> None:
@@ -983,7 +973,7 @@ class PharmacyPOS:
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (transaction_id, items, final_total, cash_paid, change, timestamp, "Completed", payment_method, customer_id))
                 
-                # Updates inventory quantities
+                # Update inventory quantities
                 for item in self.cart:
                     cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
                                 (item["quantity"], item["id"]))
@@ -1009,6 +999,9 @@ class PharmacyPOS:
                 messagebox.showinfo("Success", f"Transaction completed. Change: ₱{change:.2f}", parent=self.root)
                 
                 self.generate_receipt(transaction_id, timestamp, items, final_total, cash_paid, change)
+                
+                # Check for low inventory after updating quantities
+                self.check_low_inventory()
                 
         except sqlite3.Error as e:
             print(f"Database error during checkout: {e}")
@@ -1552,14 +1545,31 @@ class PharmacyPOS:
             self.delete_item_btn.config(state="disabled")
 
     def check_low_inventory(self) -> None:
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT item_id, quantity FROM inventory")
-            for item_id, quantity in cursor.fetchall():
-                if quantity <= 5:
-                    cursor.execute("SELECT name FROM inventory WHERE item_id = ?", (item_id,))
-                    name = cursor.fetchone()[0]
-                    messagebox.showwarning("Inventory Alert", f"Low stock for {name}: Only {quantity} units left", parent=self.root)
+        try:
+            threshold = 10  # Define low stock threshold (adjustable)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT item_id, name, quantity FROM inventory WHERE quantity <= ?", (threshold,))
+                low_items = cursor.fetchall()
+                
+                if low_items:
+                    message = "The following items are low in stock:\n\n"
+                    for item_id, name, quantity in low_items:
+                        message += f"{name} (ID: {item_id}) - Quantity: {quantity}\n"
+                    messagebox.showwarning("Low Inventory Alert", message, parent=self.root)
+                # Optionally, log the check in transaction_log
+                cursor.execute(
+                    "INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                    (str(uuid.uuid4()), "Check Inventory", f"Checked low inventory, found {len(low_items)} items",
+                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user or "System")
+                )
+                self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error in check_low_inventory: {e}")
+            messagebox.showerror("Database Error", f"Failed to check inventory: {e}", parent=self.root)
+        except Exception as e:
+            print(f"Unexpected error in check_low_inventory: {e}")
+            messagebox.showerror("Error", f"Unexpected error checking inventory: {e}", parent=self.root)
     
 
     def update_inventory_table(self, event: Optional[tk.Event] = None) -> None:
