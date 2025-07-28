@@ -1274,49 +1274,55 @@ class PharmacyPOS:
     def show_add_item(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
-        window.geometry("400x600")
+        window.geometry("600x450")  # Increased width for 2-column layout
         window.configure(bg="#f5f6f5")
 
         add_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
-        add_box.pack(pady=20)
+        add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=15)
+                bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
 
         fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
-        for field in fields:
+        
+        for i, field in enumerate(fields):
+            row = (i // 2) + 1  # Calculate row (2 fields per row)
+            col = (i % 2) * 2   # Calculate column (0 or 2)
+            
             frame = tk.Frame(add_box, bg="#ffffff")
-            frame.pack(fill="x", pady=5)
+            frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
+            
             tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
 
-        # Markup and Profitability display
+        next_row = (len(fields) + 1) // 2 + 1
+
         markup_frame = tk.Frame(add_box, bg="#ffffff")
-        markup_frame.pack(fill="x", pady=5)
+        markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
         tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
         markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=10, anchor="w")
         markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
         profitability_frame = tk.Frame(add_box, bg="#ffffff")
-        profitability_frame.pack(fill="x", pady=5)
+        profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
         tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
         profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=15, anchor="w")
         profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
+        type_frame = tk.Frame(add_box, bg="#ffffff")
+        type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
+        tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
         type_var = tk.StringVar()
-        tk.Label(add_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
-        ttk.Combobox(add_box, textvariable=type_var,
-                    values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                    state="readonly", font=("Helvetica", 14)).pack(pady=5)
+        ttk.Combobox(type_frame, textvariable=type_var,
+                    values=["Medicine", "Supplement", "Medical Device", "Beverage", 
+                            "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                    state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
 
-        # Error label for price validation
         price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
-        price_error_label.pack(pady=5)
-
-
+        price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
         def validate_prices(event: Optional[tk.Event] = None) -> None:
             try:
@@ -1332,7 +1338,9 @@ class PharmacyPOS:
         entries["Retail Price"].bind("<KeyRelease>", validate_prices)
         entries["Unit Price"].bind("<KeyRelease>", validate_prices)
 
-        tk.Button(add_box, text="Add Item",
+        button_frame = tk.Frame(add_box, bg="#ffffff")
+        button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
+        tk.Button(button_frame, text="Add Item",
                 command=lambda: self.add_item(
                     entries["Item ID (Barcode)"].get(),
                     entries["Product Name"].get(),
@@ -1345,7 +1353,10 @@ class PharmacyPOS:
                 ),
                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
                 activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack(pady=15)
+                padx=12, pady=8, bd=0).pack()
+
+        add_box.columnconfigure(0, weight=1)
+        add_box.columnconfigure(2, weight=1)
 
     def add_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, window: tk.Toplevel) -> None:
         try:
@@ -1412,14 +1423,14 @@ class PharmacyPOS:
             if item:
                 window = tk.Toplevel(self.root)
                 window.title("Update Item")
-                window.geometry("400x600")
+                window.geometry("600x450")  # Increased width for 2-column layout
                 window.configure(bg="#f5f6f5")
 
                 update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
-                update_box.pack(pady=20)
+                update_box.pack(pady=20, padx=20, fill="both", expand=True)
 
                 tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
-                        bg="#ffffff", fg="#1a1a1a").pack(pady=15)
+                        bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
 
                 fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
@@ -1431,9 +1442,13 @@ class PharmacyPOS:
                     "Quantity": 5,
                     "Supplier": 6
                 }
-                for field in fields:
+                for i, field in enumerate(fields):
+                    row = (i // 2) + 1  # Calculate row (2 fields per row)
+                    col = (i % 2) * 2   # Calculate column (0 or 2)
+                    
                     frame = tk.Frame(update_box, bg="#ffffff")
-                    frame.pack(fill="x", pady=5)
+                    frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
+                    
                     tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
                     entry = tk.Entry(frame, font=("Helvetica", 14), bg="#f5f6f5")
                     entry.pack(side="left", fill="x", expand=True, padx=5)
@@ -1441,29 +1456,31 @@ class PharmacyPOS:
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
                     entry.insert(0, str(value))
 
-                # Markup and Profitability display
+                next_row = (len(fields) + 1) // 2 + 1
+
                 markup_frame = tk.Frame(update_box, bg="#ffffff")
-                markup_frame.pack(fill="x", pady=5)
+                markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
                 tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
                 markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=10, anchor="w")
                 markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
                 profitability_frame = tk.Frame(update_box, bg="#ffffff")
-                profitability_frame.pack(fill="x", pady=5)
+                profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
                 tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(side="left")
                 profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#f5f6f5", fg="#1a1a1a", width=15, anchor="w")
                 profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
+                type_frame = tk.Frame(update_box, bg="#ffffff")
+                type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
+                tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
                 type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")
-                tk.Label(update_box, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack(pady=5)
-                ttk.Combobox(update_box, textvariable=type_var,
-                            values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                            state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                ttk.Combobox(type_frame, textvariable=type_var,
+                            values=["Medicine", "Supplement", "Medical Device", "Beverage", 
+                                    "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                            state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
 
-                # Error label for price validation
                 price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
-                price_error_label.pack(pady=5)
-
+                price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
                 def validate_prices(event: Optional[tk.Event] = None) -> None:
                     try:
@@ -1479,7 +1496,9 @@ class PharmacyPOS:
                 entries["Retail Price"].bind("<KeyRelease>", validate_prices)
                 entries["Unit Price"].bind("<KeyRelease>", validate_prices)
 
-                tk.Button(update_box, text="Update Item",
+                button_frame = tk.Frame(update_box, bg="#ffffff")
+                button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
+                tk.Button(button_frame, text="Update Item",
                         command=lambda: self.update_item(
                             entries["Item ID (Barcode)"].get(),
                             entries["Product Name"].get(),
@@ -1493,10 +1512,13 @@ class PharmacyPOS:
                         ),
                         bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
                         activebackground="#27ae60", activeforeground="#ffffff",
-                        padx=12, pady=8, bd=0).pack(pady=15)
+                        padx=12, pady=8, bd=0).pack()
+
+                update_box.columnconfigure(0, weight=1)
+                update_box.columnconfigure(2, weight=1)
             else:
                 messagebox.showerror("Error", f"Item with ID {item_id} not found", parent=self.root)
-
+    
     def update_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, original_item_id: str, window: tk.Toplevel) -> None:
         try:
             retail_price = float(retail_price) if retail_price.strip() else 0.0
