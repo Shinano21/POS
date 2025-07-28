@@ -1271,6 +1271,7 @@ class PharmacyPOS:
             error_label.config(text="Enter valid prices")
 
 
+
     def show_add_item(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
@@ -1281,7 +1282,7 @@ class PharmacyPOS:
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
+                 bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
 
         fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
@@ -1317,14 +1318,15 @@ class PharmacyPOS:
         tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
         type_var = tk.StringVar()
         ttk.Combobox(type_frame, textvariable=type_var,
-                    values=["Medicine", "Supplement", "Medical Device", "Beverage", 
-                            "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                    state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
+                     values=["Medicine", "Supplement", "Medical Device", "Beverage", 
+                             "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                     state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
 
         price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
         price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
-        def validate_prices(event: Optional[tk.Event] = None) -> None:
+        def validate_and_update(event: Optional[tk.Event] = None) -> None:
+            # Call existing validate_prices for price comparison
             try:
                 retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
                 unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
@@ -1334,26 +1336,28 @@ class PharmacyPOS:
                     price_error_label.config(text="")
             except ValueError:
                 price_error_label.config(text="Invalid price format")
+            # Update markup and profitability
+            self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
-        entries["Retail Price"].bind("<KeyRelease>", validate_prices)
-        entries["Unit Price"].bind("<KeyRelease>", validate_prices)
+        entries["Retail Price"].bind("<KeyRelease>", validate_and_update)
+        entries["Unit Price"].bind("<KeyRelease>", validate_and_update)
 
         button_frame = tk.Frame(add_box, bg="#ffffff")
         button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
         tk.Button(button_frame, text="Add Item",
-                command=lambda: self.add_item(
-                    entries["Item ID (Barcode)"].get(),
-                    entries["Product Name"].get(),
-                    type_var.get(),
-                    entries["Retail Price"].get(),
-                    entries["Unit Price"].get(),
-                    entries["Quantity"].get(),
-                    entries["Supplier"].get(),
-                    window
-                ),
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack()
+                  command=lambda: self.add_item(
+                      entries["Item ID (Barcode)"].get(),
+                      entries["Product Name"].get(),
+                      type_var.get(),
+                      entries["Retail Price"].get(),
+                      entries["Unit Price"].get(),
+                      entries["Quantity"].get(),
+                      entries["Supplier"].get(),
+                      window
+                  ),
+                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                  activebackground="#27ae60", activeforeground="#ffffff",
+                  padx=12, pady=8, bd=0).pack()
 
         add_box.columnconfigure(0, weight=1)
         add_box.columnconfigure(2, weight=1)
@@ -1379,10 +1383,10 @@ class PharmacyPOS:
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                              (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                              (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
+                              datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
@@ -1394,6 +1398,7 @@ class PharmacyPOS:
             messagebox.showerror("Error", "Invalid retail price, unit price, or quantity", parent=self.root)
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Item ID already exists", parent=self.root)
+
 
     def on_inventory_table_click(self, event: tk.Event) -> None:
         selected_item = self.inventory_table.selection()
@@ -1430,7 +1435,7 @@ class PharmacyPOS:
                 update_box.pack(pady=20, padx=20, fill="both", expand=True)
 
                 tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
-                        bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
+                         bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
 
                 fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
@@ -1475,14 +1480,15 @@ class PharmacyPOS:
                 tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#ffffff", fg="#1a1a1a").pack()
                 type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")
                 ttk.Combobox(type_frame, textvariable=type_var,
-                            values=["Medicine", "Supplement", "Medical Device", "Beverage", 
-                                    "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                            state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
+                             values=["Medicine", "Supplement", "Medical Device", "Beverage", 
+                                     "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                             state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
 
                 price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#ffffff", fg="#e74c3c")
                 price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
-                def validate_prices(event: Optional[tk.Event] = None) -> None:
+                def validate_and_update(event: Optional[tk.Event] = None) -> None:
+                    # Validate prices
                     try:
                         retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
                         unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
@@ -1492,33 +1498,38 @@ class PharmacyPOS:
                             price_error_label.config(text="")
                     except ValueError:
                         price_error_label.config(text="Invalid price format")
+                    # Update markup and profitability
+                    self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
-                entries["Retail Price"].bind("<KeyRelease>", validate_prices)
-                entries["Unit Price"].bind("<KeyRelease>", validate_prices)
+                # Initial markup calculation
+                self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
+
+                entries["Retail Price"].bind("<KeyRelease>", validate_and_update)
+                entries["Unit Price"].bind("<KeyRelease>", validate_and_update)
 
                 button_frame = tk.Frame(update_box, bg="#ffffff")
                 button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
                 tk.Button(button_frame, text="Update Item",
-                        command=lambda: self.update_item(
-                            entries["Item ID (Barcode)"].get(),
-                            entries["Product Name"].get(),
-                            type_var.get(),
-                            entries["Retail Price"].get(),
-                            entries["Unit Price"].get(),
-                            entries["Quantity"].get(),
-                            entries["Supplier"].get(),
-                            item[0],
-                            window
-                        ),
-                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                        activebackground="#27ae60", activeforeground="#ffffff",
-                        padx=12, pady=8, bd=0).pack()
+                          command=lambda: self.update_item(
+                              entries["Item ID (Barcode)"].get(),
+                              entries["Product Name"].get(),
+                              type_var.get(),
+                              entries["Retail Price"].get(),
+                              entries["Unit Price"].get(),
+                              entries["Quantity"].get(),
+                              entries["Supplier"].get(),
+                              item[0],
+                              window
+                          ),
+                          bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                          activebackground="#27ae60", activeforeground="#ffffff",
+                          padx=12, pady=8, bd=0).pack()
 
                 update_box.columnconfigure(0, weight=1)
                 update_box.columnconfigure(2, weight=1)
             else:
                 messagebox.showerror("Error", f"Item with ID {item_id} not found", parent=self.root)
-    
+
     def update_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, original_item_id: str, window: tk.Toplevel) -> None:
         try:
             retail_price = float(retail_price) if retail_price.strip() else 0.0
@@ -1552,8 +1563,8 @@ class PharmacyPOS:
                     WHERE item_id = ?
                 """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier, original_item_id))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Retail Price: {retail_price:.2f}, Supplier: {supplier}",
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                              (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Retail Price: {retail_price:.2f}, Supplier: {supplier}",
+                              datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
