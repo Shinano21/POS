@@ -130,9 +130,11 @@ class PharmacyPOS:
 
     def style_config(self) -> None:
         style = ttk.Style()
-        # Increase font size for Treeview content (rows) to 16 and headings to 18
-        style.configure("Treeview", rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(16)))
-        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(18), "bold"))
+        # Default Treeview style for other tables
+        style.configure("Treeview", rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(20)))
+        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(20), "bold"))
+        # Custom style for cart table
+        style.configure("Cart.Treeview", rowheight=self.scale_size(24), font=("Helvetica", self.scale_size(16)))
         style.theme_use("clam")
 
     def toggle_fullscreen(self, event: Optional[tk.Event] = None) -> str:
@@ -460,6 +462,7 @@ class PharmacyPOS:
             self.show_account_management()
             return
         self.clear_frame()
+        self.style_config()  # Ensure styles are applied
         main_frame = tk.Frame(self.main_frame, bg="#f5f6f5")
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
@@ -531,8 +534,8 @@ class PharmacyPOS:
         cart_frame.grid_columnconfigure(0, weight=1)
 
         columns = ("Product", "RetailPrice", "Quantity", "Subtotal")
-        headers = ("PRODUCT DETAILS", "RETAIL PRICE", "QTY", "SUBTOTAL")
-        self.cart_table = ttk.Treeview(cart_frame, columns=columns, show="headings")
+        headers = ("NAME", "SRP", "QTY", "SUBTOTAL")
+        self.cart_table = ttk.Treeview(cart_frame, columns=columns, show="headings", style="Cart.Treeview")
         for col, head in zip(columns, headers):
             self.cart_table.heading(col, text=head)
             if col == "Product":
@@ -564,7 +567,7 @@ class PharmacyPOS:
         for field in fields:
             tk.Label(self.summary_frame, text=field, font=("Helvetica", self.scale_size(20)),
                     bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(2), anchor="w")
-            entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(18)), bg="#f5f6f5",
+            entry = tk.Entry(self.summary_frame, font=("Helvetica", self.scale_size(24)), bg="#f5f6f5",
                             highlightthickness=1, relief="flat")
             entry.pack(pady=self.scale_size(2), fill="x", ipady=self.scale_size(5))
             self.summary_entries[field] = entry
@@ -577,9 +580,13 @@ class PharmacyPOS:
 
         button_frame = tk.Frame(self.summary_frame, bg="#ffffff")
         button_frame.pack(pady=self.scale_size(10), fill="x")
-        
-        self.update_cart_table()
 
+        # Debug: Print applied style and scaling factor
+        style = ttk.Style()
+        print(f"Cart Table Font: {style.lookup('Cart.Treeview', 'font')}")
+        print(f"Scaling Factor: {self.scaling_factor}")
+
+        self.update_cart_table()
 
     def clear_search(self) -> None:
         self.search_entry.delete(0, tk.END)
@@ -664,7 +671,6 @@ class PharmacyPOS:
                 self.suggestion_listbox.see(0)
 
     def select_suggestion(self, event: Optional[tk.Event] = None) -> None:
-        # CORRECTED: Removed update_quantity_display call
         if self.suggestion_window and self.suggestion_window.winfo_exists():
             selection = self.suggestion_listbox.curselection()
             if selection:
@@ -675,8 +681,14 @@ class PharmacyPOS:
                     cursor.execute("SELECT item_id, name, retail_price, quantity FROM inventory WHERE name = ?", (item_name,))
                     item = cursor.fetchone()
                     if item:
+                        if item[3] <= 0:  # Check if stock is zero
+                            messagebox.showerror("Error", f"Cannot add {item[1]} to cart: Out of stock", parent=self.root)
+                            return
                         for cart_item in self.cart:
                             if cart_item["id"] == item[0]:
+                                if cart_item["quantity"] + 1 > item[3]:
+                                    messagebox.showerror("Error", f"Cannot add more {item[1]}: Only {item[3]} in stock", parent=self.root)
+                                    return
                                 cart_item["quantity"] += 1
                                 cart_item["subtotal"] = (cart_item["retail_price"] * cart_item["quantity"]) - \
                                                         (cart_item["retail_price"] * cart_item["quantity"] * 0.2 if cart_item.get('discount_applied', False) else 0)
@@ -2048,6 +2060,7 @@ class PharmacyPOS:
             return
         try:
             self.clear_frame()
+            self.style_config()  # Ensure styles are applied
         except AttributeError as e:
             messagebox.showerror("Error", f"Unable to clear frame: {e}", parent=self.root)
             return
@@ -2062,71 +2075,99 @@ class PharmacyPOS:
         except AttributeError as e:
             messagebox.showwarning("Warning", f"Navigation setup failed: {e}; continuing without navigation.", parent=self.root)
 
-        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        # Create canvas for scrollable content
+        canvas = tk.Canvas(main_frame, bg="#ffffff", highlightthickness=0)
+        canvas.pack(side="top", fill="both", expand=True)
+
+        # Add horizontal scrollbar
+        h_scrollbar = ttk.Scrollbar(main_frame, orient="horizontal", command=canvas.xview)
+        h_scrollbar.pack(side="bottom", fill="x")
+        canvas.configure(xscrollcommand=h_scrollbar.set)
+
+        # Create scrollable frame inside canvas
+        content_frame = tk.Frame(canvas, bg="#ffffff")
+        content_frame_id = canvas.create_window((0, 0), window=content_frame, anchor="nw")
+
+        # Update scroll region when content_frame size changes
+        def update_scroll_region(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        content_frame.bind("<Configure>", update_scroll_region)
+
+        # Add padding to content_frame
+        content_frame.configure(padx=self.scale_size(20), pady=self.scale_size(20))
 
         filter_frame = tk.Frame(content_frame, bg="#ffffff")
-        filter_frame.pack(fill="x", pady=10)
-        tk.Label(filter_frame, text="Month:", font=("Helvetica", 14),
-                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=5)
+        filter_frame.pack(fill="x", pady=self.scale_size(10))
+        tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(14)),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
-                                    font=("Helvetica", 14), width=5, state="readonly")
-        month_combobox.pack(side="left", padx=5)
-        tk.Label(filter_frame, text="Year:", font=("Helvetica", 14),
-                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=5)
+                                    font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
+        month_combobox.pack(side="left", padx=self.scale_size(5))
+        tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(14)),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
                                     values=[str(i) for i in range(2020, datetime.now().year + 1)],
-                                    font=("Helvetica", 14), width=7, state="readonly")
-        year_combobox.pack(side="left", padx=5)
+                                    font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
+        year_combobox.pack(side="left", padx=self.scale_size(5))
 
-        tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
+        tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
+                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
         monthly_frame = tk.Frame(content_frame, bg="#ffffff")
-        monthly_frame.pack(fill="x", pady=5)
-        monthly_table = ttk.Treeview(monthly_frame, columns=("Month", "UnitSales", "GrandSales", "NetProfit"),
-                                    show="headings", height=5)
-        monthly_table.heading("Month", text="MONTH")
-        monthly_table.heading("UnitSales", text="TOTAL UNIT SALES")
-        monthly_table.heading("GrandSales", text="TOTAL GRAND SALES")
-        monthly_table.heading("NetProfit", text="NET PROFIT")
-        monthly_table.column("Month", width=150, anchor="w")
-        monthly_table.column("UnitSales", width=150, anchor="center")
-        monthly_table.column("GrandSales", width=150, anchor="center")
-        monthly_table.column("NetProfit", width=150, anchor="center")
-        monthly_table.pack(side="left", fill="x", expand=True)
-        monthly_scrollbar = ttk.Scrollbar(monthly_frame, orient="vertical", command=monthly_table.yview)
-        monthly_scrollbar.pack(side="right", fill="y")
-        monthly_table.configure(yscrollcommand=monthly_scrollbar.set)
+        monthly_frame.pack(fill="x", pady=self.scale_size(5))
+        monthly_frame.grid_rowconfigure(0, weight=1)
+        monthly_frame.grid_columnconfigure(0, weight=1)
 
-        tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=10, anchor="w")
+        columns = ("Month", "UnitSales", "GrandSales", "NetProfit")
+        headers = ("MONTH", "TOTAL UNIT SALES", "TOTAL GRAND SALES", "NET PROFIT")
+        monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=5, style="Treeview")
+        for col, head in zip(columns, headers):
+            monthly_table.heading(col, text=head)
+            monthly_table.column(col, width=self.scale_size(200), anchor="center" if col != "Month" else "w", stretch=True)
+        monthly_table.grid(row=0, column=0, sticky="nsew")
+
+        monthly_v_scrollbar = ttk.Scrollbar(monthly_frame, orient="vertical", command=monthly_table.yview)
+        monthly_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        monthly_table.configure(yscrollcommand=monthly_v_scrollbar.set)
+
+        tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
+                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
         daily_frame = tk.Frame(content_frame, bg="#ffffff")
-        daily_frame.pack(fill="x", pady=5)
-        daily_table = ttk.Treeview(daily_frame, columns=("Date", "UnitSales", "GrandSales", "NetProfit"),
-                                show="headings", height=5)
-        daily_table.heading("Date", text="DATE")
-        daily_table.heading("UnitSales", text="TOTAL UNIT SALES")
-        daily_table.heading("GrandSales", text="TOTAL GRAND SALES")
-        daily_table.heading("NetProfit", text="NET PROFIT")
-        daily_table.column("Date", width=150, anchor="w")
-        daily_table.column("UnitSales", width=150, anchor="center")
-        daily_table.column("GrandSales", width=150, anchor="center")
-        daily_table.column("NetProfit", width=150, anchor="center")
-        daily_table.pack(side="left", fill="x", expand=True)
-        daily_scrollbar = ttk.Scrollbar(daily_frame, orient="vertical", command=daily_table.yview)
-        daily_scrollbar.pack(side="right", fill="y")
-        daily_table.configure(yscrollcommand=daily_scrollbar.set)
+        daily_frame.pack(fill="x", pady=self.scale_size(5))
+        daily_frame.grid_rowconfigure(0, weight=1)
+        daily_frame.grid_columnconfigure(0, weight=1)
+
+        daily_columns = ("Date", "UnitSales", "GrandSales", "NetProfit")
+        daily_headers = ("DATE", "TOTAL UNIT SALES", "TOTAL GRAND SALES", "NET PROFIT")
+        daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=5, style="Treeview")
+        for col, head in zip(daily_columns, daily_headers):
+            daily_table.heading(col, text=head)
+            daily_table.column(col, width=self.scale_size(200), anchor="center" if col != "Date" else "w", stretch=True)
+        daily_table.grid(row=0, column=0, sticky="nsew")
+
+        daily_v_scrollbar = ttk.Scrollbar(daily_frame, orient="vertical", command=daily_table.yview)
+        daily_v_scrollbar.grid(row=0, column=1, sticky="ns")
+        daily_table.configure(yscrollcommand=daily_v_scrollbar.set)
 
         tk.Button(filter_frame, text="Apply Filter",
                 command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
                 activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack(side="left", padx=5)
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
+
+        # Debug: Print applied style and scaling factor
+        style = ttk.Style()
+        print(f"Monthly Table Font: {style.lookup('Treeview', 'font')}")
+        print(f"Daily Table Font: {style.lookup('Treeview', 'font')}")
+        print(f"Scaling Factor: {self.scaling_factor}")
 
         self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
 
+        # Ensure canvas scrolls to the top-left initially
+        canvas.update_idletasks()
+        canvas.xview_moveto(0)
     def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
         for item in monthly_table.get_children():
             monthly_table.delete(item)
