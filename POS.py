@@ -2171,8 +2171,8 @@ class PharmacyPOS:
         monthly_frame.grid_rowconfigure(0, weight=1)
         monthly_frame.grid_columnconfigure(0, weight=1)
 
-        columns = ("Month", "UnitSales", "GrandSales", "NetProfit")
-        headers = ("MONTH", "TOTAL UNIT SALES", "TOTAL GRAND SALES", "NET PROFIT")
+        columns = ("Month", "GrandSales", "UnitSales",  "NetProfit")
+        headers = ("MONTH", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=10, style="Treeview")
         for col, head in zip(columns, headers):
             monthly_table.heading(col, text=head)
@@ -2191,8 +2191,8 @@ class PharmacyPOS:
         daily_frame.grid_rowconfigure(0, weight=1)
         daily_frame.grid_columnconfigure(0, weight=1)
 
-        daily_columns = ("Date", "UnitSales", "GrandSales", "NetProfit")
-        daily_headers = ("DATE", "TOTAL UNIT SALES", "TOTAL GRAND SALES", "NET PROFIT")
+        daily_columns = ("Date", "GrandSales", "UnitSales", "NetProfit")
+        daily_headers = ("DATE", "TOTAL UNIT SALES", "UNIT COST", "NET PROFIT")
         daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=10, style="Treeview")
         for col, head in zip(daily_columns, daily_headers):
             daily_table.heading(col, text=head)
@@ -2279,8 +2279,8 @@ class PharmacyPOS:
                     monthly_sales[month_str]["grand_sales"] += total_amount
 
                 for month_str in sorted(monthly_sales.keys()):
-                    unit_sales = monthly_sales[month_str]["unit_sales"]
                     grand_sales = monthly_sales[month_str]["grand_sales"]
+                    unit_sales = monthly_sales[month_str]["unit_sales"]
                     net_profit = grand_sales - unit_sales
                     monthly_table.insert("", "end", values=(
                         month_str, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}"
@@ -2311,8 +2311,9 @@ class PharmacyPOS:
                                     unit_sales += item[0] * qty
                             except (ValueError, IndexError):
                                 continue
-                    daily_sales[date]["unit_sales"] += unit_sales
+                   
                     daily_sales[date]["grand_sales"] += total_amount
+                    daily_sales[date]["unit_sales"] += unit_sales
                     total_unit_sales += unit_sales
                     total_grand_sales += total_amount
 
