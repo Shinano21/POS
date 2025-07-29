@@ -1284,7 +1284,7 @@ class PharmacyPOS:
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
                  bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
 
-        fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
+        fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
         
         for i, field in enumerate(fields):
@@ -1347,7 +1347,7 @@ class PharmacyPOS:
         tk.Button(button_frame, text="Add Item",
                   command=lambda: self.add_item(
                       entries["Item ID (Barcode)"].get(),
-                      entries["Product Name"].get(),
+                      entries["Name"].get(),
                       type_var.get(),
                       entries["Retail Price"].get(),
                       entries["Unit Price"].get(),
@@ -1368,7 +1368,7 @@ class PharmacyPOS:
             unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
             quantity = int(quantity)
             if not all([name, item_type]):
-                messagebox.showerror("Error", "Product Name and Type are required", parent=self.root)
+                messagebox.showerror("Error", "Name and Type are required", parent=self.root)
                 return
             if retail_price <= 0:
                 messagebox.showerror("Error", "Retail Price must be greater than zero", parent=self.root)
@@ -1437,11 +1437,11 @@ class PharmacyPOS:
                 tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
                          bg="#ffffff", fg="#1a1a1a").grid(row=0, column=0, columnspan=4, pady=15)
 
-                fields = ["Item ID (Barcode)", "Product Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
+                fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
                 field_indices = {
                     "Item ID (Barcode)": 0,
-                    "Product Name": 1,
+                    "Name": 1,
                     "Unit Price": 4,
                     "Retail Price": 3,
                     "Quantity": 5,
@@ -1512,7 +1512,7 @@ class PharmacyPOS:
                 tk.Button(button_frame, text="Update Item",
                           command=lambda: self.update_item(
                               entries["Item ID (Barcode)"].get(),
-                              entries["Product Name"].get(),
+                              entries["Name"].get(),
                               type_var.get(),
                               entries["Retail Price"].get(),
                               entries["Unit Price"].get(),
@@ -1545,7 +1545,7 @@ class PharmacyPOS:
                 messagebox.showerror("Error", "Quantity cannot be negative", parent=self.root)
                 return
             if not all([name, item_type]):
-                messagebox.showerror("Error", "Product Name and Type are required", parent=self.root)
+                messagebox.showerror("Error", "Name and Type are required", parent=self.root)
                 return
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
@@ -1690,8 +1690,12 @@ class PharmacyPOS:
         canvas = tk.Canvas(transactions_frame, bg="#ffffff")
         canvas.grid(row=1, column=0, sticky="nsew")
 
+        v_scrollbar = ttk.Scrollbar(transactions_frame, orient="vertical", command=canvas.yview)
+        v_scrollbar.grid(row=1, column=1, sticky="ns")
         h_scrollbar = ttk.Scrollbar(transactions_frame, orient="horizontal", command=canvas.xview)
         h_scrollbar.grid(row=2, column=0, sticky="ew")
+
+        canvas.configure(xscrollcommand=h_scrollbar.set, yscrollcommand=v_scrollbar.set)
 
         tree_frame = tk.Frame(canvas, bg="#ffffff")
         canvas_window = canvas.create_window((0, 0), window=tree_frame, anchor="nw")
@@ -1705,6 +1709,13 @@ class PharmacyPOS:
             self.transactions_table.column(col, width=width, anchor="center" if col != "ItemsList" else "w")
         self.transactions_table.pack(fill="both", expand=True)
 
+        # Update canvas scroll region when tree_frame size changes
+        def configure_canvas(event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        tree_frame.bind("<Configure>", configure_canvas)
+
+        self.update_transactions_table()
+        
         def update_scroll_region(event=None):
             total_width = sum(self.transactions_table.column(col, "width") for col in columns)
             total_height = self.transactions_table.winfo_reqheight()
@@ -2110,9 +2121,14 @@ class PharmacyPOS:
 
         # Create canvas for scrollable content
         canvas = tk.Canvas(main_frame, bg="#ffffff", highlightthickness=0)
-        canvas.pack(side="top", fill="both", expand=True)
+        canvas.pack(side="left", fill="both", expand=True)
 
-        # Add horizontal scrollbar
+        # Add vertical scrollbar for canvas
+        v_scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        v_scrollbar.pack(side="right", fill="y")
+        canvas.configure(yscrollcommand=v_scrollbar.set)
+
+        # Add horizontal scrollbar for canvas
         h_scrollbar = ttk.Scrollbar(main_frame, orient="horizontal", command=canvas.xview)
         h_scrollbar.pack(side="bottom", fill="x")
         canvas.configure(xscrollcommand=h_scrollbar.set)
@@ -2130,24 +2146,26 @@ class PharmacyPOS:
         # Add padding to content_frame
         content_frame.configure(padx=self.scale_size(20), pady=self.scale_size(20))
 
+        # Filter frame for month and year selection
         filter_frame = tk.Frame(content_frame, bg="#ffffff")
         filter_frame.pack(fill="x", pady=self.scale_size(10))
         tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(14)),
-                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
+                 bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
-                                    font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
+                                      font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
         month_combobox.pack(side="left", padx=self.scale_size(5))
         tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(14)),
-                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
+                 bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
-                                    values=[str(i) for i in range(2020, datetime.now().year + 1)],
-                                    font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
+                                     values=[str(i) for i in range(2020, datetime.now().year + 1)],
+                                     font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
         year_combobox.pack(side="left", padx=self.scale_size(5))
 
+        # Monthly sales summary
         tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
+                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
         monthly_frame = tk.Frame(content_frame, bg="#ffffff")
         monthly_frame.pack(fill="x", pady=self.scale_size(5))
         monthly_frame.grid_rowconfigure(0, weight=1)
@@ -2155,7 +2173,7 @@ class PharmacyPOS:
 
         columns = ("Month", "UnitSales", "GrandSales", "NetProfit")
         headers = ("MONTH", "TOTAL UNIT SALES", "TOTAL GRAND SALES", "NET PROFIT")
-        monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=5, style="Treeview")
+        monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=10, style="Treeview")
         for col, head in zip(columns, headers):
             monthly_table.heading(col, text=head)
             monthly_table.column(col, width=self.scale_size(200), anchor="center" if col != "Month" else "w", stretch=True)
@@ -2165,8 +2183,9 @@ class PharmacyPOS:
         monthly_v_scrollbar.grid(row=0, column=1, sticky="ns")
         monthly_table.configure(yscrollcommand=monthly_v_scrollbar.set)
 
+        # Daily sales summary
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
+                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
         daily_frame = tk.Frame(content_frame, bg="#ffffff")
         daily_frame.pack(fill="x", pady=self.scale_size(5))
         daily_frame.grid_rowconfigure(0, weight=1)
@@ -2174,7 +2193,7 @@ class PharmacyPOS:
 
         daily_columns = ("Date", "UnitSales", "GrandSales", "NetProfit")
         daily_headers = ("DATE", "TOTAL UNIT SALES", "TOTAL GRAND SALES", "NET PROFIT")
-        daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=5, style="Treeview")
+        daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=10, style="Treeview")
         for col, head in zip(daily_columns, daily_headers):
             daily_table.heading(col, text=head)
             daily_table.column(col, width=self.scale_size(200), anchor="center" if col != "Date" else "w", stretch=True)
@@ -2184,11 +2203,12 @@ class PharmacyPOS:
         daily_v_scrollbar.grid(row=0, column=1, sticky="ns")
         daily_table.configure(yscrollcommand=daily_v_scrollbar.set)
 
+        # Apply filter button
         tk.Button(filter_frame, text="Apply Filter",
-                command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
-                activebackground="#27ae60", activeforeground="#ffffff",
-                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
+                  command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
+                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
+                  activebackground="#27ae60", activeforeground="#ffffff",
+                  padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
 
         # Debug: Print applied style and scaling factor
         style = ttk.Style()
@@ -2201,6 +2221,7 @@ class PharmacyPOS:
         # Ensure canvas scrolls to the top-left initially
         canvas.update_idletasks()
         canvas.xview_moveto(0)
+        
     def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
         for item in monthly_table.get_children():
             monthly_table.delete(item)
@@ -2895,61 +2916,43 @@ class PharmacyPOS:
         if not self.cart or self.selected_item_index is None:
             messagebox.showerror("Error", "No item selected or cart is empty", parent=self.root)
             return
-        self.create_password_auth_window(
-            "Authenticate Void", "Enter admin password to void selected item",
-            self.validate_void_selected_auth)
-
-
-
-    def validate_void_selected_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
-                if self.selected_item_index is not None:
-                    item = self.cart.pop(self.selected_item_index)
-                    cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                  (str(uuid.uuid4()), "Void Item", f"Voided item {item['name']} from cart",
-                                   datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
-                    self.conn.commit()
-                    self.update_cart_table()
-                    self.selected_item_index = None
-                    self.quantity_entry.config(state="disabled")
-                    window.destroy()
-                    messagebox.showinfo("Success", "Item voided successfully", parent=self.root)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        item = self.cart[self.selected_item_index]
+        if messagebox.askyesno("Confirm Void",
+                            f"Are you sure you want to void {item['name']} from the cart?",
+                            parent=self.root):
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
+                            (str(uuid.uuid4()), "Void Item", f"Voided item {item['name']} from cart",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                self.conn.commit()
+            self.cart.pop(self.selected_item_index)
+            self.update_cart_table()
+            self.selected_item_index = None
+            if hasattr(self, 'quantity_entry'):
+                self.quantity_entry.config(state="disabled")
+            messagebox.showinfo("Success", "Item voided successfully", parent=self.root)
 
     def void_order(self, event: Optional[tk.Event] = None) -> None:
         if not self.cart:
             messagebox.showerror("Error", "Cart is empty", parent=self.root)
             return
-        self.create_password_auth_window(
-            "Authenticate Void Order", "Enter admin password to void entire order",
-            self.validate_void_order_auth)
-
-    def validate_void_order_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
-                self.cart.clear()
-                self.selected_item_index = None
-                self.discount_var.set(False)
-                self.discount_authenticated = False
+        if messagebox.askyesno("Confirm Void Order",
+                            "Are you sure you want to void the entire order?",
+                            parent=self.root):
+            with self.conn:
+                cursor = self.conn.cursor()
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Void Order", "Voided entire order",
-                               datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                            (str(uuid.uuid4()), "Void Order", "Voided entire order",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
-                self.update_cart_table()
-                window.destroy()
-                messagebox.showinfo("Success", "Order voided successfully", parent=self.root)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+            self.cart.clear()
+            self.selected_item_index = None
+            self.discount_var.set(False)
+            self.discount_authenticated = False
+            self.update_cart_table()
+            messagebox.showinfo("Success", "Order voided successfully", parent=self.root)
+    
 
     def hold_transaction(self, event: Optional[tk.Event] = None) -> None:
         if not self.cart:
