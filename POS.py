@@ -1005,6 +1005,16 @@ class PharmacyPOS:
                 self.current_payment_method = None
                 self.current_customer_id = None
                 
+                # Clear Cash Paid and Change fields
+                if "Cash Paid " in self.summary_entries and self.summary_entries["Cash Paid "].winfo_exists():
+                    self.summary_entries["Cash Paid "].delete(0, tk.END)
+                    self.summary_entries["Cash Paid "].insert(0, "0.00")
+                if "Change " in self.summary_entries and self.summary_entries["Change "].winfo_exists():
+                    self.summary_entries["Change "].config(state="normal")
+                    self.summary_entries["Change "].delete(0, tk.END)
+                    self.summary_entries["Change "].insert(0, "0.00")
+                    self.summary_entries["Change "].config(state="readonly")
+                
                 if hasattr(self, 'customer_label') and self.customer_label.winfo_exists():
                     self.customer_label.config(text="No Customer Selected")
                     
@@ -2090,9 +2100,50 @@ class PharmacyPOS:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to print receipt: {e}", parent=self.root)
 
+    def print_sales_report(self, month, year, total_unit_sales, daily_sales):
+                try:
+                    month = int(month)
+                    year = int(year)
+                except ValueError:
+                    messagebox.showerror("Error", "Invalid month or year for report.", parent=self.root)
+                    return
+
+                # Generate report filename
+                filename = f"sales_report_{year}-{month:02d}.txt"
+                month_name = datetime.strptime(str(month), "%m").strftime("%B")
+
+                # Create report content
+                report = f"Sales Report for {month_name} {year}\n"
+                report += "=" * 50 + "\n\n"
+                report += f"Unit Cost for the Month: ${total_unit_sales:.2f}\n\n"
+                report += "Daily Sales Summary:\n"
+                report += f"{'Date':<12} {'Total Sales':>12} {'Unit Cost':>15} {'Net Profit':>12}\n"
+                report += "-" * 50 + "\n"
+
+                if daily_sales:
+                    total_grand_sales = sum(data["grand_sales"] for data in daily_sales.values())
+                    total_net_profit = total_grand_sales - total_unit_sales
+                    for date in sorted(daily_sales.keys()):
+                        grand_sales = daily_sales[date]["grand_sales"]
+                        unit_sales = daily_sales[date]["unit_sales"]
+                        net_profit = grand_sales - unit_sales
+                        report += f"{date:<12} {grand_sales:>12.2f} {unit_sales:>15.2f} {net_profit:>12.2f}\n"
+                    report += "-" * 50 + "\n"
+                    report += f"{'Total':<12} {total_grand_sales:>12.2f} {total_unit_sales:>15.2f} {total_net_profit:>12.2f}\n"
+                else:
+                    report += "No transactions found for the selected period.\n"
+
+                # Save report to file
+                try:
+                    with open(filename, "w") as f:
+                        f.write(report)
+                    messagebox.showinfo("Success", f"Sales report saved to {filename}", parent=self.root)
+                except IOError as e:
+                    messagebox.showerror("Error", f"Failed to save report: {e}", parent=self.root)
+
     def show_sales_summary(self) -> None:
         if not hasattr(self, 'root') or self.root is None:
-            print("Error: self.root is not defined")
+            messagebox.showerror("Error", "Application root is not defined", parent=self.root)
             return
         try:
             if self.get_user_role() == "Drug Lord":
@@ -2150,28 +2201,42 @@ class PharmacyPOS:
         filter_frame = tk.Frame(content_frame, bg="#ffffff")
         filter_frame.pack(fill="x", pady=self.scale_size(10))
         tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(14)),
-                 bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
-                                      font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
+                                    font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
         month_combobox.pack(side="left", padx=self.scale_size(5))
         tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(14)),
-                 bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=self.scale_size(5))
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
-                                     values=[str(i) for i in range(2020, datetime.now().year + 1)],
-                                     font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
+                                    values=[str(i) for i in range(2020, datetime.now().year + 1)],
+                                    font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
         year_combobox.pack(side="left", padx=self.scale_size(5))
+
+        # Apply filter button
+        tk.Button(filter_frame, text="Apply Filter",
+                command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
+                activebackground="#27ae60", activeforeground="#ffffff",
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
+
+        # Print button
+        tk.Button(filter_frame, text="Print Report",
+                command=lambda: self.print_sales_report(month_var.get(), year_var.get()),
+                bg="#3498db", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
+                activebackground="#2980b9", activeforeground="#ffffff",
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
 
         # Monthly sales summary
         tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
+                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
         monthly_frame = tk.Frame(content_frame, bg="#ffffff")
         monthly_frame.pack(fill="x", pady=self.scale_size(5))
         monthly_frame.grid_rowconfigure(0, weight=1)
         monthly_frame.grid_columnconfigure(0, weight=1)
 
-        columns = ("Month", "GrandSales", "UnitSales",  "NetProfit")
+        columns = ("Month", "GrandSales", "UnitSales", "NetProfit")
         headers = ("MONTH", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=10, style="Treeview")
         for col, head in zip(columns, headers):
@@ -2185,14 +2250,14 @@ class PharmacyPOS:
 
         # Daily sales summary
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
+                bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
         daily_frame = tk.Frame(content_frame, bg="#ffffff")
         daily_frame.pack(fill="x", pady=self.scale_size(5))
         daily_frame.grid_rowconfigure(0, weight=1)
         daily_frame.grid_columnconfigure(0, weight=1)
 
         daily_columns = ("Date", "GrandSales", "UnitSales", "NetProfit")
-        daily_headers = ("DATE", "TOTAL UNIT SALES", "UNIT COST", "NET PROFIT")
+        daily_headers = ("DATE", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=10, style="Treeview")
         for col, head in zip(daily_columns, daily_headers):
             daily_table.heading(col, text=head)
@@ -2203,25 +2268,13 @@ class PharmacyPOS:
         daily_v_scrollbar.grid(row=0, column=1, sticky="ns")
         daily_table.configure(yscrollcommand=daily_v_scrollbar.set)
 
-        # Apply filter button
-        tk.Button(filter_frame, text="Apply Filter",
-                  command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                  bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
-                  activebackground="#27ae60", activeforeground="#ffffff",
-                  padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
-
-        # Debug: Print applied style and scaling factor
-        style = ttk.Style()
-        print(f"Monthly Table Font: {style.lookup('Treeview', 'font')}")
-        print(f"Daily Table Font: {style.lookup('Treeview', 'font')}")
-        print(f"Scaling Factor: {self.scaling_factor}")
-
+        # Populate tables
         self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
 
         # Ensure canvas scrolls to the top-left initially
         canvas.update_idletasks()
         canvas.xview_moveto(0)
-        
+
     def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
         for item in monthly_table.get_children():
             monthly_table.delete(item)
@@ -2283,7 +2336,7 @@ class PharmacyPOS:
                     unit_sales = monthly_sales[month_str]["unit_sales"]
                     net_profit = grand_sales - unit_sales
                     monthly_table.insert("", "end", values=(
-                        month_str, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}"
+                        month_str, f"{grand_sales:.2f}", f"{unit_sales:.2f}", f"{net_profit:.2f}"
                     ))
 
                 # Daily calculations
@@ -2311,24 +2364,23 @@ class PharmacyPOS:
                                     unit_sales += item[0] * qty
                             except (ValueError, IndexError):
                                 continue
-                   
                     daily_sales[date]["grand_sales"] += total_amount
                     daily_sales[date]["unit_sales"] += unit_sales
                     total_unit_sales += unit_sales
                     total_grand_sales += total_amount
 
                 for date in sorted(daily_sales.keys()):
-                    unit_sales = daily_sales[date]["unit_sales"]
                     grand_sales = daily_sales[date]["grand_sales"]
+                    unit_sales = daily_sales[date]["unit_sales"]
                     net_profit = grand_sales - unit_sales
                     daily_table.insert("", "end", values=(
-                        date, f"{unit_sales:.2f}", f"{grand_sales:.2f}", f"{net_profit:.2f}"
+                        date, f"{grand_sales:.2f}", f"{unit_sales:.2f}", f"{net_profit:.2f}"
                     ))
 
                 if daily_sales:
                     total_net_profit = total_grand_sales - total_unit_sales
                     daily_table.insert("", "end", values=(
-                        "Total", f"{total_unit_sales:.2f}", f"{total_grand_sales:.2f}", f"{total_net_profit:.2f}"
+                        "Total", f"{total_grand_sales:.2f}", f"{total_unit_sales:.2f}", f"{total_net_profit:.2f}"
                     ))
                 else:
                     tk.Label(daily_frame, text="No transactions found for the selected period.",
@@ -2342,6 +2394,146 @@ class PharmacyPOS:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
+
+    def print_sales_report(self, month: str, year: str) -> None:
+        try:
+            month = int(month)
+            year = int(year)
+        except ValueError:
+            messagebox.showerror("Error", "Invalid month or year selected.", parent=self.root)
+            return
+
+        start_date = f"{year}-{month:02d}-01"
+        next_month = month + 1 if month < 12 else 1
+        next_year = year if month < 12 else year + 1
+        end_date = f"{next_year}-{next_month:02d}-01"
+
+        try:
+            # Prepare data for the report
+            monthly_sales = {}
+            daily_sales = {}
+            with self.conn:
+                cursor = self.conn.cursor()
+                # Monthly calculations
+                cursor.execute("""
+                    SELECT strftime('%Y-%m', timestamp) AS month, items, total_amount
+                    FROM transactions
+                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
+                """, (start_date, end_date))
+                for month_str, items, total_amount in cursor.fetchall():
+                    if month_str not in monthly_sales:
+                        monthly_sales[month_str] = {"unit_sales": 0.0, "grand_sales": 0.0}
+                    unit_sales = 0.0
+                    for item_data in items.split(";"):
+                        if item_data:
+                            try:
+                                item_id, qty = item_data.split(":")
+                                qty = int(qty)
+                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
+                                            (item_id,))
+                                item = cursor.fetchone()
+                                if item:
+                                    unit_sales += item[0] * qty
+                            except (ValueError, IndexError):
+                                continue
+                    monthly_sales[month_str]["unit_sales"] += unit_sales
+                    monthly_sales[month_str]["grand_sales"] += total_amount
+
+                # Daily calculations
+                cursor.execute("""
+                    SELECT strftime('%Y-%m-%d', timestamp) AS date, items, total_amount
+                    FROM transactions
+                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
+                """, (start_date, end_date))
+                total_unit_sales = 0.0
+                total_grand_sales = 0.0
+                for date, items, total_amount in cursor.fetchall():
+                    if date not in daily_sales:
+                        daily_sales[date] = {"unit_sales": 0.0, "grand_sales": 0.0}
+                    unit_sales = 0.0
+                    for item_data in items.split(";"):
+                        if item_data:
+                            try:
+                                item_id, qty = item_data.split(":")
+                                qty = int(qty)
+                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
+                                            (item_id,))
+                                item = cursor.fetchone()
+                                if item:
+                                    unit_sales += item[0] * qty
+                            except (ValueError, IndexError):
+                                continue
+                    daily_sales[date]["grand_sales"] += total_amount
+                    daily_sales[date]["unit_sales"] += unit_sales
+                    total_unit_sales += unit_sales
+                    total_grand_sales += total_amount
+
+            # Generate PDF report
+            receipt_dir = os.path.join(os.path.dirname(self.db_path), "reports")
+            os.makedirs(receipt_dir, exist_ok=True)
+            report_path = os.path.join(receipt_dir, f"sales_report_{year}_{month:02d}.pdf")
+            c = canvas.Canvas(report_path, pagesize=letter)
+            c.setFont("Helvetica", 12)
+
+            # Header
+            c.drawString(100, 750, "Shinano Pharmacy Sales Report")
+            c.drawString(100, 730, f"Period: {year}-{month:02d}")
+            c.drawString(100, 710, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            c.drawString(100, 690, "-" * 60)
+
+            # Monthly Sales
+            y = 670
+            c.drawString(100, y, "Monthly Sales Summary")
+            y -= 20
+            c.drawString(100, y, "Month | Total Sales | Unit Cost | Net Profit")
+            y -= 20
+            if monthly_sales:
+                for month_str in sorted(monthly_sales.keys()):
+                    grand_sales = monthly_sales[month_str]["grand_sales"]
+                    unit_sales = monthly_sales[month_str]["unit_sales"]
+                    net_profit = grand_sales - unit_sales
+                    c.drawString(100, y, f"{month_str} | ₱{grand_sales:.2f} | ₱{unit_sales:.2f} | ₱{net_profit:.2f}")
+                    y -= 20
+            else:
+                c.drawString(100, y, "No monthly sales data available")
+                y -= 20
+
+            y -= 20
+            c.drawString(100, y, "-" * 60)
+            y -= 20
+
+            # Daily Sales
+            c.drawString(100, y, "Daily Sales Summary")
+            y -= 20
+            c.drawString(100, y, "Date | Total Sales | Unit Cost | Net Profit")
+            y -= 20
+            if daily_sales:
+                for date in sorted(daily_sales.keys()):
+                    grand_sales = daily_sales[date]["grand_sales"]
+                    unit_sales = daily_sales[date]["unit_sales"]
+                    net_profit = grand_sales - unit_sales
+                    c.drawString(100, y, f"{date} | ₱{grand_sales:.2f} | ₱{unit_sales:.2f} | ₱{net_profit:.2f}")
+                    y -= 20
+                y -= 20
+                total_net_profit = total_grand_sales - total_unit_sales
+                c.drawString(100, y, f"Total | ₱{total_grand_sales:.2f} | ₱{total_unit_sales:.2f} | ₱{total_net_profit:.2f}")
+            else:
+                c.drawString(100, y, "No daily sales data available")
+
+            c.showPage()
+            c.save()
+
+            # Open the report
+            try:
+                webbrowser.open(f"file://{os.path.abspath(report_path)}")
+                messagebox.showinfo("Success", f"Sales report generated at {report_path}", parent=self.root)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to open report: {e}", parent=self.root)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate report: {e}", parent=self.root)
 
 
     
