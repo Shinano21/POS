@@ -265,6 +265,16 @@ class PharmacyPOS:
         self.show_login()
         self.root.bind("<Shift-Return>", self.handle_shift_enter_key)
         self.root.bind("<Shift_R>", self.focus_cash_paid)
+        # Maximize window on startup (cross-platform)
+        try:
+            self.root.state('zoomed')  # Maximize window (Windows, Linux, macOS)
+        except tk.TclError as e:
+            print(f"Error maximizing window: {e}")
+            self.root.attributes('-fullscreen', False)  # Fallback to non-fullscreen
+        # Ensure sidebar is visible initially
+        self.sidebar_visible = True
+        # Force layout update
+        self.root.update_idletasks()
 
     def focus_cash_paid(self, event: Optional[tk.Event] = None) -> None:
    
@@ -295,11 +305,30 @@ class PharmacyPOS:
             self.sidebar.pack_forget()
             self.hamburger_btn.config(text="☰")
             self.sidebar_visible = False
+            # Expand content frame to fill available space
+            self.main_frame.pack_configure(fill="both", expand=True)
         else:
             self.sidebar.pack(side="left", fill="y", before=self.header)
             self.hamburger_btn.config(text="✕")
             self.sidebar_visible = True
-
+            # Ensure main frame still fills the window
+            self.main_frame.pack_configure(fill="both", expand=True)
+        
+        # Force layout update to prevent glitches
+        self.root.update_idletasks()
+        
+        # Restore maximized state if applicable
+        try:
+            if self.root.wm_state() == 'zoomed' or self.root.attributes('-fullscreen'):
+                self.root.state('zoomed')  # Ensure maximized state
+            else:
+                self.root.state('normal')  # Restore normal state if not maximized
+        except tk.TclError as e:
+            print(f"Error restoring window state: {e}")
+        
+        # Log for debugging
+        print(f"Sidebar toggled: {'Hidden' if not self.sidebar_visible else 'Shown'}, Window state: {self.root.wm_state()}")
+        
     def setup_navigation(self, parent: tk.Frame) -> None:
         self.sidebar = tk.Frame(parent, bg="#1a1a1a", width=200)
         self.sidebar.pack(side="left", fill="y")
@@ -1143,36 +1172,43 @@ class PharmacyPOS:
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=self.scale_size(20), pady=self.scale_size(20))
+        content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
+        content_frame.grid_rowconfigure(1, weight=1)  # Table frame expands
+        content_frame.grid_rowconfigure(2, weight=0)  # Button frame stays fixed
+        content_frame.grid_columnconfigure(0, weight=1)
 
+        # Search container
         search_frame = tk.Frame(content_frame, bg="#ffffff")
-        search_frame.pack(fill="x", pady=10)
+        search_frame.grid(row=0, column=0, sticky="ew", pady=self.scale_size(10))
 
-        tk.Label(search_frame, text="Search:", font=("Helvetica", 14),
+        tk.Label(search_frame, text="Search:", font=("Helvetica", self.scale_size(14)),
                 bg="#ffffff", fg="#1a1a1a").pack(side="left")
-        self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", 14), bg="#f5f6f5")
-        self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=5)
+        self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(14)), bg="#f5f6f5")
+        self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
         self.inventory_search_entry.bind("<KeyRelease>", self.update_inventory_table)
 
-        tk.Label(search_frame, text="Filter:", font=("Helvetica", 14),
-                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=(6, 5))
+        tk.Label(search_frame, text="Filter:", font=("Helvetica", self.scale_size(14)),
+                bg="#ffffff", fg="#1a1a1a").pack(side="left", padx=(self.scale_size(6), self.scale_size(5)))
         self.type_filter_var = tk.StringVar()
         self.type_filter_combobox = ttk.Combobox(search_frame, textvariable=self.type_filter_var,
                                                 values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                                                state="readonly", font=("Helvetica", 14))
-        self.type_filter_combobox.pack(side="left", padx=5)
+                                                state="readonly", font=("Helvetica", self.scale_size(14)))
+        self.type_filter_combobox.pack(side="left", padx=self.scale_size(5))
         self.type_filter_combobox.set("All")
         self.type_filter_combobox.bind("<<ComboboxSelected>>", self.update_inventory_table)
 
         tk.Button(search_frame, text="Add Item",
                 command=self.show_add_item,
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
                 activebackground="#27ae60", activeforeground="#ffffff",
-                padx=12, pady=8, bd=0).pack(side="right", padx=5)
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
+        # Inventory table frame
         inventory_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
-        inventory_frame.pack(fill="both", expand=True, pady=10)
+        inventory_frame.grid(row=1, column=0, sticky="nsew", pady=self.scale_size(10))
+        inventory_frame.grid_rowconfigure(0, weight=1)
+        inventory_frame.grid_columnconfigure(0, weight=1)
 
         columns = ("Name", "Type", "RetailPrice", "Quantity", "Supplier")
         headers = ("NAME", "TYPE", "RETAIL PRICE", "QUANTITY", "SUPPLIER")
@@ -1180,41 +1216,51 @@ class PharmacyPOS:
         for col, head in zip(columns, headers):
             self.inventory_table.heading(col, text=head)
             if col == "Name":
-                width = self.scale_size(200)  # Custom width for Name
+                width = self.scale_size(200)
             elif col == "Type":
-                width = self.scale_size(200)  # Custom width for Type
+                width = self.scale_size(200)
             elif col == "RetailPrice":
-                width = self.scale_size(150)  # Custom width for Retail Price
+                width = self.scale_size(150)
             elif col == "Quantity":
-                width = self.scale_size(120)  # Custom width for Quantity
+                width = self.scale_size(120)
             else:  # Supplier
-                width = self.scale_size(200)  # Custom width for Supplier
+                width = self.scale_size(200)
             self.inventory_table.column(col, 
                                     width=width,
                                     anchor="center" if col != "Name" else "w",
                                     stretch=True)
-        self.inventory_table.grid(row=1, column=0, columnspan=3, sticky="nsew")
-        self.update_inventory_table()
-        self.inventory_table.bind("<Double-1>", self.on_inventory_table_click)
-        inventory_frame.grid_rowconfigure(1, weight=1)
-        inventory_frame.grid_columnconfigure(0, weight=1)
+        self.inventory_table.grid(row=0, column=0, sticky="nsew")
 
+        # Add vertical scrollbar
+        scrollbar = ttk.Scrollbar(inventory_frame, orient="vertical", command=self.inventory_table.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.inventory_table.configure(yscrollcommand=scrollbar.set)
+
+        # Button frame for Update and Delete buttons
         button_frame = tk.Frame(content_frame, bg="#ffffff")
-        button_frame.pack(fill="x", pady=10)
+        button_frame.grid(row=2, column=0, sticky="ew", pady=self.scale_size(10))
+
         self.update_item_btn = tk.Button(button_frame, text="Update Item",
                                         command=self.show_update_item_from_selection,
-                                        bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
+                                        bg="#3498db", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
                                         activebackground="#2980b9", activeforeground="#ffffff",
-                                        padx=12, pady=8, bd=0, state="disabled")
-        self.update_item_btn.pack(side="left", padx=5)
+                                        padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.update_item_btn.grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
+
         self.delete_item_btn = tk.Button(button_frame, text="Delete Item",
                                         command=self.confirm_delete_item,
-                                        bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
+                                        bg="#e74c3c", fg="#ffffff", font=("Helvetica", self.scale_size(14)),
                                         activebackground="#c0392b", activeforeground="#ffffff",
-                                        padx=12, pady=8, bd=0, state="disabled")
-        self.delete_item_btn.pack(side="left", padx=5)
+                                        padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.delete_item_btn.grid(row=0, column=1, padx=self.scale_size(5), sticky="w")
 
+        # Bind right-click for update and double-click for delete
+        self.inventory_table.bind("<Button-3>", self.on_inventory_right_click)
+        self.inventory_table.bind("<Double-1>", lambda e: self.confirm_delete_item())
         self.inventory_table.bind("<<TreeviewSelect>>", self.on_inventory_select)
+
+        self.update_inventory_table()
+        self.root.update_idletasks()
 
     def confirm_delete_item(self) -> None:
         selected_item = self.inventory_table.selection()
@@ -1410,17 +1456,13 @@ class PharmacyPOS:
             messagebox.showerror("Error", "Item ID already exists", parent=self.root)
 
 
-    def on_inventory_table_click(self, event: tk.Event) -> None:
-        selected_item = self.inventory_table.selection()
-        if not selected_item:
-            return
-        item_name = self.inventory_table.item(selected_item)["values"][0]
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT * FROM inventory WHERE name = ?", (item_name,))
-            item = cursor.fetchone()
-            if item:
-                self.show_update_item(item)
+    def on_inventory_right_click(self, event: tk.Event) -> None:
+        # Check if exactly one item is selected
+        selected = self.inventory_table.selection()
+        if len(selected) == 1:
+            self.show_update_item_from_selection()
+        else:
+            messagebox.showinfo("Selection Error", "Please select exactly one item to update.", parent=self.root)
 
     def show_update_item_from_selection(self) -> None:
         selected_item = self.inventory_table.selection()
