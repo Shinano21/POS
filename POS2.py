@@ -345,7 +345,7 @@ class PharmacyPOS:
                                       padx=8, pady=4, bd=0)
         self.hamburger_btn.pack(side="left", padx=5)
 
-        tk.Label(self.header, text=" WELCOME!", font=("Helvetica", 18, "bold"),
+        tk.Label(self.header, text="St. Rafael Pharmacy", font=("Helvetica", 18, "bold"),
                  bg="#F5F5DC", fg="#2C1B18").pack(side="left", padx=12)
         tk.Label(self.header, text=datetime.now().strftime("%B %d, %Y %I:%M %p PST"),
                  font=("Helvetica", 12), bg="#F5F5DC", fg="#3C2F2F").pack(side="left", padx=12)
@@ -2219,12 +2219,11 @@ class PharmacyPOS:
         except AttributeError as e:
             messagebox.showerror("Error", f"Unable to clear frame: {e}", parent=self.root)
             return
-        try:
-            main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")
-            main_frame.pack(fill="both", expand=True)
-        except AttributeError as e:
-            messagebox.showerror("Error", f"Main frame setup failed: {e}", parent=self.root)
-            return
+
+        # Main frame with pack layout for responsiveness
+        main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")
+        main_frame.pack(fill="both", expand=True)
+
         try:
             self.setup_navigation(main_frame)
         except AttributeError as e:
@@ -2234,98 +2233,205 @@ class PharmacyPOS:
         canvas = tk.Canvas(main_frame, bg="#FFF8E7", highlightthickness=0)
         canvas.pack(side="left", fill="both", expand=True)
 
-        # Add vertical scrollbar for canvas
+        # Add vertical and horizontal scrollbars
         v_scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
         v_scrollbar.pack(side="right", fill="y")
-        canvas.configure(yscrollcommand=v_scrollbar.set)
+        h_scrollbar = ttk.Scrollbar(main_frame, orient="horizontal", command=canvas.xview)
+        h_scrollbar.pack(side="bottom", fill="x")
+        canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
 
         # Create scrollable frame inside canvas
         content_frame = tk.Frame(canvas, bg="#FFF8E7")
         content_frame_id = canvas.create_window((0, 0), window=content_frame, anchor="nw")
 
-        # Update scroll region when content_frame size changes
+        # Mouse wheel scrolling handlers
+        import sys
+        def on_canvas_mouse_wheel(event):
+            if v_scrollbar.winfo_ismapped():
+                if event.num == 4 or event.delta > 0:
+                    canvas.yview_scroll(-1, "units")
+                elif event.num == 5 or event.delta < 0:
+                    canvas.yview_scroll(1, "units")
+            return "break"
+
+        def on_canvas_shift_mouse_wheel(event):
+            if h_scrollbar.winfo_ismapped():
+                if event.num == 4 or event.delta > 0:
+                    canvas.xview_scroll(-1, "units")
+                elif event.num == 5 or event.delta < 0:
+                    canvas.xview_scroll(1, "units")
+            return "break"
+
+        def on_table_mouse_wheel(table, v_scrollbar, h_scrollbar):
+            def handler(event):
+                if v_scrollbar.winfo_ismapped():
+                    if event.num == 4 or event.delta > 0:
+                        table.yview_scroll(-1, "units")
+                    elif event.num == 5 or event.delta < 0:
+                        table.yview_scroll(1, "units")
+                return "break"
+            return handler
+
+        def on_table_shift_mouse_wheel(table, h_scrollbar):
+            def handler(event):
+                if h_scrollbar.winfo_ismapped():
+                    if event.num == 4 or event.delta > 0:
+                        table.xview_scroll(-1, "units")
+                    elif event.num == 5 or event.delta < 0:
+                        table.xview_scroll(1, "units")
+                return "break"
+            return handler
+
+        # Function to bind canvas scrolling
+        def bind_canvas_scrolling():
+            canvas.bind("<Button-1>", lambda e: canvas.focus_set())
+            if sys.platform == "win32":
+                canvas.bind("<MouseWheel>", on_canvas_mouse_wheel)
+                canvas.bind("<Shift-MouseWheel>", on_canvas_shift_mouse_wheel)
+            else:
+                canvas.bind("<Button-4>", on_canvas_mouse_wheel)
+                canvas.bind("<Button-5>", on_canvas_mouse_wheel)
+                canvas.bind("<Shift-Button-4>", on_canvas_shift_mouse_wheel)
+                canvas.bind("<Shift-Button-5>", on_canvas_shift_mouse_wheel)
+
+        # Function to bind table scrolling
+        def bind_table_scrolling(table, v_scrollbar, h_scrollbar):
+            table.bind("<Button-1>", lambda e: table.focus_set())
+            if sys.platform == "win32":
+                table.bind("<MouseWheel>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
+                table.bind("<Shift-MouseWheel>", on_table_shift_mouse_wheel(table, h_scrollbar))
+            else:
+                table.bind("<Button-4>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
+                table.bind("<Button-5>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
+                table.bind("<Shift-Button-4>", on_table_shift_mouse_wheel(table, h_scrollbar))
+                table.bind("<Shift-Button-5>", on_table_shift_mouse_wheel(table, h_scrollbar))
+
+        # Update scroll region and handle resizing
         def update_scroll_region(event=None):
             canvas.configure(scrollregion=canvas.bbox("all"))
+            window_width = self.root.winfo_width()
+            base_column_width = max(self.scale_size(100), window_width // 6)
+            for col in columns:
+                monthly_table.column(col, width=base_column_width if col != "Month" else int(base_column_width * 1.5), stretch=True)
+            for col in daily_columns:
+                daily_table.column(col, width=base_column_width if col != "Date" else int(base_column_width * 1.5), stretch=True)
+            month_combobox.configure(width=max(5, window_width // 100))
+            year_combobox.configure(width=max(7, window_width // 80))
+            apply_filter_btn.configure(padx=self.scale_size(12), pady=self.scale_size(8))
+            print_report_btn.configure(padx=self.scale_size(12), pady=self.scale_size(8))
 
         content_frame.bind("<Configure>", update_scroll_region)
+        self.root.bind("<Configure>", update_scroll_region)
 
-        # Add padding to content_frame
+        # Configure content_frame grid for responsiveness
         content_frame.configure(padx=self.scale_size(20), pady=self.scale_size(20))
+        content_frame.grid_rowconfigure(0, weight=0)
+        content_frame.grid_rowconfigure(1, weight=0)
+        content_frame.grid_rowconfigure(2, weight=1)
+        content_frame.grid_rowconfigure(3, weight=0)
+        content_frame.grid_rowconfigure(4, weight=1)
+        content_frame.grid_columnconfigure(0, weight=1)
 
-        # Filter frame for month and year selection
+        # Filter frame with responsive grid layout
         filter_frame = tk.Frame(content_frame, bg="#FFF8E7")
-        filter_frame.pack(fill="x", pady=self.scale_size(10))
+        filter_frame.grid(row=0, column=0, sticky="ew", pady=self.scale_size(10))
+        filter_frame.grid_columnconfigure(1, weight=1)
+        filter_frame.grid_columnconfigure(3, weight=1)
+        filter_frame.grid_columnconfigure(4, weight=0)
+        filter_frame.grid_columnconfigure(5, weight=0)
+
         tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(14)),
-                bg="#FFF8E7", fg="#2C1B18").pack(side="left", padx=self.scale_size(5))
+                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
                                     font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
-        month_combobox.pack(side="left", padx=self.scale_size(5))
+        month_combobox.grid(row=0, column=1, padx=self.scale_size(5), sticky="ew")
+
         tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(14)),
-                bg="#FFF8E7", fg="#2C1B18").pack(side="left", padx=self.scale_size(5))
+                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=2, padx=self.scale_size(5), sticky="w")
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
                                     values=[str(i) for i in range(2020, datetime.now().year + 1)],
                                     font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
-        year_combobox.pack(side="left", padx=self.scale_size(5))
+        year_combobox.grid(row=0, column=3, padx=self.scale_size(5), sticky="ew")
 
-        # Apply filter button
-        tk.Button(filter_frame, text="Apply Filter",
-                command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                activebackground="#8B5A2B", activeforeground="#FFF8E7",
-                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
+        apply_filter_btn = tk.Button(filter_frame, text="Apply Filter",
+                                    command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
+                                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
+                                    activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                                    padx=self.scale_size(12), pady=self.scale_size(8), bd=0)
+        apply_filter_btn.grid(row=0, column=4, padx=self.scale_size(5), sticky="ew")
 
-        # Print button
-        tk.Button(filter_frame, text="Print Report",
-                command=lambda: self.print_sales_report(month_var.get(), year_var.get()),
-                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                activebackground="#8B5A2B", activeforeground="#FFF8E7",
-                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
+        print_report_btn = tk.Button(filter_frame, text="Print Report",
+                                    command=lambda: self.print_sales_report(month_var.get(), year_var.get()),
+                                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
+                                    activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                                    padx=self.scale_size(12), pady=self.scale_size(8), bd=0)
+        print_report_btn.grid(row=0, column=5, padx=self.scale_size(5), sticky="ew")
 
         # Monthly sales summary
         tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#FFF8E7", fg="#2C1B18").pack(pady=self.scale_size(10), anchor="w")
+                bg="#FFF8E7", fg="#2C1B18").grid(row=1, column=0, pady=self.scale_size(10), sticky="w")
         monthly_frame = tk.Frame(content_frame, bg="#FFF8E7")
-        monthly_frame.pack(fill="x", pady=self.scale_size(5))
+        monthly_frame.grid(row=2, column=0, sticky="nsew", pady=self.scale_size(5))
         monthly_frame.grid_rowconfigure(0, weight=1)
         monthly_frame.grid_columnconfigure(0, weight=1)
+        monthly_frame.grid_columnconfigure(1, weight=0)
 
         columns = ("Month", "GrandSales", "UnitSales", "NetProfit")
         headers = ("MONTH", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=10, style="Treeview")
         for col, head in zip(columns, headers):
             monthly_table.heading(col, text=head)
-            monthly_table.column(col, width=self.scale_size(200), anchor="center" if col != "Month" else "w", stretch=True)
+            monthly_table.column(col, width=self.scale_size(150), anchor="center" if col != "Month" else "w", stretch=True)
         monthly_table.grid(row=0, column=0, sticky="nsew")
 
         monthly_v_scrollbar = ttk.Scrollbar(monthly_frame, orient="vertical", command=monthly_table.yview)
         monthly_v_scrollbar.grid(row=0, column=1, sticky="ns")
         monthly_table.configure(yscrollcommand=monthly_v_scrollbar.set)
 
-        # Apply Treeview styling
-        style = ttk.Style()
-        style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7")
+        monthly_h_scrollbar = ttk.Scrollbar(monthly_frame, orient="horizontal", command=monthly_table.xview)
+        monthly_h_scrollbar.grid(row=1, column=0, sticky="ew")
+        monthly_table.configure(xscrollcommand=monthly_h_scrollbar.set)
 
         # Daily sales summary
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#FFF8E7", fg="#2C1B18").pack(pady=self.scale_size(10), anchor="w")
+                bg="#FFF8E7", fg="#2C1B18").grid(row=3, column=0, pady=self.scale_size(10), sticky="w")
         daily_frame = tk.Frame(content_frame, bg="#FFF8E7")
-        daily_frame.pack(fill="x", pady=self.scale_size(5))
+        daily_frame.grid(row=4, column=0, sticky="nsew", pady=self.scale_size(5))
         daily_frame.grid_rowconfigure(0, weight=1)
         daily_frame.grid_columnconfigure(0, weight=1)
+        daily_frame.grid_columnconfigure(1, weight=0)
 
         daily_columns = ("Date", "GrandSales", "UnitSales", "NetProfit")
         daily_headers = ("DATE", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=10, style="Treeview")
         for col, head in zip(daily_columns, daily_headers):
             daily_table.heading(col, text=head)
-            daily_table.column(col, width=self.scale_size(200), anchor="center" if col != "Date" else "w", stretch=True)
+            daily_table.column(col, width=self.scale_size(150), anchor="center" if col != "Date" else "w", stretch=True)
         daily_table.grid(row=0, column=0, sticky="nsew")
 
         daily_v_scrollbar = ttk.Scrollbar(daily_frame, orient="vertical", command=daily_table.yview)
         daily_v_scrollbar.grid(row=0, column=1, sticky="ns")
         daily_table.configure(yscrollcommand=daily_v_scrollbar.set)
+
+        daily_h_scrollbar = ttk.Scrollbar(daily_frame, orient="horizontal", command=daily_table.xview)
+        daily_h_scrollbar.grid(row=1, column=0, sticky="ew")
+        daily_table.configure(xscrollcommand=daily_h_scrollbar.set)
+
+        # Apply Treeview styling
+        style = ttk.Style()
+        style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7",
+                        rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(12)))
+
+        # Bind Enter/Leave events for context-sensitive scrolling
+        monthly_table.bind("<Enter>", lambda e: bind_table_scrolling(monthly_table, monthly_v_scrollbar, monthly_h_scrollbar))
+        monthly_table.bind("<Leave>", lambda e: bind_canvas_scrolling())
+        daily_table.bind("<Enter>", lambda e: bind_table_scrolling(daily_table, daily_v_scrollbar, daily_h_scrollbar))
+        daily_table.bind("<Leave>", lambda e: bind_canvas_scrolling())
+
+        # Initially bind canvas scrolling
+        bind_canvas_scrolling()
 
         # Populate tables
         self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
@@ -2333,7 +2439,8 @@ class PharmacyPOS:
         # Ensure canvas scrolls to the top initially
         canvas.update_idletasks()
         canvas.yview_moveto(0)
-
+        canvas.xview_moveto(0)
+    
     def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
         for item in monthly_table.get_children():
             monthly_table.delete(item)
