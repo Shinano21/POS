@@ -299,6 +299,8 @@ class PharmacyPOS:
         for widget in self.main_frame.winfo_children():
             widget.destroy()
         self.main_frame.pack(fill="both", expand=True)
+        # Hide suggestion window when clearing the frame
+        self.hide_suggestion_window()
 
     def toggle_sidebar(self) -> None:
         if self.sidebar_visible:
@@ -668,8 +670,10 @@ class PharmacyPOS:
                 self.suggestion_listbox.see(index)
 
     def hide_suggestion_window(self) -> None:
-        if self.suggestion_window and self.suggestion_window.winfo_exists():
+        if hasattr(self, 'suggestion_window') and self.suggestion_window and self.suggestion_window.winfo_exists():
             self.suggestion_window.withdraw()
+        if hasattr(self, 'clear_btn') and self.clear_btn.winfo_exists():
+            self.clear_btn.pack_forget()
 
     def move_selection_up(self, event: tk.Event) -> None:
         if self.suggestion_window and self.suggestion_window.winfo_exists():
@@ -2230,11 +2234,20 @@ class PharmacyPOS:
         content_frame = tk.Frame(canvas, bg="#ffffff")
         content_frame_id = canvas.create_window((0, 0), window=content_frame, anchor="nw")
 
-        # Update scroll region when content_frame size changes
-        def update_scroll_region(event=None):
+        # Update scroll region and column widths when content_frame or window size changes
+        def update_layout(event=None):
             canvas.configure(scrollregion=canvas.bbox("all"))
+            # Dynamically adjust Treeview column widths based on window width
+            window_width = self.root.winfo_width()
+            base_width = self.scale_size(200)
+            adjusted_width = max(base_width, window_width // 5)  # Ensure columns fit within window
+            for col in columns:
+                monthly_table.column(col, width=adjusted_width, stretch=True)
+            for col in daily_columns:
+                daily_table.column(col, width=adjusted_width, stretch=True)
 
-        content_frame.bind("<Configure>", update_scroll_region)
+        content_frame.bind("<Configure>", update_layout)
+        self.root.bind("<Configure>", update_layout)  # Update on window resize
 
         # Add padding to content_frame
         content_frame.configure(padx=self.scale_size(20), pady=self.scale_size(20))
@@ -2290,6 +2303,10 @@ class PharmacyPOS:
         monthly_v_scrollbar.grid(row=0, column=1, sticky="ns")
         monthly_table.configure(yscrollcommand=monthly_v_scrollbar.set)
 
+        # Apply Treeview styling
+        style = ttk.Style()
+        style.configure("Treeview", background="#ffffff", foreground="#1a1a1a", fieldbackground="#ffffff")
+
         # Daily sales summary
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
                 bg="#ffffff", fg="#1a1a1a").pack(pady=self.scale_size(10), anchor="w")
@@ -2315,6 +2332,7 @@ class PharmacyPOS:
 
         # Ensure canvas scrolls to the top-left initially
         canvas.update_idletasks()
+        canvas.yview_moveto(0)
         canvas.xview_moveto(0)
 
     def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
@@ -2422,20 +2440,21 @@ class PharmacyPOS:
                 if daily_sales:
                     total_net_profit = total_grand_sales - total_unit_sales
                     daily_table.insert("", "end", values=(
-                        "Total", f"{total_grand_sales:.2f}", f"{total_unit_sales:.2f}", f"{total_net_profit:.2f}"
+                        "Total", f"{total_grand_sales:.2f}", f"{total_unit_sales:.2f}", f"{net_profit:.2f}"
                     ))
                 else:
                     tk.Label(daily_frame, text="No transactions found for the selected period.",
-                            font=("Helvetica", 14), bg="#ffffff", fg="#ff0000").pack(pady=5)
+                            font=("Helvetica", self.scale_size(14)), bg="#ffffff", fg="#ff0000").grid(row=1, column=0, pady=self.scale_size(5), sticky="ew")
 
                 if not monthly_sales:
                     tk.Label(monthly_frame, text="No transactions found for the selected period.",
-                            font=("Helvetica", 14), bg="#ffffff", fg="#ff0000").pack(pady=5)
+                            font=("Helvetica", self.scale_size(14)), bg="#ffffff", fg="#ff0000").grid(row=1, column=0, pady=self.scale_size(5), sticky="ew")
 
         except AttributeError as e:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
+            
 
     def print_sales_report(self, month: str, year: str) -> None:
         try:
