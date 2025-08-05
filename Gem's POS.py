@@ -1186,28 +1186,28 @@ class PharmacyPOS:
 
     def display_inventory(self) -> None:
         self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")
+        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Sandy Beige
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#FFF8E7", padx=self.scale_size(20), pady=self.scale_size(20))
+        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))  # Soft White
         content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
         content_frame.grid_rowconfigure(1, weight=1)  # Table frame expands
         content_frame.grid_rowconfigure(2, weight=0)  # Button frame stays fixed
         content_frame.grid_columnconfigure(0, weight=1)
 
         # Search container
-        search_frame = tk.Frame(content_frame, bg="#FFF8E7")
+        search_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         search_frame.grid(row=0, column=0, sticky="ew", pady=self.scale_size(10))
 
         tk.Label(search_frame, text="Search:", font=("Helvetica", self.scale_size(14)),
-                bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-        self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(14)), bg="#F5F5DC", fg="#2C1B18")
+                bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
+        self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(14)), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
         self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
         self.inventory_search_entry.bind("<KeyRelease>", self.update_inventory_table)
 
         tk.Label(search_frame, text="Filter:", font=("Helvetica", self.scale_size(14)),
-                bg="#FFF8E7", fg="#2C1B18").pack(side="left", padx=(self.scale_size(6), self.scale_size(5)))
+                bg="#F5F6F5", fg="#2C3E50").pack(side="left", padx=(self.scale_size(6), self.scale_size(5)))  # Soft White, Dark Slate
         self.type_filter_var = tk.StringVar()
         self.type_filter_combobox = ttk.Combobox(search_frame, textvariable=self.type_filter_var,
                                                 values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
@@ -1218,19 +1218,19 @@ class PharmacyPOS:
 
         tk.Button(search_frame, text="Add Item",
                 command=self.show_add_item,
-                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
         # Inventory table frame
-        inventory_frame = tk.Frame(content_frame, bg="#FFF8E7", bd=1, relief="flat")
+        inventory_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
         inventory_frame.grid(row=1, column=0, sticky="nsew", pady=self.scale_size(10))
         inventory_frame.grid_rowconfigure(0, weight=1)
         inventory_frame.grid_columnconfigure(0, weight=1)
 
         columns = ("Name", "Type", "RetailPrice", "Quantity", "Supplier")
         headers = ("NAME", "TYPE", "RETAIL PRICE", "QUANTITY", "SUPPLIER")
-        self.inventory_table = ttk.Treeview(inventory_frame, columns=columns, show="headings")
+        self.inventory_table = ttk.Treeview(inventory_frame, columns=columns, show="headings", style="Treeview")
         for col, head in zip(columns, headers):
             self.inventory_table.heading(col, text=head)
             if col == "Name":
@@ -1255,20 +1255,20 @@ class PharmacyPOS:
         self.inventory_table.configure(yscrollcommand=scrollbar.set)
 
         # Button frame for Update and Delete buttons
-        button_frame = tk.Frame(content_frame, bg="#FFF8E7")
+        button_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         button_frame.grid(row=2, column=0, sticky="ew", pady=self.scale_size(10))
 
         self.update_item_btn = tk.Button(button_frame, text="Update Item",
                                         command=self.show_update_item_from_selection,
-                                        bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                                        activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                                        activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                         padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
         self.update_item_btn.grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
 
         self.delete_item_btn = tk.Button(button_frame, text="Delete Item",
                                         command=self.confirm_delete_item,
-                                        bg="#3C2F2F", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                                        activebackground="#2C1B18", activeforeground="#FFF8E7",
+                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Coral Red, Soft White
+                                        activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                                         padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
         self.delete_item_btn.grid(row=0, column=1, padx=self.scale_size(5), sticky="w")
 
@@ -1279,7 +1279,7 @@ class PharmacyPOS:
 
         # Apply Treeview styling
         style = ttk.Style()
-        style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7")
+        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5")  # Soft White, Dark Slate
 
         self.update_inventory_table()
         self.root.update_idletasks()
@@ -1360,10 +1360,19 @@ class PharmacyPOS:
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
-                 bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
+                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
 
+        # Fields matching show_update_item, excluding Type which is handled separately
         fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
+        field_indices = {
+            "Item ID (Barcode)": 0,
+            "Name": 1,
+            "Unit Price": 4,
+            "Retail Price": 3,
+            "Quantity": 5,
+            "Supplier": 6
+        }
         
         for i, field in enumerate(fields):
             row = (i // 2) + 1  # Calculate row (2 fields per row)
@@ -1376,6 +1385,9 @@ class PharmacyPOS:
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
+            if field == "Item ID (Barcode)":
+                entry.insert(0, f"ITEM-{str(uuid.uuid4())[:8]}")
+                entry.config(state="readonly")
 
         next_row = (len(fields) + 1) // 2 + 1
 
@@ -1394,17 +1406,16 @@ class PharmacyPOS:
         type_frame = tk.Frame(add_box, bg="#FFF8E7")
         type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
         tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack()
-        type_var = tk.StringVar()
+        type_var = tk.StringVar(value="Medicine")
         ttk.Combobox(type_frame, textvariable=type_var,
-                     values=["Medicine", "Supplement", "Medical Device", "Beverage", 
-                             "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                     state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
+                    values=["Medicine", "Supplement", "Medical Device", "Beverage", 
+                            "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                    state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
 
         price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#FFF8E7", fg="#3C2F2F")
         price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
         def validate_and_update(event: Optional[tk.Event] = None) -> None:
-            # Call existing validate_prices for price comparison
             try:
                 retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
                 unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
@@ -1414,37 +1425,39 @@ class PharmacyPOS:
                     price_error_label.config(text="")
             except ValueError:
                 price_error_label.config(text="Invalid price format", fg="#3C2F2F")
-            # Update markup and profitability
             self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
         entries["Retail Price"].bind("<KeyRelease>", validate_and_update)
         entries["Unit Price"].bind("<KeyRelease>", validate_and_update)
 
+        # Initial markup calculation
+        self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
+
         button_frame = tk.Frame(add_box, bg="#FFF8E7")
         button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
         tk.Button(button_frame, text="Add Item",
-                  command=lambda: self.add_item(
-                      entries["Item ID (Barcode)"].get(),
-                      entries["Name"].get(),
-                      type_var.get(),
-                      entries["Retail Price"].get(),
-                      entries["Unit Price"].get(),
-                      entries["Quantity"].get(),
-                      entries["Supplier"].get(),
-                      window
-                  ),
-                  bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
-                  activebackground="#8B5A2B", activeforeground="#FFF8E7",
-                  padx=12, pady=8, bd=0).pack()
+                command=lambda: self.add_item(
+                    entries["Item ID (Barcode)"].get(),
+                    entries["Name"].get(),
+                    type_var.get(),
+                    entries["Retail Price"].get(),
+                    entries["Unit Price"].get(),
+                    entries["Quantity"].get(),
+                    entries["Supplier"].get(),
+                    window
+                ),
+                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
+                activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                padx=12, pady=8, bd=0).pack()
 
         add_box.columnconfigure(0, weight=1)
         add_box.columnconfigure(2, weight=1)
 
     def add_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, window: tk.Toplevel) -> None:
         try:
-            retail_price = float(retail_price)
+            retail_price = float(retail_price) if retail_price.strip() else 0.0
             unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
-            quantity = int(quantity)
+            quantity = int(quantity) if quantity.strip() else 0
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Name and Type are required", parent=self.root)
                 return
@@ -1454,22 +1467,34 @@ class PharmacyPOS:
             if unit_price < 0:
                 messagebox.showerror("Error", "Unit Price cannot be negative", parent=self.root)
                 return
+            if quantity < 0:
+                messagebox.showerror("Error", "Quantity cannot be negative", parent=self.root)
+                return
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else str(uuid.uuid4())
 
+            # Debugging: Log values before insertion
+            print(f"Inserting into inventory: item_id={item_id}, name={name}, type={item_type}, "
+                f"retail_price={retail_price}, unit_price={unit_price}, quantity={quantity}, supplier={supplier}")
+
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?, ?)",
-                              (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                cursor.execute("INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
-                              datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                            (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
+
+                # Debugging: Verify insertion
+                cursor.execute("SELECT item_id, name, type, retail_price, unit_price, quantity, supplier FROM inventory WHERE item_id = ?", (item_id,))
+                result = cursor.fetchone()
+                print(f"Inserted record: {result}")
+
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", "Item added successfully", parent=self.root)
-                # Check for low inventory after adding
                 if quantity <= 5:
                     self.check_low_inventory()
         except ValueError:
@@ -2276,13 +2301,13 @@ class PharmacyPOS:
             return
         try:
             self.clear_frame()
-            self.style_config()  # Ensure styles are applied
+            self.style_config()  # Ensure sea-themed styles are applied
         except AttributeError as e:
             messagebox.showerror("Error", f"Unable to clear frame: {e}", parent=self.root)
             return
 
         # Main frame with pack layout for responsiveness
-        main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")
+        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Sandy Beige
         main_frame.pack(fill="both", expand=True)
 
         try:
@@ -2291,7 +2316,7 @@ class PharmacyPOS:
             messagebox.showwarning("Warning", f"Navigation setup failed: {e}; continuing without navigation.", parent=self.root)
 
         # Create canvas for scrollable content
-        canvas = tk.Canvas(main_frame, bg="#FFF8E7", highlightthickness=0)
+        canvas = tk.Canvas(main_frame, bg="#F5F6F5", highlightthickness=0)  # Soft White
         canvas.pack(side="left", fill="both", expand=True)
 
         # Add vertical and horizontal scrollbars
@@ -2302,7 +2327,7 @@ class PharmacyPOS:
         canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
 
         # Create scrollable frame inside canvas
-        content_frame = tk.Frame(canvas, bg="#FFF8E7")
+        content_frame = tk.Frame(canvas, bg="#F5F6F5")  # Soft White
         content_frame_id = canvas.create_window((0, 0), window=content_frame, anchor="nw")
 
         # Mouse wheel scrolling handlers
@@ -2394,7 +2419,7 @@ class PharmacyPOS:
         content_frame.grid_columnconfigure(0, weight=1)
 
         # Filter frame with responsive grid layout
-        filter_frame = tk.Frame(content_frame, bg="#FFF8E7")
+        filter_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         filter_frame.grid(row=0, column=0, sticky="ew", pady=self.scale_size(10))
         filter_frame.grid_columnconfigure(1, weight=1)
         filter_frame.grid_columnconfigure(3, weight=1)
@@ -2402,14 +2427,14 @@ class PharmacyPOS:
         filter_frame.grid_columnconfigure(5, weight=0)
 
         tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(14)),
-                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
+                bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=0, padx=self.scale_size(5), sticky="w")  # Soft White, Dark Slate
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
                                     font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
         month_combobox.grid(row=0, column=1, padx=self.scale_size(5), sticky="ew")
 
         tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(14)),
-                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=2, padx=self.scale_size(5), sticky="w")
+                bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=2, padx=self.scale_size(5), sticky="w")  # Soft White, Dark Slate
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
                                     values=[str(i) for i in range(2020, datetime.now().year + 1)],
@@ -2418,22 +2443,22 @@ class PharmacyPOS:
 
         apply_filter_btn = tk.Button(filter_frame, text="Apply Filter",
                                     command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                                    activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                                    bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                                    activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                     padx=self.scale_size(12), pady=self.scale_size(8), bd=0)
         apply_filter_btn.grid(row=0, column=4, padx=self.scale_size(5), sticky="ew")
 
         print_report_btn = tk.Button(filter_frame, text="Print Report",
                                     command=lambda: self.print_sales_report(month_var.get(), year_var.get()),
-                                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14)),
-                                    activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                                    bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                                    activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                     padx=self.scale_size(12), pady=self.scale_size(8), bd=0)
         print_report_btn.grid(row=0, column=5, padx=self.scale_size(5), sticky="ew")
 
         # Monthly sales summary
         tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#FFF8E7", fg="#2C1B18").grid(row=1, column=0, pady=self.scale_size(10), sticky="w")
-        monthly_frame = tk.Frame(content_frame, bg="#FFF8E7")
+                bg="#F5F6F5", fg="#2C3E50").grid(row=1, column=0, pady=self.scale_size(10), sticky="w")  # Soft White, Dark Slate
+        monthly_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         monthly_frame.grid(row=2, column=0, sticky="nsew", pady=self.scale_size(5))
         monthly_frame.grid_rowconfigure(0, weight=1)
         monthly_frame.grid_columnconfigure(0, weight=1)
@@ -2457,8 +2482,8 @@ class PharmacyPOS:
 
         # Daily sales summary
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#FFF8E7", fg="#2C1B18").grid(row=3, column=0, pady=self.scale_size(10), sticky="w")
-        daily_frame = tk.Frame(content_frame, bg="#FFF8E7")
+                bg="#F5F6F5", fg="#2C3E50").grid(row=3, column=0, pady=self.scale_size(10), sticky="w")  # Soft White, Dark Slate
+        daily_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         daily_frame.grid(row=4, column=0, sticky="nsew", pady=self.scale_size(5))
         daily_frame.grid_rowconfigure(0, weight=1)
         daily_frame.grid_columnconfigure(0, weight=1)
@@ -2482,7 +2507,7 @@ class PharmacyPOS:
 
         # Apply Treeview styling
         style = ttk.Style()
-        style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7",
+        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5",  # Soft White, Dark Slate
                         rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(12)))
 
         # Bind Enter/Leave events for context-sensitive scrolling
@@ -2771,66 +2796,103 @@ class PharmacyPOS:
             self.show_dashboard()
             return
         self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")
+        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Sandy Beige
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        # Create a canvas for scrolling the entire content
+        canvas = tk.Canvas(main_frame, bg="#F5F6F5")  # Soft White
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # Add scrollbar for the canvas
+        content_scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        content_scrollbar.pack(side="right", fill="y")
+        canvas.configure(yscrollcommand=content_scrollbar.set)
+
+        # Create content_frame inside the canvas
+        content_frame = tk.Frame(canvas, bg="#F5F6F5", padx=20, pady=20)  # Soft White
+        canvas.create_window((0, 0), window=content_frame, anchor="nw")
+
+        # Update canvas scroll region when content_frame size changes
+        def configure_canvas(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        content_frame.bind("<Configure>", configure_canvas)
+
+        # Mouse wheel binding for the entire content (Windows)
+        def on_mouse_wheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind("<MouseWheel>", on_mouse_wheel)
 
         tk.Label(content_frame, text="Account Management", font=("Helvetica", 18, "bold"),
-                 bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10, anchor="w")  # Soft White, Dark Slate
 
-        users_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
+        # Users table with its own scrollbar
+        users_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
         users_frame.pack(fill="both", expand=True, pady=10)
 
         columns = ("Username", "Role", "Status")
         headers = ("USERNAME", "ROLE", "STATUS")
-        self.users_table = ttk.Treeview(users_frame, columns=columns, show="headings")
+        users_scrollbar = ttk.Scrollbar(users_frame, orient="vertical")
+        self.users_table = ttk.Treeview(users_frame, columns=columns, show="headings", style="Treeview", yscrollcommand=users_scrollbar.set)
+        users_scrollbar.config(command=self.users_table.yview)
+        users_scrollbar.pack(side="right", fill="y")
         for col, head in zip(columns, headers):
             self.users_table.heading(col, text=head)
             self.users_table.column(col, width=150, anchor="center")
         self.users_table.pack(fill="both", expand=True)
         self.update_users_table()
         self.users_table.bind("<<TreeviewSelect>>", self.on_user_select)
-        users_frame.pack(fill="both", expand=True)
 
-        self.users_button_frame = tk.Frame(content_frame, bg="#ffffff")
+        # Mouse wheel binding for users table (Windows)
+        def on_users_mouse_wheel(event):
+            self.users_table.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self.users_table.bind("<MouseWheel>", on_users_mouse_wheel)
+
+        self.users_button_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         self.users_button_frame.pack(fill="x", pady=10)
         self.update_user_btn = tk.Button(self.users_button_frame, text="Update", command=self.show_update_user,
-                                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                                        activebackground="#27ae60", activeforeground="#ffffff",
+                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                                        activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                         padx=12, pady=8, bd=0, state="disabled")
         self.update_user_btn.pack(side="left", padx=5)
         self.delete_user_btn = tk.Button(self.users_button_frame, text="Delete",
                                         command=lambda: self.create_password_auth_window(
                                             "Authenticate Deletion", "Enter admin password to delete user",
                                             self.validate_delete_user_auth, selected_item=self.users_table.selection()),
-                                        bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
-                                        activebackground="#c0392b", activeforeground="#ffffff",
+                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14),  # Coral Red, Soft White
+                                        activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                                         padx=12, pady=8, bd=0, state="disabled")
         self.delete_user_btn.pack(side="left", padx=5)
 
-        button_frame = tk.Frame(content_frame, bg="#ffffff")
+        button_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         button_frame.pack(fill="x")
         tk.Button(button_frame, text="Add New User", command=self.show_add_user,
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                 activebackground="#27ae60", activeforeground="#ffffff",
-                 padx=12, pady=8, bd=0).pack(side="left", padx=5)
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
         tk.Label(content_frame, text="Transaction Log", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")
-        log_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10, anchor="w")  # Soft White, Dark Slate
+        
+        # Log table with its own scrollbar
+        log_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
         log_frame.pack(fill="both", expand=True, pady=10)
         columns = ("Action", "Details", "Timestamp", "User")
         headers = ("ACTION", "DETAILS", "TIMESTAMP", "USER")
-        self.log_table = ttk.Treeview(log_frame, columns=columns, show="headings")
+        log_scrollbar = ttk.Scrollbar(log_frame, orient="vertical")
+        self.log_table = ttk.Treeview(log_frame, columns=columns, show="headings", style="Treeview", yscrollcommand=log_scrollbar.set)
+        log_scrollbar.config(command=self.log_table.yview)
+        log_scrollbar.pack(side="right", fill="y")
         for col, head in zip(columns, headers):
             self.log_table.heading(col, text=head)
             self.log_table.column(col, width=150 if col != "Details" else 300, anchor="center" if col != "Details" else "w")
         self.log_table.pack(fill="both", expand=True)
         self.update_log_table()
 
+        # Mouse wheel binding for log table (Windows)
+        def on_log_mouse_wheel(event):
+            self.log_table.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self.log_table.bind("<MouseWheel>", on_log_mouse_wheel)
     def update_users_table(self) -> None:
         for item in self.users_table.get_children():
             self.users_table.delete(item)
@@ -2850,35 +2912,35 @@ class PharmacyPOS:
         window = tk.Toplevel(self.root)
         window.title("Add New User")
         window.geometry("400x400")
-        window.configure(bg="#F5F5DC")
+        window.configure(bg="#F4E1C1")  # Sandy Beige
 
-        add_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
+        add_box = tk.Frame(window, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         add_box.pack(pady=20)
 
         tk.Label(add_box, text="Add New User", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#8B5A2B").pack(pady=15)
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=15)  # Soft White, Dark Slate
 
         fields = ["Username", "Password"]
         entries = {}
         for field in fields:
-            frame = tk.Frame(add_box, bg="#ffffff")
+            frame = tk.Frame(add_box, bg="#F5F6F5")  # Soft White
             frame.pack(fill="x", pady=5)
-            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack(side="left")
-            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", show="*" if field == "Password" else "")
+            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
+            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F4E1C1", fg="#2C3E50", show="*" if field == "Password" else "")  # Sandy Beige, Dark Slate
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
 
         role_var = tk.StringVar()
-        tk.Label(add_box, text="Role", font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack(pady=5)
+        tk.Label(add_box, text="Role", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)  # Soft White, Dark Slate
         ttk.Combobox(add_box, textvariable=role_var, values=["User", "Drug Lord"],
                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
 
         tk.Button(add_box, text="Add User",
-                 command=lambda: self.add_user(entries["Username"].get(), entries["Password"].get(),
-                                              role_var.get(), window),
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                 activebackground="#27ae60", activeforeground="#ffffff",
-                 padx=12, pady=8, bd=0).pack(pady=15)
+                command=lambda: self.add_user(entries["Username"].get(), entries["Password"].get(),
+                                            role_var.get(), window),
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                padx=12, pady=8, bd=0).pack(pady=15)
 
     def add_user(self, username: str, password: str, role: str, window: tk.Toplevel) -> None:
         if not all([username, password, role]):

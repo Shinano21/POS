@@ -1348,10 +1348,19 @@ class PharmacyPOS:
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
-                 bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
+                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
 
+        # Fields matching show_update_item, excluding Type which is handled separately
         fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
+        field_indices = {
+            "Item ID (Barcode)": 0,
+            "Name": 1,
+            "Unit Price": 4,
+            "Retail Price": 3,
+            "Quantity": 5,
+            "Supplier": 6
+        }
         
         for i, field in enumerate(fields):
             row = (i // 2) + 1  # Calculate row (2 fields per row)
@@ -1364,6 +1373,9 @@ class PharmacyPOS:
             entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
+            if field == "Item ID (Barcode)":
+                entry.insert(0, f"ITEM-{str(uuid.uuid4())[:8]}")
+                entry.config(state="readonly")
 
         next_row = (len(fields) + 1) // 2 + 1
 
@@ -1382,17 +1394,16 @@ class PharmacyPOS:
         type_frame = tk.Frame(add_box, bg="#FFF8E7")
         type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
         tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack()
-        type_var = tk.StringVar()
+        type_var = tk.StringVar(value="Medicine")
         ttk.Combobox(type_frame, textvariable=type_var,
-                     values=["Medicine", "Supplement", "Medical Device", "Beverage", 
-                             "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                     state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
+                    values=["Medicine", "Supplement", "Medical Device", "Beverage", 
+                            "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
+                    state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
 
         price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#FFF8E7", fg="#3C2F2F")
         price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
         def validate_and_update(event: Optional[tk.Event] = None) -> None:
-            # Call existing validate_prices for price comparison
             try:
                 retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
                 unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
@@ -1402,37 +1413,39 @@ class PharmacyPOS:
                     price_error_label.config(text="")
             except ValueError:
                 price_error_label.config(text="Invalid price format", fg="#3C2F2F")
-            # Update markup and profitability
             self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
         entries["Retail Price"].bind("<KeyRelease>", validate_and_update)
         entries["Unit Price"].bind("<KeyRelease>", validate_and_update)
 
+        # Initial markup calculation
+        self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
+
         button_frame = tk.Frame(add_box, bg="#FFF8E7")
         button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
         tk.Button(button_frame, text="Add Item",
-                  command=lambda: self.add_item(
-                      entries["Item ID (Barcode)"].get(),
-                      entries["Name"].get(),
-                      type_var.get(),
-                      entries["Retail Price"].get(),
-                      entries["Unit Price"].get(),
-                      entries["Quantity"].get(),
-                      entries["Supplier"].get(),
-                      window
-                  ),
-                  bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
-                  activebackground="#8B5A2B", activeforeground="#FFF8E7",
-                  padx=12, pady=8, bd=0).pack()
+                command=lambda: self.add_item(
+                    entries["Item ID (Barcode)"].get(),
+                    entries["Name"].get(),
+                    type_var.get(),
+                    entries["Retail Price"].get(),
+                    entries["Unit Price"].get(),
+                    entries["Quantity"].get(),
+                    entries["Supplier"].get(),
+                    window
+                ),
+                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
+                activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                padx=12, pady=8, bd=0).pack()
 
         add_box.columnconfigure(0, weight=1)
         add_box.columnconfigure(2, weight=1)
 
     def add_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, window: tk.Toplevel) -> None:
         try:
-            retail_price = float(retail_price)
+            retail_price = float(retail_price) if retail_price.strip() else 0.0
             unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
-            quantity = int(quantity)
+            quantity = int(quantity) if quantity.strip() else 0
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Name and Type are required", parent=self.root)
                 return
@@ -1442,22 +1455,34 @@ class PharmacyPOS:
             if unit_price < 0:
                 messagebox.showerror("Error", "Unit Price cannot be negative", parent=self.root)
                 return
+            if quantity < 0:
+                messagebox.showerror("Error", "Quantity cannot be negative", parent=self.root)
+                return
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else str(uuid.uuid4())
 
+            # Debugging: Log values before insertion
+            print(f"Inserting into inventory: item_id={item_id}, name={name}, type={item_type}, "
+                f"retail_price={retail_price}, unit_price={unit_price}, quantity={quantity}, supplier={supplier}")
+
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("INSERT INTO inventory VALUES (?, ?, ?, ?, ?, ?, ?)",
-                              (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                cursor.execute("INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
-                              datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                            (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
+
+                # Debugging: Verify insertion
+                cursor.execute("SELECT item_id, name, type, retail_price, unit_price, quantity, supplier FROM inventory WHERE item_id = ?", (item_id,))
+                result = cursor.fetchone()
+                print(f"Inserted record: {result}")
+
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", "Item added successfully", parent=self.root)
-                # Check for low inventory after adding
                 if quantity <= 5:
                     self.check_low_inventory()
         except ValueError:
@@ -2004,10 +2029,10 @@ class PharmacyPOS:
                 if item_data:
                     try:
                         item_id, qty = item_data.split(":")
-                        cursor.execute("SELECT name, price, quantity FROM inventory WHERE item_id = ?", (item_id,))
+                        cursor.execute("SELECT name, retail_price, quantity FROM inventory WHERE item_id = ?", (item_id,))
                         item = cursor.fetchone()
                         if item:
-                            edit_items.append({"id": item_id, "name": item[0], "price": float(item[1]), "original_quantity": int(qty), "current_quantity": int(qty), "inventory_quantity": int(item[2])})
+                            edit_items.append({"id": item_id, "name": item[0], "retail_price": float(item[1]), "original_quantity": int(qty), "current_quantity": int(qty), "inventory_quantity": int(item[2])})
                     except ValueError:
                         continue
 
@@ -2017,7 +2042,7 @@ class PharmacyPOS:
 
             window = tk.Toplevel(self.root)
             window.title(f"Edit Transaction {transaction_id}")
-            window.geometry("600x400")
+            window.geometry("650x550")
             window.configure(bg="#F5F5DC")
 
             content_frame = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20)
@@ -2085,7 +2110,7 @@ class PharmacyPOS:
                             messagebox.showerror("Error", f"Insufficient stock for {item['name']}. Available: {item['inventory_quantity']}", parent=self.root)
                             return
                         item["current_quantity"] = new_qty
-                        total_amount += item["price"] * new_qty
+                        total_amount += item["retail_price"] * new_qty
                         if new_qty > 0:
                             new_items.append(f"{item['id']}:{new_qty}")
                         # Update inventory
@@ -2759,65 +2784,103 @@ class PharmacyPOS:
             self.show_dashboard()
             return
         self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")
+        main_frame = tk.Frame(self.main_frame, bg="#F5F5DC")  # Beige
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        # Create a canvas for scrolling the entire content
+        canvas = tk.Canvas(main_frame, bg="#ffffff")  # White
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # Add scrollbar for the canvas
+        content_scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=canvas.yview)
+        content_scrollbar.pack(side="right", fill="y")
+        canvas.configure(yscrollcommand=content_scrollbar.set)
+
+        # Create content_frame inside the canvas
+        content_frame = tk.Frame(canvas, bg="#ffffff", padx=20, pady=20)  # White
+        canvas.create_window((0, 0), window=content_frame, anchor="nw")
+
+        # Update canvas scroll region when content_frame size changes
+        def configure_canvas(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        content_frame.bind("<Configure>", configure_canvas)
+
+        # Mouse wheel binding for the entire content (Windows)
+        def on_mouse_wheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind("<MouseWheel>", on_mouse_wheel)
 
         tk.Label(content_frame, text="Account Management", font=("Helvetica", 18, "bold"),
-                 bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")
+                 bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")  # White, Brown
 
-        users_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
+        # Users table with its own scrollbar
+        users_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")  # White
         users_frame.pack(fill="both", expand=True, pady=10)
 
         columns = ("Username", "Role", "Status")
         headers = ("USERNAME", "ROLE", "STATUS")
-        self.users_table = ttk.Treeview(users_frame, columns=columns, show="headings")
+        users_scrollbar = ttk.Scrollbar(users_frame, orient="vertical")
+        self.users_table = ttk.Treeview(users_frame, columns=columns, show="headings", yscrollcommand=users_scrollbar.set)
+        users_scrollbar.config(command=self.users_table.yview)
+        users_scrollbar.pack(side="right", fill="y")
         for col, head in zip(columns, headers):
             self.users_table.heading(col, text=head)
             self.users_table.column(col, width=150, anchor="center")
         self.users_table.pack(fill="both", expand=True)
         self.update_users_table()
         self.users_table.bind("<<TreeviewSelect>>", self.on_user_select)
-        users_frame.pack(fill="both", expand=True)
 
-        self.users_button_frame = tk.Frame(content_frame, bg="#ffffff")
+        # Mouse wheel binding for users table (Windows)
+        def on_users_mouse_wheel(event):
+            self.users_table.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self.users_table.bind("<MouseWheel>", on_users_mouse_wheel)
+
+        self.users_button_frame = tk.Frame(content_frame, bg="#ffffff")  # White
         self.users_button_frame.pack(fill="x", pady=10)
         self.update_user_btn = tk.Button(self.users_button_frame, text="Update", command=self.show_update_user,
-                                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                                        activebackground="#27ae60", activeforeground="#ffffff",
+                                        bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),  # Green, White
+                                        activebackground="#27ae60", activeforeground="#ffffff",  # Darker Green, White
                                         padx=12, pady=8, bd=0, state="disabled")
         self.update_user_btn.pack(side="left", padx=5)
         self.delete_user_btn = tk.Button(self.users_button_frame, text="Delete",
                                         command=lambda: self.create_password_auth_window(
                                             "Authenticate Deletion", "Enter admin password to delete user",
                                             self.validate_delete_user_auth, selected_item=self.users_table.selection()),
-                                        bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
-                                        activebackground="#c0392b", activeforeground="#ffffff",
+                                        bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),  # Red, White
+                                        activebackground="#c0392b", activeforeground="#ffffff",  # Darker Red, White
                                         padx=12, pady=8, bd=0, state="disabled")
         self.delete_user_btn.pack(side="left", padx=5)
 
-        button_frame = tk.Frame(content_frame, bg="#ffffff")
+        button_frame = tk.Frame(content_frame, bg="#ffffff")  # White
         button_frame.pack(fill="x")
         tk.Button(button_frame, text="Add New User", command=self.show_add_user,
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
-                 activebackground="#27ae60", activeforeground="#ffffff",
+                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),  # Green, White
+                 activebackground="#27ae60", activeforeground="#ffffff",  # Darker Green, White
                  padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
         tk.Label(content_frame, text="Transaction Log", font=("Helvetica", 18, "bold"),
-                bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")
-        log_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
+                bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")  # White, Brown
+
+        # Log table with its own scrollbar
+        log_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")  # White
         log_frame.pack(fill="both", expand=True, pady=10)
         columns = ("Action", "Details", "Timestamp", "User")
         headers = ("ACTION", "DETAILS", "TIMESTAMP", "USER")
-        self.log_table = ttk.Treeview(log_frame, columns=columns, show="headings")
+        log_scrollbar = ttk.Scrollbar(log_frame, orient="vertical")
+        self.log_table = ttk.Treeview(log_frame, columns=columns, show="headings", yscrollcommand=log_scrollbar.set)
+        log_scrollbar.config(command=self.log_table.yview)
+        log_scrollbar.pack(side="right", fill="y")
         for col, head in zip(columns, headers):
             self.log_table.heading(col, text=head)
             self.log_table.column(col, width=150 if col != "Details" else 300, anchor="center" if col != "Details" else "w")
         self.log_table.pack(fill="both", expand=True)
         self.update_log_table()
+
+        # Mouse wheel binding for log table (Windows)
+        def on_log_mouse_wheel(event):
+            self.log_table.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        self.log_table.bind("<MouseWheel>", on_log_mouse_wheel)
 
     def update_users_table(self) -> None:
         for item in self.users_table.get_children():
