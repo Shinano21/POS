@@ -29,7 +29,7 @@ class PharmacyPOS:
         self.root.configure(bg="#F5F5DC")
 
         try:
-            icon_image = Image.open("images/medkitpos.png")
+            icon_image = Image.open("images/shinano.png")
             icon_size = (int(32 * self.scaling_factor), int(32 * self.scaling_factor))
             icon_image = icon_image.resize(icon_size, Image.Resampling.LANCZOS)
             self.icon_image = ImageTk.PhotoImage(icon_image)
@@ -2167,10 +2167,10 @@ class PharmacyPOS:
 
         # Header
         c.drawString(100, 750, "Shinano POS")
-        c.drawString(100, 732, "ARI PHARMACEUTICALS INC.")
-        c.drawString(100, 714, "VAT REG TIN: 123-456-789-000")
-        c.drawString(100, 696, "SN: 987654321 MIN: 123456789")
-        c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
+        c.drawString(100, 732, "St. Rafael Pharma")
+        # c.drawString(100, 714, "VAT REG TIN: 123-456-789-000")
+        # c.drawString(100, 696, "SN: 987654321 MIN: 123456789")
+        # c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
         c.drawString(100, 650, f"Date: {timestamp}")
         c.drawString(100, 632, f"TRANSACTION CODE: {transaction_id}")
 
