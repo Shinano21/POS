@@ -189,7 +189,6 @@ class PharmacyPOS:
                     cursor.execute("ALTER TABLE inventory ADD COLUMN supplier TEXT")
                     print("Added supplier column to inventory table.")
                 
-                # Rest of the table creation remains unchanged
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS transactions (
                         transaction_id TEXT PRIMARY KEY,
@@ -209,6 +208,7 @@ class PharmacyPOS:
                     cursor.execute("ALTER TABLE transactions ADD COLUMN payment_method TEXT")
                 if 'customer_id' not in columns:
                     cursor.execute("ALTER TABLE transactions ADD COLUMN customer_id TEXT")
+                
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS funds (
                         fund_id TEXT PRIMARY KEY,
@@ -218,7 +218,6 @@ class PharmacyPOS:
                         user TEXT
                     )
                 ''')
-                
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS customers (
                         customer_id TEXT PRIMARY KEY,
@@ -244,6 +243,15 @@ class PharmacyPOS:
                         action TEXT,
                         details TEXT,
                         timestamp TEXT,
+                        user TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS daily_sales (
+                        sale_date TEXT PRIMARY KEY,
+                        total_sales REAL,
+                        unit_sales INTEGER,
+                        net_profit REAL,
                         user TEXT
                     )
                 ''')
@@ -1022,28 +1030,58 @@ class PharmacyPOS:
             items = ";".join([f"{item['id']}:{item['quantity']}" for item in self.cart])
             change = cash_paid - final_total
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            sale_date = datetime.now().strftime("%Y-%m-%d")
             payment_method = getattr(self, 'current_payment_method', 'Cash')
             customer_id = getattr(self, 'current_customer_id', None)
 
+            # Calculate unit sales and net profit
+            unit_sales = sum(item["quantity"] for item in self.cart)
+            net_profit = 0.0
             with self.conn:
                 cursor = self.conn.cursor()
+                # Validate stock and calculate net profit
+                for item in self.cart:
+                    cursor.execute("SELECT retail_price, unit_price, quantity FROM inventory WHERE item_id = ?",
+                                  (item["id"],))
+                    result = cursor.fetchone()
+                    if not result:
+                        raise ValueError(f"Item {item['id']} not found in inventory")
+                    retail_price, unit_price, current_quantity = result
+                    if current_quantity < item["quantity"]:
+                        raise ValueError(f"Insufficient stock for item {item['id']}: {current_quantity} available")
+                    net_profit += (retail_price - unit_price) * item["quantity"]
+                    # Decrease inventory quantity
+                    cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
+                                  (item["quantity"], item["id"]))
+
+                # Insert transaction
                 cursor.execute('''
                     INSERT INTO transactions (transaction_id, items, total_amount, cash_paid, change_amount, timestamp, status, payment_method, customer_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (transaction_id, items, final_total, cash_paid, change, timestamp, "Completed", payment_method, customer_id))
-                
-                # Update inventory quantities
-                for item in self.cart:
-                    cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
-                                (item["quantity"], item["id"]))
-                
+
+                # Update daily_sales
+                cursor.execute("SELECT total_sales, unit_sales, net_profit FROM daily_sales WHERE sale_date = ?", (sale_date,))
+                existing_sale = cursor.fetchone()
+                if existing_sale:
+                    new_total_sales = existing_sale[0] + final_total
+                    new_unit_sales = existing_sale[1] + unit_sales
+                    new_net_profit = existing_sale[2] + net_profit
+                    cursor.execute("UPDATE daily_sales SET total_sales = ?, unit_sales = ?, net_profit = ?, user = ? WHERE sale_date = ?",
+                                  (new_total_sales, new_unit_sales, new_net_profit, self.current_user, sale_date))
+                else:
+                    cursor.execute("INSERT INTO daily_sales (sale_date, total_sales, unit_sales, net_profit, user) VALUES (?, ?, ?, ?, ?)",
+                                  (sale_date, final_total, unit_sales, net_profit, self.current_user))
+
+                # Insert transaction log
                 cursor.execute('''
                     INSERT INTO transaction_log (log_id, action, details, timestamp, user)
                     VALUES (?, ?, ?, ?, ?)
                 ''', (str(uuid.uuid4()), "Checkout", f"Completed transaction {transaction_id}", timestamp, self.current_user))
-                
+
                 self.conn.commit()
-                
+
+                # Clear UI elements
                 self.cart.clear()
                 self.selected_item_index = None
                 self.update_cart_table()
@@ -1051,8 +1089,7 @@ class PharmacyPOS:
                 self.discount_var.set(False)
                 self.current_payment_method = None
                 self.current_customer_id = None
-                
-                # Clear Cash Paid and Change fields
+
                 if "Cash Paid " in self.summary_entries and self.summary_entries["Cash Paid "].winfo_exists():
                     self.summary_entries["Cash Paid "].delete(0, tk.END)
                     self.summary_entries["Cash Paid "].insert(0, "0.00")
@@ -1061,23 +1098,22 @@ class PharmacyPOS:
                     self.summary_entries["Change "].delete(0, tk.END)
                     self.summary_entries["Change "].insert(0, "0.00")
                     self.summary_entries["Change "].config(state="readonly")
-                
+
                 if hasattr(self, 'customer_label') and self.customer_label.winfo_exists():
                     self.customer_label.config(text="No Customer Selected")
-                    
+
                 messagebox.showinfo("Success", f"Transaction completed. Change: ₱{change:.2f}", parent=self.root)
-                
+
                 self.generate_receipt(transaction_id, timestamp, items, final_total, cash_paid, change)
-                
-                # Check for low inventory after updating quantities
                 self.check_low_inventory()
-                
-        except sqlite3.Error as e:
-            print(f"Database error during checkout: {e}")
+
+        except (sqlite3.Error, ValueError) as e:
+            print(f"Debug: Error in process_checkout: {e}")
             messagebox.showerror("Error", f"Failed to process transaction: {e}", parent=self.root)
         except Exception as e:
-            print(f"Unexpected error during checkout: {e}")
+            print(f"Debug: Unexpected error in process_checkout: {e}")
             messagebox.showerror("Error", f"An unexpected error occurred: {e}", parent=self.root)
+
 
     def generate_receipt(self, transaction_id: str, timestamp: str, items: str, total_amount: float, cash_paid: float, change: float) -> None:
         try:
@@ -2328,69 +2364,60 @@ class PharmacyPOS:
 
         # Create scrollable frame inside canvas
         content_frame = tk.Frame(canvas, bg="#F5F6F5")  # Soft White
-        content_frame_id = canvas.create_window((0, 0), window=content_frame, anchor="nw")
+        canvas.create_window((0, 0), window=content_frame, anchor="nw")
 
         # Mouse wheel scrolling handlers
-        import sys
         def on_canvas_mouse_wheel(event):
             if v_scrollbar.winfo_ismapped():
-                if event.num == 4 or event.delta > 0:
-                    canvas.yview_scroll(-1, "units")
-                elif event.num == 5 or event.delta < 0:
-                    canvas.yview_scroll(1, "units")
+                delta = -1 if (event.delta > 0 or event.num == 4) else 1 if (event.delta < 0 or event.num == 5) else 0
+                if delta != 0:
+                    canvas.yview_scroll(delta, "units")
             return "break"
 
         def on_canvas_shift_mouse_wheel(event):
             if h_scrollbar.winfo_ismapped():
-                if event.num == 4 or event.delta > 0:
-                    canvas.xview_scroll(-1, "units")
-                elif event.num == 5 or event.delta < 0:
-                    canvas.xview_scroll(1, "units")
+                delta = -1 if (event.delta > 0 or event.num == 4) else 1 if (event.delta < 0 or event.num == 5) else 0
+                if delta != 0:
+                    canvas.xview_scroll(delta, "units")
             return "break"
 
         def on_table_mouse_wheel(table, v_scrollbar, h_scrollbar):
             def handler(event):
                 if v_scrollbar.winfo_ismapped():
-                    if event.num == 4 or event.delta > 0:
-                        table.yview_scroll(-1, "units")
-                    elif event.num == 5 or event.delta < 0:
-                        table.yview_scroll(1, "units")
+                    delta = -1 if (event.delta > 0 or event.num == 4) else 1 if (event.delta < 0 or event.num == 5) else 0
+                    if delta != 0:
+                        table.yview_scroll(delta, "units")
                 return "break"
             return handler
 
         def on_table_shift_mouse_wheel(table, h_scrollbar):
             def handler(event):
                 if h_scrollbar.winfo_ismapped():
-                    if event.num == 4 or event.delta > 0:
-                        table.xview_scroll(-1, "units")
-                    elif event.num == 5 or event.delta < 0:
-                        table.xview_scroll(1, "units")
+                    delta = -1 if (event.delta > 0 or event.num == 4) else 1 if (event.delta < 0 or event.num == 5) else 0
+                    if delta != 0:
+                        table.xview_scroll(delta, "units")
                 return "break"
             return handler
 
         # Function to bind canvas scrolling
         def bind_canvas_scrolling():
             canvas.bind("<Button-1>", lambda e: canvas.focus_set())
-            if sys.platform == "win32":
-                canvas.bind("<MouseWheel>", on_canvas_mouse_wheel)
-                canvas.bind("<Shift-MouseWheel>", on_canvas_shift_mouse_wheel)
-            else:
-                canvas.bind("<Button-4>", on_canvas_mouse_wheel)
-                canvas.bind("<Button-5>", on_canvas_mouse_wheel)
-                canvas.bind("<Shift-Button-4>", on_canvas_shift_mouse_wheel)
-                canvas.bind("<Shift-Button-5>", on_canvas_shift_mouse_wheel)
+            canvas.bind("<MouseWheel>", on_canvas_mouse_wheel)
+            canvas.bind("<Button-4>", on_canvas_mouse_wheel)
+            canvas.bind("<Button-5>", on_canvas_mouse_wheel)
+            canvas.bind("<Shift-MouseWheel>", on_canvas_shift_mouse_wheel)
+            canvas.bind("<Shift-Button-4>", on_canvas_shift_mouse_wheel)
+            canvas.bind("<Shift-Button-5>", on_canvas_shift_mouse_wheel)
 
         # Function to bind table scrolling
         def bind_table_scrolling(table, v_scrollbar, h_scrollbar):
             table.bind("<Button-1>", lambda e: table.focus_set())
-            if sys.platform == "win32":
-                table.bind("<MouseWheel>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
-                table.bind("<Shift-MouseWheel>", on_table_shift_mouse_wheel(table, h_scrollbar))
-            else:
-                table.bind("<Button-4>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
-                table.bind("<Button-5>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
-                table.bind("<Shift-Button-4>", on_table_shift_mouse_wheel(table, h_scrollbar))
-                table.bind("<Shift-Button-5>", on_table_shift_mouse_wheel(table, h_scrollbar))
+            table.bind("<MouseWheel>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
+            table.bind("<Button-4>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
+            table.bind("<Button-5>", on_table_mouse_wheel(table, v_scrollbar, h_scrollbar))
+            table.bind("<Shift-MouseWheel>", on_table_shift_mouse_wheel(table, h_scrollbar))
+            table.bind("<Shift-Button-4>", on_table_shift_mouse_wheel(table, h_scrollbar))
+            table.bind("<Shift-Button-5>", on_table_shift_mouse_wheel(table, h_scrollbar))
 
         # Update scroll region and handle resizing
         def update_scroll_region(event=None):
@@ -2464,7 +2491,7 @@ class PharmacyPOS:
         monthly_frame.grid_columnconfigure(0, weight=1)
         monthly_frame.grid_columnconfigure(1, weight=0)
 
-        columns = ("Month", "GrandSales", "UnitSales", "NetProfit")
+        columns = ("Month", "TotalSales", "UnitCost", "NetProfit")
         headers = ("MONTH", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         monthly_table = ttk.Treeview(monthly_frame, columns=columns, show="headings", height=10, style="Treeview")
         for col, head in zip(columns, headers):
@@ -2489,7 +2516,7 @@ class PharmacyPOS:
         daily_frame.grid_columnconfigure(0, weight=1)
         daily_frame.grid_columnconfigure(1, weight=0)
 
-        daily_columns = ("Date", "GrandSales", "UnitSales", "NetProfit")
+        daily_columns = ("Date", "TotalSales", "UnitCost", "NetProfit")
         daily_headers = ("DATE", "TOTAL SALES", "UNIT COST", "NET PROFIT")
         daily_table = ttk.Treeview(daily_frame, columns=daily_columns, show="headings", height=10, style="Treeview")
         for col, head in zip(daily_columns, daily_headers):
@@ -2507,7 +2534,7 @@ class PharmacyPOS:
 
         # Apply Treeview styling
         style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5",  # Soft White, Dark Slate
+        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5",
                         rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(12)))
 
         # Bind Enter/Leave events for context-sensitive scrolling
@@ -2527,125 +2554,93 @@ class PharmacyPOS:
         canvas.yview_moveto(0)
         canvas.xview_moveto(0)
     
-    def update_tables(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
+    def update_tables(self, month_var: tk.StringVar, year_var: tk.StringVar, monthly_table: ttk.Treeview, daily_table: ttk.Treeview, monthly_frame: tk.Frame, daily_frame: tk.Frame) -> None:
+        # Clear existing table data
         for item in monthly_table.get_children():
             monthly_table.delete(item)
         for item in daily_table.get_children():
             daily_table.delete(item)
 
-        for widget in monthly_frame.winfo_children():
-            if isinstance(widget, tk.Label) and widget.cget("fg") == "#3C2F2F":
-                widget.destroy()
-        for widget in daily_frame.winfo_children():
-            if isinstance(widget, tk.Label) and widget.cget("fg") == "#3C2F2F":
-                widget.destroy()
-
         try:
-            month = int(month_var.get())
-            year = int(year_var.get())
-        except ValueError:
-            messagebox.showerror("Error", "Invalid month or year selected.", parent=self.root)
-            return
-
-        start_date = f"{year}-{month:02d}-01"
-        next_month = month + 1 if month < 12 else 1
-        next_year = year if month < 12 else year + 1
-        end_date = f"{next_year}-{next_month:02d}-01"
-
-        try:
-            if not hasattr(self, 'conn') or self.conn is None:
-                raise AttributeError("Database connection not available")
+            month = month_var.get()
+            year = year_var.get()
             with self.conn:
                 cursor = self.conn.cursor()
-                # Monthly calculations
-                cursor.execute("""
-                    SELECT strftime('%Y-%m', timestamp) AS month, items, total_amount
-                    FROM transactions
-                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
-                """, (start_date, end_date))
-                monthly_sales = {}
-                for month_str, items, total_amount in cursor.fetchall():
-                    if month_str not in monthly_sales:
-                        monthly_sales[month_str] = {"unit_sales": 0.0, "grand_sales": 0.0}
-                    unit_sales = 0.0
-                    for item_data in items.split(";"):
-                        if item_data:
-                            try:
-                                item_id, qty = item_data.split(":")
-                                qty = int(qty)
-                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
-                                            (item_id,))
-                                item = cursor.fetchone()
-                                if item:
-                                    unit_sales += item[0] * qty
-                            except (ValueError, IndexError):
-                                continue
-                    monthly_sales[month_str]["unit_sales"] += unit_sales
-                    monthly_sales[month_str]["grand_sales"] += total_amount
+                # Debug: Check table row counts
+                cursor.execute("SELECT count(*) FROM daily_sales")
+                daily_sales_count = cursor.fetchone()[0]
+                cursor.execute("SELECT count(*) FROM transactions")
+                transactions_count = cursor.fetchone()[0]
+                print(f"Debug: daily_sales rows: {daily_sales_count}, transactions rows: {transactions_count}")
 
-                for month_str in sorted(monthly_sales.keys()):
-                    grand_sales = monthly_sales[month_str]["grand_sales"]
-                    unit_sales = monthly_sales[month_str]["unit_sales"]
-                    net_profit = grand_sales - unit_sales
+                # Monthly sales: Aggregate total sales, total unit cost, and net profit
+                cursor.execute('''
+                    SELECT strftime('%m', t.timestamp) AS month,
+                           SUM(t.total_amount) AS total_sales,
+                           SUM(CASE
+                               WHEN instr(t.items, ':') > 0 THEN
+                                   CAST(SUBSTR(t.items, instr(t.items, ':') + 1) AS INTEGER) * i.unit_price
+                               ELSE 0
+                           END) AS total_unit_cost,
+                           SUM(d.net_profit) AS net_profit
+                    FROM transactions t
+                    JOIN inventory i ON instr(t.items, i.item_id) > 0
+                    JOIN daily_sales d ON strftime('%Y-%m-%d', t.timestamp) = d.sale_date
+                    WHERE strftime('%Y', t.timestamp) = ?
+                    GROUP BY strftime('%m', t.timestamp)
+                    ORDER BY month
+                ''', (year,))
+                monthly_data = cursor.fetchall()
+                print(f"Debug: Monthly data for {year}: {monthly_data}")
+                month_names = {str(i).zfill(2): name for i, name in enumerate(
+                    ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November", "December"], 1)}
+                for row in monthly_data:
+                    month_num = row[0]
                     monthly_table.insert("", "end", values=(
-                        month_str, f"{grand_sales:.2f}", f"{unit_sales:.2f}", f"{net_profit:.2f}"
+                        month_names.get(month_num, month_num),
+                        f"{row[1] if row[1] is not None else 0:.2f}",
+                        f"{row[2] if row[2] is not None else 0:.2f}",
+                        f"{row[3] if row[3] is not None else 0:.2f}"
                     ))
 
-                # Daily calculations
-                cursor.execute("""
-                    SELECT strftime('%Y-%m-%d', timestamp) AS date, items, total_amount
-                    FROM transactions
-                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
-                """, (start_date, end_date))
-                daily_sales = {}
-                total_unit_sales = 0.0
-                total_grand_sales = 0.0
-                for date, items, total_amount in cursor.fetchall():
-                    if date not in daily_sales:
-                        daily_sales[date] = {"unit_sales": 0.0, "grand_sales": 0.0}
-                    unit_sales = 0.0
-                    for item_data in items.split(";"):
-                        if item_data:
-                            try:
-                                item_id, qty = item_data.split(":")
-                                qty = int(qty)
-                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
-                                            (item_id,))
-                                item = cursor.fetchone()
-                                if item:
-                                    unit_sales += item[0] * qty
-                            except (ValueError, IndexError):
-                                continue
-                    daily_sales[date]["grand_sales"] += total_amount
-                    daily_sales[date]["unit_sales"] += unit_sales
-                    total_unit_sales += unit_sales
-                    total_grand_sales += total_amount
-
-                for date in sorted(daily_sales.keys()):
-                    grand_sales = daily_sales[date]["grand_sales"]
-                    unit_sales = daily_sales[date]["unit_sales"]
-                    net_profit = grand_sales - unit_sales
+                # Daily sales: Aggregate total sales, total unit cost, and net profit
+                cursor.execute('''
+                    SELECT strftime('%Y-%m-%d', t.timestamp) AS sale_date,
+                           SUM(t.total_amount) AS total_sales,
+                           SUM(CASE
+                               WHEN instr(t.items, ':') > 0 THEN
+                                   CAST(SUBSTR(t.items, instr(t.items, ':') + 1) AS INTEGER) * i.unit_price
+                               ELSE 0
+                           END) AS total_unit_cost,
+                           SUM(d.net_profit) AS net_profit
+                    FROM transactions t
+                    JOIN inventory i ON instr(t.items, i.item_id) > 0
+                    JOIN daily_sales d ON strftime('%Y-%m-%d', t.timestamp) = d.sale_date
+                    WHERE strftime('%Y', t.timestamp) = ? AND strftime('%m', t.timestamp) = ?
+                    GROUP BY strftime('%Y-%m-%d', t.timestamp)
+                    ORDER BY sale_date DESC
+                ''', (year, month.zfill(2)))
+                daily_data = cursor.fetchall()
+                print(f"Debug: Daily data for {year}-{month.zfill(2)}: {daily_data}")
+                for row in daily_data:
                     daily_table.insert("", "end", values=(
-                        date, f"{grand_sales:.2f}", f"{unit_sales:.2f}", f"{net_profit:.2f}"
+                        row[0],
+                        f"{row[1] if row[1] is not None else 0:.2f}",
+                        f"{row[2] if row[2] is not None else 0:.2f}",
+                        f"{row[3] if row[3] is not None else 0:.2f}"
                     ))
 
-                if daily_sales:
-                    total_net_profit = total_grand_sales - total_unit_sales
-                    daily_table.insert("", "end", values=(
-                        "Total", f"{total_grand_sales:.2f}", f"{total_unit_sales:.2f}", f"{total_net_profit:.2f}"
-                    ))
-                else:
-                    tk.Label(daily_frame, text="No transactions found for the selected period.",
-                            font=("Helvetica", 14), bg="#FFF8E7", fg="#3C2F2F").grid(row=1, column=0, pady=5, sticky="ew")
+                # If no data, display a message
+                if not monthly_data:
+                    monthly_table.insert("", "end", values=("No data", "0.00", "0.00", "0.00"))
+                if not daily_data:
+                    daily_table.insert("", "end", values=("No data", "0.00", "0.00", "0.00"))
 
-                if not monthly_sales:
-                    tk.Label(monthly_frame, text="No transactions found for the selected period.",
-                            font=("Helvetica", 14), bg="#FFF8E7", fg="#3C2F2F").grid(row=1, column=0, pady=5, sticky="ew")
-
-        except AttributeError as e:
-            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
+            print(f"Debug: SQLite error in update_tables: {e}")
+            messagebox.showerror("Error", f"Failed to update sales tables: {e}", parent=self.root)
+
 
     def print_sales_report(self, month: str, year: str) -> None:
         try:
