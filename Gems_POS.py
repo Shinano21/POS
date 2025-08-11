@@ -2553,7 +2553,7 @@ class PharmacyPOS:
         canvas.update_idletasks()
         canvas.yview_moveto(0)
         canvas.xview_moveto(0)
-    
+
     def update_tables(self, month_var: tk.StringVar, year_var: tk.StringVar, monthly_table: ttk.Treeview, daily_table: ttk.Treeview, monthly_frame: tk.Frame, daily_frame: tk.Frame) -> None:
         # Clear existing table data
         for item in monthly_table.get_children():
@@ -2575,19 +2575,18 @@ class PharmacyPOS:
 
                 # Monthly sales: Aggregate total sales, total unit cost, and net profit
                 cursor.execute('''
-                    SELECT strftime('%m', t.timestamp) AS month,
-                           SUM(t.total_amount) AS total_sales,
-                           SUM(CASE
-                               WHEN instr(t.items, ':') > 0 THEN
-                                   CAST(SUBSTR(t.items, instr(t.items, ':') + 1) AS INTEGER) * i.unit_price
-                               ELSE 0
-                           END) AS total_unit_cost,
-                           SUM(d.net_profit) AS net_profit
-                    FROM transactions t
-                    JOIN inventory i ON instr(t.items, i.item_id) > 0
-                    JOIN daily_sales d ON strftime('%Y-%m-%d', t.timestamp) = d.sale_date
-                    WHERE strftime('%Y', t.timestamp) = ?
-                    GROUP BY strftime('%m', t.timestamp)
+                    SELECT strftime('%m', sale_date) AS month,
+                           SUM(total_sales) AS total_sales,
+                           SUM((
+                               SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
+                               FROM transactions t2
+                               JOIN inventory i ON instr(t2.items, i.item_id) > 0
+                               WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
+                           )) AS total_unit_cost,
+                           SUM(net_profit) AS net_profit
+                    FROM daily_sales d
+                    WHERE strftime('%Y', sale_date) = ?
+                    GROUP BY strftime('%m', sale_date)
                     ORDER BY month
                 ''', (year,))
                 monthly_data = cursor.fetchall()
@@ -2606,19 +2605,17 @@ class PharmacyPOS:
 
                 # Daily sales: Aggregate total sales, total unit cost, and net profit
                 cursor.execute('''
-                    SELECT strftime('%Y-%m-%d', t.timestamp) AS sale_date,
-                           SUM(t.total_amount) AS total_sales,
-                           SUM(CASE
-                               WHEN instr(t.items, ':') > 0 THEN
-                                   CAST(SUBSTR(t.items, instr(t.items, ':') + 1) AS INTEGER) * i.unit_price
-                               ELSE 0
-                           END) AS total_unit_cost,
-                           SUM(d.net_profit) AS net_profit
-                    FROM transactions t
-                    JOIN inventory i ON instr(t.items, i.item_id) > 0
-                    JOIN daily_sales d ON strftime('%Y-%m-%d', t.timestamp) = d.sale_date
-                    WHERE strftime('%Y', t.timestamp) = ? AND strftime('%m', t.timestamp) = ?
-                    GROUP BY strftime('%Y-%m-%d', t.timestamp)
+                    SELECT sale_date,
+                           total_sales,
+                           (
+                               SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
+                               FROM transactions t2
+                               JOIN inventory i ON instr(t2.items, i.item_id) > 0
+                               WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
+                           ) AS total_unit_cost,
+                           net_profit
+                    FROM daily_sales d
+                    WHERE strftime('%Y', sale_date) = ? AND strftime('%m', sale_date) = ?
                     ORDER BY sale_date DESC
                 ''', (year, month.zfill(2)))
                 daily_data = cursor.fetchall()
