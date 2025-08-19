@@ -15,6 +15,9 @@ from pathlib import Path
 import webbrowser
 from datetime import datetime, date
 from tkcalendar import DateEntry
+import csv
+from tkinter import filedialog
+import logging
 
 class PharmacyPOS:
     def __init__(self, root: tk.Tk):
@@ -284,6 +287,8 @@ class PharmacyPOS:
         self.show_login()
         self.root.bind("<Shift-Return>", self.handle_shift_enter_key)
         self.root.bind("<Shift_R>", self.focus_cash_paid)
+        
+
         # Maximize window on startup (cross-platform)
         try:
             self.root.state('zoomed')  # Maximize window (Windows, Linux, macOS)
@@ -537,7 +542,15 @@ class PharmacyPOS:
         self.search_entry = tk.Entry(entry_frame, font=("Helvetica", self.scale_size(14)), bg="#F4E1C1", fg="#2C3E50", bd=0, highlightthickness=0)  # Sandy Beige, Dark Slate
         self.search_entry.pack(side="left", fill="x", expand=True, ipady=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_suggestions)
-        self.search_entry.bind("<FocusOut>", lambda e: self.hide_suggestion_window())
+        self.search_entry.bind("<FocusOut>", self.on_entry_focus_out)
+
+        
+
+
+
+        self.search_entry.bind("<Down>", self.move_selection_down)
+        self.search_entry.bind("<Up>", self.move_selection_up)
+        self.search_entry.bind("<Return>", self.select_suggestion)
 
         self.clear_btn = tk.Button(entry_frame, text="✕", command=self.clear_search,
                                 bg="#F4E1C1", fg="#2C3E50", font=("Helvetica", self.scale_size(12)),  # Sandy Beige, Dark Slate
@@ -641,47 +654,80 @@ class PharmacyPOS:
 
         self.update_cart_table()
 
+    def on_entry_focus_out(self, event):
+            # Only hide if focus is NOT going into the suggestion listbox
+            if self.suggestion_listbox and self.suggestion_listbox.winfo_exists():
+                if self.root.focus_get() != self.suggestion_listbox:
+                    self.hide_suggestion_window()
+
     def clear_search(self) -> None:
         self.search_entry.delete(0, tk.END)
         self.hide_suggestion_window()
         self.clear_btn.pack_forget()
 
     def update_suggestions(self, event: Optional[tk.Event] = None) -> None:
+        # 🚫 Ignore arrow keys and Enter, so the listbox doesn't reset/vanish
+        if event and event.keysym in ("Up", "Down", "Return"):
+            return
+
         query = self.search_entry.get().strip()
         if not self.suggestion_window or not self.suggestion_window.winfo_exists():
             self.suggestion_window = tk.Toplevel(self.root)
             self.suggestion_window.wm_overrideredirect(True)
             self.suggestion_window.configure(bg="#ffffff")
-            self.suggestion_listbox = tk.Listbox(self.suggestion_window, height=5, font=("Helvetica", 12),
-                                                bg="#ffffff", fg="#000000", selectbackground="#2ecc71",
-                                                selectforeground="#ffffff", highlightthickness=0, bd=0,
-                                                relief="flat")
+            self.suggestion_listbox = tk.Listbox(
+                self.suggestion_window,
+                height=5,
+                font=("Helvetica", 12),
+                bg="#ffffff",
+                fg="#000000",
+                selectbackground="#2ecc71",
+                selectforeground="#ffffff",
+                highlightthickness=0,
+                bd=0,
+                relief="flat"
+            )
             self.suggestion_listbox.pack(fill="both", expand=True)
             self.suggestion_listbox.bind("<<ListboxSelect>>", self.select_suggestion)
             self.suggestion_listbox.bind("<Return>", self.select_suggestion)
             self.suggestion_listbox.bind("<Up>", self.move_selection_up)
             self.suggestion_listbox.bind("<Down>", self.move_selection_down)
             self.suggestion_listbox.bind("<Motion>", self.highlight_on_hover)
+            # ✅ Hide only if listbox itself loses focus (not when Entry loses focus)
+            self.suggestion_listbox.bind("<FocusOut>", lambda e: self.hide_suggestion_window())
 
         self.suggestion_listbox.delete(0, tk.END)
         if query:
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("SELECT name, retail_price, quantity, supplier FROM inventory WHERE name LIKE ?",
-                            (f"%{query}%",))
+                cursor.execute(
+                    "SELECT name, retail_price, quantity, supplier FROM inventory WHERE name LIKE ?",
+                    (f"%{query}%",)
+                )
                 suggestions = cursor.fetchall()
 
                 if suggestions:
+                    # auto-highlight first suggestion
+                    self.suggestion_listbox.selection_clear(0, tk.END)
+                    self.suggestion_listbox.selection_set(0)
+                    self.suggestion_listbox.activate(0)
+                    self.suggestion_listbox.see(0)
+
                     for name, retail_price, quantity, supplier in suggestions:
                         display_text = f"{name} - ₱{retail_price:.2f} (Stock: {quantity}, Supplier: {supplier or 'Unknown'})"
                         self.suggestion_listbox.insert(tk.END, display_text)
+
                     search_width = self.search_entry.winfo_width()
-                    self.suggestion_window.geometry(f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}")
+                    self.suggestion_window.geometry(
+                        f"{search_width}x{self.suggestion_listbox.winfo_reqheight()}+"
+                        f"{self.search_entry.winfo_rootx()}+{self.search_entry.winfo_rooty() + self.search_entry.winfo_height()}"
+                    )
                     self.suggestion_window.deiconify()
                     self.clear_btn.pack(side="right", padx=(0, 5))
                 else:
                     self.hide_suggestion_window()
                     self.clear_btn.pack_forget()
+
 
     def highlight_on_hover(self, event: tk.Event) -> None:
         if self.suggestion_listbox and self.suggestion_listbox.winfo_exists():
@@ -1025,7 +1071,51 @@ class PharmacyPOS:
             return transaction_id
 
     def process_checkout(self, cash_paid: float, final_total: float) -> None:
+        logging.debug("Starting process_checkout")
         try:
+            # Check if summary_entries is initialized and contains required fields
+            if not hasattr(self, 'summary_entries') or not all(key in self.summary_entries for key in ["Cash Paid ", "Final Total ", "Change "]):
+                logging.error("Summary entries not initialized")
+                messagebox.showerror("Error", "Checkout fields not initialized. Please restart the application.", parent=self.root)
+                return
+            
+            # Get and validate input values
+            cash_paid_str = self.summary_entries["Cash Paid "].get().strip()
+            final_total_str = self.summary_entries["Final Total "].get().strip()
+            logging.debug(f"Cash Paid: '{cash_paid_str}', Final Total: '{final_total_str}'")
+            
+            if not cash_paid_str or not final_total_str:
+                logging.error("Cash Paid or Final Total is empty")
+                messagebox.showerror("Error", "Cash Paid or Final Total is empty", parent=self.root)
+                return
+            
+            try:
+                cash_paid = float(cash_paid_str)
+                final_total = float(final_total_str)
+            except ValueError as e:
+                logging.error(f"Invalid input for cash_paid or final_total: {e}")
+                messagebox.showerror("Error", "Invalid cash or total amount", parent=self.root)
+                return
+            
+            if cash_paid < final_total:
+                logging.error("Insufficient cash paid")
+                messagebox.showerror("Error", "Insufficient cash paid.", parent=self.root)
+                return
+            
+            # Prompt for customer ID if not set
+            if not hasattr(self, 'current_customer_id') or not self.current_customer_id:
+                if not messagebox.askyesno(
+                    "No Customer Information",
+                    "No customer ID is selected. Proceed without customer details?",
+                    parent=self.root
+                ):
+                    self.select_customer()
+                    return
+            
+            # Confirm checkout
+            if not messagebox.askyesno("Confirm Checkout", "Proceed with checkout?", parent=self.root):
+                return
+
             transaction_id = self.generate_transaction_id()
             items = ";".join([f"{item['id']}:{item['quantity']}" for item in self.cart])
             change = cash_paid - final_total
@@ -1042,7 +1132,7 @@ class PharmacyPOS:
                 # Validate stock and calculate net profit
                 for item in self.cart:
                     cursor.execute("SELECT retail_price, unit_price, quantity FROM inventory WHERE item_id = ?",
-                                  (item["id"],))
+                                (item["id"],))
                     result = cursor.fetchone()
                     if not result:
                         raise ValueError(f"Item {item['id']} not found in inventory")
@@ -1052,7 +1142,7 @@ class PharmacyPOS:
                     net_profit += (retail_price - unit_price) * item["quantity"]
                     # Decrease inventory quantity
                     cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?",
-                                  (item["quantity"], item["id"]))
+                                (item["quantity"], item["id"]))
 
                 # Insert transaction
                 cursor.execute('''
@@ -1068,10 +1158,10 @@ class PharmacyPOS:
                     new_unit_sales = existing_sale[1] + unit_sales
                     new_net_profit = existing_sale[2] + net_profit
                     cursor.execute("UPDATE daily_sales SET total_sales = ?, unit_sales = ?, net_profit = ?, user = ? WHERE sale_date = ?",
-                                  (new_total_sales, new_unit_sales, new_net_profit, self.current_user, sale_date))
+                                (new_total_sales, new_unit_sales, new_net_profit, self.current_user, sale_date))
                 else:
                     cursor.execute("INSERT INTO daily_sales (sale_date, total_sales, unit_sales, net_profit, user) VALUES (?, ?, ?, ?, ?)",
-                                  (sale_date, final_total, unit_sales, net_profit, self.current_user))
+                                (sale_date, final_total, unit_sales, net_profit, self.current_user))
 
                 # Insert transaction log
                 cursor.execute('''
@@ -1081,37 +1171,37 @@ class PharmacyPOS:
 
                 self.conn.commit()
 
-                # Clear UI elements
-                self.cart.clear()
-                self.selected_item_index = None
-                self.update_cart_table()
-                self.discount_authenticated = False
-                self.discount_var.set(False)
-                self.current_payment_method = None
-                self.current_customer_id = None
+            # Clear UI elements
+            self.cart.clear()
+            self.selected_item_index = None
+            self.update_cart_table()
+            self.discount_authenticated = False
+            self.discount_var.set(False)
+            self.current_payment_method = None
+            self.current_customer_id = None
 
-                if "Cash Paid " in self.summary_entries and self.summary_entries["Cash Paid "].winfo_exists():
-                    self.summary_entries["Cash Paid "].delete(0, tk.END)
-                    self.summary_entries["Cash Paid "].insert(0, "0.00")
-                if "Change " in self.summary_entries and self.summary_entries["Change "].winfo_exists():
-                    self.summary_entries["Change "].config(state="normal")
-                    self.summary_entries["Change "].delete(0, tk.END)
-                    self.summary_entries["Change "].insert(0, "0.00")
-                    self.summary_entries["Change "].config(state="readonly")
+            if "Cash Paid " in self.summary_entries and self.summary_entries["Cash Paid "].winfo_exists():
+                self.summary_entries["Cash Paid "].delete(0, tk.END)
+                self.summary_entries["Cash Paid "].insert(0, "0.00")
+            if "Change " in self.summary_entries and self.summary_entries["Change "].winfo_exists():
+                self.summary_entries["Change "].config(state="normal")
+                self.summary_entries["Change "].delete(0, tk.END)
+                self.summary_entries["Change "].insert(0, "0.00")
+                self.summary_entries["Change "].config(state="readonly")
 
-                if hasattr(self, 'customer_label') and self.customer_label.winfo_exists():
-                    self.customer_label.config(text="No Customer Selected")
+            if hasattr(self, 'customer_label') and self.customer_label.winfo_exists():
+                self.customer_label.config(text="No Customer Selected")
 
-                messagebox.showinfo("Success", f"Transaction completed. Change: ₱{change:.2f}", parent=self.root)
+            messagebox.showinfo("Success", f"Transaction completed. Change: ₱{change:.2f}", parent=self.root)
 
-                self.generate_receipt(transaction_id, timestamp, items, final_total, cash_paid, change)
-                self.check_low_inventory()
+            self.generate_receipt(transaction_id, timestamp, items, final_total, cash_paid, change)
+            self.check_low_inventory()
 
         except (sqlite3.Error, ValueError) as e:
-            print(f"Debug: Error in process_checkout: {e}")
+            logging.error(f"Checkout failed: {e}")
             messagebox.showerror("Error", f"Failed to process transaction: {e}", parent=self.root)
         except Exception as e:
-            print(f"Debug: Unexpected error in process_checkout: {e}")
+            logging.error(f"Unexpected error in process_checkout: {e}")
             messagebox.showerror("Error", f"An unexpected error occurred: {e}", parent=self.root)
 
 
@@ -1258,6 +1348,12 @@ class PharmacyPOS:
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
+        tk.Button(search_frame, text="📤 Upload CSV",
+                command=self.upload_inventory_csv,
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
+
         # Inventory table frame
         inventory_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
         inventory_frame.grid(row=1, column=0, sticky="nsew", pady=self.scale_size(10))
@@ -1319,6 +1415,99 @@ class PharmacyPOS:
 
         self.update_inventory_table()
         self.root.update_idletasks()
+
+    def upload_inventory_csv(self) -> None:
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to upload inventory", parent=self.root)
+            return
+
+        file_path = filedialog.askopenfilename(
+            title="Select CSV File",
+            filetypes=[("CSV Files", "*.csv")]
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                expected_headers = ["BARCODE", "ITEM DESCRIPTION", "ON HAND", "SUPPLIER", "CATEGORY", "UNIT COST", "SELLING PRICE"]
+                if not all(header in reader.fieldnames for header in expected_headers):
+                    messagebox.showerror("Error", f"CSV file must contain headers: {', '.join(expected_headers)}", parent=self.root)
+                    return
+
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    items_added = 0
+                    items_updated = 0
+                    for row in reader:
+                        try:
+                            item_id = row["BARCODE"].strip()
+                            name = row["ITEM DESCRIPTION"].strip()
+                            quantity = int(row["ON HAND"].strip())
+                            supplier = row["SUPPLIER"].strip()
+                            item_type = row["CATEGORY"].strip()
+                            unit_price = float(row["UNIT COST"].strip())
+                            retail_price = float(row["SELLING PRICE"].strip())
+
+                            item_id = row["BARCODE"].strip()
+                            if not item_id:
+                                # Generate a unique ID if barcode is missing
+                                item_id = f"GEN-{uuid.uuid4().hex[:8].upper()}"
+
+                            name = row["ITEM DESCRIPTION"].strip()
+                            if not name:
+                                continue  # Still skip if no name
+
+                            if quantity < 0 or unit_price < 0 or retail_price < 0:
+                                messagebox.showwarning(
+                                    "Warning",
+                                    f"Invalid data for item {name}: Negative values not allowed",
+                                    parent=self.root
+                                )
+                                continue
+
+
+                            # Check if item exists
+                            cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item_id,))
+                            existing_item = cursor.fetchone()
+                            if existing_item:
+                                # Update existing item
+                                cursor.execute("""
+                                    UPDATE inventory
+                                    SET name = ?, type = ?, retail_price = ?, unit_price = ?, quantity = ?, supplier = ?
+                                    WHERE item_id = ?
+                                """, (name, item_type, retail_price, unit_price, quantity, supplier, item_id))
+                                items_updated += 1
+                            else:
+                                # Insert new item
+                                cursor.execute("""
+                                    INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                                items_added += 1
+                        except (ValueError, KeyError) as e:
+                            messagebox.showwarning("Warning", f"Invalid data for item {row.get('ITEM DESCRIPTION', 'unknown')}: {e}", parent=self.root)
+                            continue
+
+                    # Log the action
+                    cursor.execute("""
+                        INSERT INTO transaction_log (log_id, action, details, timestamp, user)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (
+                        str(uuid.uuid4()),
+                        "Upload Inventory CSV",
+                        f"Added {items_added} items, updated {items_updated} items from CSV",
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        self.current_user
+                    ))
+                    self.conn.commit()
+
+            # Refresh inventory table
+            self.update_inventory_table()
+            messagebox.showinfo("Success", f"Inventory updated: {items_added} items added, {items_updated} items updated", parent=self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process CSV file: {e}", parent=self.root)
 
     def confirm_delete_item(self) -> None:
         selected_item = self.inventory_table.selection()

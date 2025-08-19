@@ -15,6 +15,8 @@ from pathlib import Path
 import webbrowser
 from datetime import datetime, date
 from tkcalendar import DateEntry
+import csv
+from tkinter import filedialog 
 
 class PharmacyPOS:
     def __init__(self, root: tk.Tk):
@@ -365,7 +367,7 @@ class PharmacyPOS:
                                     padx=8, pady=4, bd=0)
         self.hamburger_btn.pack(side="left", padx=5)
 
-        tk.Label(self.header, text="St Rafael Pharmacy", font=("Helvetica", 18, "bold"),
+        tk.Label(self.header, text="St. Rafael Pharmacy", font=("Helvetica", 18, "bold"),
                 bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
         tk.Label(self.header, text=datetime.now().strftime("%B %d, %Y %I:%M %p PST"),
                 font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
@@ -1258,6 +1260,12 @@ class PharmacyPOS:
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
+        tk.Button(search_frame, text="📤 Upload CSV",
+                command=self.upload_inventory_csv,
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
+
         # Inventory table frame
         inventory_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
         inventory_frame.grid(row=1, column=0, sticky="nsew", pady=self.scale_size(10))
@@ -1319,6 +1327,99 @@ class PharmacyPOS:
 
         self.update_inventory_table()
         self.root.update_idletasks()
+
+    def upload_inventory_csv(self) -> None:
+        if not self.current_user:
+            messagebox.showerror("Error", "You must be logged in to upload inventory", parent=self.root)
+            return
+
+        file_path = filedialog.askopenfilename(
+            title="Select CSV File",
+            filetypes=[("CSV Files", "*.csv")]
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                expected_headers = ["BARCODE", "ITEM DESCRIPTION", "ON HAND", "SUPPLIER", "CATEGORY", "UNIT COST", "SELLING PRICE"]
+                if not all(header in reader.fieldnames for header in expected_headers):
+                    messagebox.showerror("Error", f"CSV file must contain headers: {', '.join(expected_headers)}", parent=self.root)
+                    return
+
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    items_added = 0
+                    items_updated = 0
+                    for row in reader:
+                        try:
+                            item_id = row["BARCODE"].strip()
+                            name = row["ITEM DESCRIPTION"].strip()
+                            quantity = int(row["ON HAND"].strip())
+                            supplier = row["SUPPLIER"].strip()
+                            item_type = row["CATEGORY"].strip()
+                            unit_price = float(row["UNIT COST"].strip())
+                            retail_price = float(row["SELLING PRICE"].strip())
+
+                            item_id = row["BARCODE"].strip()
+                            if not item_id:
+                                # Generate a unique ID if barcode is missing
+                                item_id = f"GEN-{uuid.uuid4().hex[:8].upper()}"
+
+                            name = row["ITEM DESCRIPTION"].strip()
+                            if not name:
+                                continue  # Still skip if no name
+
+                            if quantity < 0 or unit_price < 0 or retail_price < 0:
+                                messagebox.showwarning(
+                                    "Warning",
+                                    f"Invalid data for item {name}: Negative values not allowed",
+                                    parent=self.root
+                                )
+                                continue
+
+
+                            # Check if item exists
+                            cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item_id,))
+                            existing_item = cursor.fetchone()
+                            if existing_item:
+                                # Update existing item
+                                cursor.execute("""
+                                    UPDATE inventory
+                                    SET name = ?, type = ?, retail_price = ?, unit_price = ?, quantity = ?, supplier = ?
+                                    WHERE item_id = ?
+                                """, (name, item_type, retail_price, unit_price, quantity, supplier, item_id))
+                                items_updated += 1
+                            else:
+                                # Insert new item
+                                cursor.execute("""
+                                    INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                                items_added += 1
+                        except (ValueError, KeyError) as e:
+                            messagebox.showwarning("Warning", f"Invalid data for item {row.get('ITEM DESCRIPTION', 'unknown')}: {e}", parent=self.root)
+                            continue
+
+                    # Log the action
+                    cursor.execute("""
+                        INSERT INTO transaction_log (log_id, action, details, timestamp, user)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (
+                        str(uuid.uuid4()),
+                        "Upload Inventory CSV",
+                        f"Added {items_added} items, updated {items_updated} items from CSV",
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        self.current_user
+                    ))
+                    self.conn.commit()
+
+            # Refresh inventory table
+            self.update_inventory_table()
+            messagebox.showinfo("Success", f"Inventory updated: {items_added} items added, {items_updated} items updated", parent=self.root)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process CSV file: {e}", parent=self.root)
 
     def confirm_delete_item(self) -> None:
         selected_item = self.inventory_table.selection()
@@ -2215,7 +2316,7 @@ class PharmacyPOS:
 
         # Header
         c.drawString(100, 750, "Shinano POS")
-        c.drawString(100, 732, "St. Rafael Pharmacy.")
+        c.drawString(100, 732, "St. Rafael Pharmacy")
         # c.drawString(100, 714, "VAT REG TIN: 123-456-789-000")
         # c.drawString(100, 696, "SN: 987654321 MIN: 123456789")
         c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
