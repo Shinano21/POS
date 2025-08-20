@@ -374,7 +374,7 @@ class PharmacyPOS:
                                     padx=8, pady=4, bd=0)
         self.hamburger_btn.pack(side="left", padx=5)
 
-        tk.Label(self.header, text="Gem's Pharmacy", font=("Helvetica", 18, "bold"),
+        tk.Label(self.header, text="St. Rafael Pharmacy", font=("Helvetica", 18, "bold"),
                 bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
         tk.Label(self.header, text=datetime.now().strftime("%B %d, %Y %I:%M %p PST"),
                 font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
@@ -2410,7 +2410,7 @@ class PharmacyPOS:
 
         # Header
         c.drawString(100, 750, "Shinano POS")
-        c.drawString(100, 732, "Gem's Pharmacy.")
+        c.drawString(100, 732, "St. Rafael Pharmacy.")
         # c.drawString(100, 714, "VAT REG TIN: 123-456-789-000")
         # c.drawString(100, 696, "SN: 987654321 MIN: 123456789")
         c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
