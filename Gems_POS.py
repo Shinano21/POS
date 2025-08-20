@@ -173,9 +173,9 @@ class PharmacyPOS:
                         item_id TEXT PRIMARY KEY,
                         name TEXT,
                         type TEXT,
-                        retail_price REAL,
-                        unit_price REAL,
-                        quantity INTEGER,
+                        retail_price REAL DEFAULT 0.0,
+                        unit_price REAL DEFAULT 0.0,
+                        quantity INTEGER DEFAULT 0,
                         supplier TEXT
                     )
                 ''')
@@ -186,7 +186,7 @@ class PharmacyPOS:
                     cursor.execute("ALTER TABLE inventory RENAME COLUMN price TO retail_price")
                     print("Renamed price to retail_price in inventory table.")
                 if 'unit_price' not in columns:
-                    cursor.execute("ALTER TABLE inventory ADD COLUMN unit_price REAL")
+                    cursor.execute("ALTER TABLE inventory ADD COLUMN unit_price REAL DEFAULT 0.0")
                     print("Added unit_price column to inventory table.")
                 if 'supplier' not in columns:
                     cursor.execute("ALTER TABLE inventory ADD COLUMN supplier TEXT")
@@ -196,9 +196,9 @@ class PharmacyPOS:
                     CREATE TABLE IF NOT EXISTS transactions (
                         transaction_id TEXT PRIMARY KEY,
                         items TEXT,
-                        total_amount REAL,
-                        cash_paid REAL,
-                        change_amount REAL,
+                        total_amount REAL DEFAULT 0.0,
+                        cash_paid REAL DEFAULT 0.0,
+                        change_amount REAL DEFAULT 0.0,
                         timestamp TEXT,
                         status TEXT,
                         payment_method TEXT,
@@ -216,7 +216,7 @@ class PharmacyPOS:
                     CREATE TABLE IF NOT EXISTS funds (
                         fund_id TEXT PRIMARY KEY,
                         type TEXT,
-                        amount REAL,
+                        amount REAL DEFAULT 0.0,
                         timestamp TEXT,
                         user TEXT
                     )
@@ -252,9 +252,9 @@ class PharmacyPOS:
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS daily_sales (
                         sale_date TEXT PRIMARY KEY,
-                        total_sales REAL,
-                        unit_sales INTEGER,
-                        net_profit REAL,
+                        total_sales REAL DEFAULT 0.0,
+                        unit_sales INTEGER DEFAULT 0,
+                        net_profit REAL DEFAULT 0.0,
                         user TEXT
                     )
                 ''')
@@ -277,9 +277,13 @@ class PharmacyPOS:
         with self.conn:
             cursor = self.conn.cursor()
             for item_id, name, item_type, retail_price, unit_price, quantity, supplier in sample_items:
-                cursor.execute("INSERT OR IGNORE INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                cursor.execute("""
+                    INSERT OR IGNORE INTO inventory 
+                    (item_id, name, type, retail_price, unit_price, quantity, supplier) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
             self.conn.commit()
+
 
     def setup_gui(self) -> None:
         self.main_frame = tk.Frame(self.root, bg="#F4E1C1")  # Sandy Beige
@@ -810,8 +814,8 @@ class PharmacyPOS:
 
     def update_change(self, event: Optional[tk.Event] = None) -> None:
         try:
-            cash_paid = float(self.summary_entries["Cash Paid "].get())
-            final_total = float(self.summary_entries["Final Total "].get())
+            cash_paid = float(self.summary_entries["Cash Paid "].get() or 0)
+            final_total = float(self.summary_entries["Final Total "].get() or 0)
             change = cash_paid - final_total
             self.summary_entries["Change "].config(state="normal")
             self.summary_entries["Change "].delete(0, tk.END)
@@ -997,9 +1001,9 @@ class PharmacyPOS:
             self.update_quantity_display()
 
     def update_cart_totals(self) -> None:
-        final_total = sum((item['retail_price'] * item['quantity']) - 
-                         (item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0) 
-                         for item in self.cart)
+        final_total = sum(((item['retail_price'] or 0) * (item['quantity'] or 0)) - 
+                 (((item['retail_price'] or 0) * (item['quantity'] or 0) * 0.2) if item.get('discount_applied', False) else 0) 
+                 for item in self.cart)
 
         if "Final Total " in self.summary_entries and self.summary_entries["Final Total "].winfo_exists():
             self.summary_entries["Final Total "].config(state="normal")
@@ -1118,7 +1122,7 @@ class PharmacyPOS:
 
             transaction_id = self.generate_transaction_id()
             items = ";".join([f"{item['id']}:{item['quantity']}" for item in self.cart])
-            change = cash_paid - final_total
+            change = float(cash_paid or 0) - float(final_total or 0)
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sale_date = datetime.now().strftime("%Y-%m-%d")
             payment_method = getattr(self, 'current_payment_method', 'Cash')
@@ -1232,7 +1236,7 @@ class PharmacyPOS:
                     item_data = cursor.fetchone()
                     if item_data:
                         name, price = item_data
-                        subtotal = price * qty
+                        subtotal = (price or 0) * (qty or 0)
                         c.drawString(100, y, f"{name} | {qty} | ₱{price:.2f} | ₱{subtotal:.2f}")
                         y -= 20
             
@@ -1255,8 +1259,10 @@ class PharmacyPOS:
             for item in self.cart_table.get_children():
                 self.cart_table.delete(item)
             for item in self.cart:
-                discount = item['retail_price'] * item['quantity'] * 0.2 if item.get('discount_applied', False) else 0
-                subtotal = (item['retail_price'] * item['quantity']) - discount
+                price = item.get('retail_price') or 0
+                qty = item.get('quantity') or 0
+                discount = price * qty * 0.2 if item.get('discount_applied', False) else 0
+                subtotal = (price * qty) - discount
                 item['subtotal'] = subtotal
                 display_name = f"{item['name']} (20% OFF)" if item.get('discount_applied', False) else item['name']
                 self.cart_table.insert("", "end", values=(
