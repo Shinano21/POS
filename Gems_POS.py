@@ -865,9 +865,9 @@ class PharmacyPOS:
             return
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 self.discount_authenticated = True
                 self.cart[item_index]['discount_applied'] = True
                 self.update_cart_table()
@@ -1307,9 +1307,9 @@ class PharmacyPOS:
     def validate_inventory_access_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 window.destroy()
                 self.display_inventory()
             else:
@@ -1445,7 +1445,7 @@ class PharmacyPOS:
                 with self.conn:
                     cursor = self.conn.cursor()
                     items_added = 0
-                    items_updated = 0
+                    items_skipped = 0
                     for row in reader:
                         try:
                             item_id = row["BARCODE"].strip()
@@ -1456,14 +1456,12 @@ class PharmacyPOS:
                             unit_price = float(row["UNIT COST"].strip())
                             retail_price = float(row["SELLING PRICE"].strip())
 
-                            item_id = row["BARCODE"].strip()
                             if not item_id:
                                 # Generate a unique ID if barcode is missing
                                 item_id = f"GEN-{uuid.uuid4().hex[:8].upper()}"
 
-                            name = row["ITEM DESCRIPTION"].strip()
                             if not name:
-                                continue  # Still skip if no name
+                                continue  # Skip if no name
 
                             if quantity < 0 or unit_price < 0 or retail_price < 0:
                                 messagebox.showwarning(
@@ -1473,25 +1471,22 @@ class PharmacyPOS:
                                 )
                                 continue
 
+                            # 🚫 Check for duplicate by NAME
+                            cursor.execute("SELECT COUNT(*) FROM inventory WHERE name = ?", (name,))
+                            exists = cursor.fetchone()[0]
 
-                            # Check if item exists
-                            cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item_id,))
-                            existing_item = cursor.fetchone()
-                            if existing_item:
-                                # Update existing item
-                                cursor.execute("""
-                                    UPDATE inventory
-                                    SET name = ?, type = ?, retail_price = ?, unit_price = ?, quantity = ?, supplier = ?
-                                    WHERE item_id = ?
-                                """, (name, item_type, retail_price, unit_price, quantity, supplier, item_id))
-                                items_updated += 1
-                            else:
-                                # Insert new item
-                                cursor.execute("""
-                                    INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                                """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
-                                items_added += 1
+                            if exists:
+                                # Skip duplicates
+                                items_skipped += 1
+                                continue
+
+                            # Insert only new items
+                            cursor.execute("""
+                                INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+                            items_added += 1
+
                         except (ValueError, KeyError) as e:
                             messagebox.showwarning("Warning", f"Invalid data for item {row.get('ITEM DESCRIPTION', 'unknown')}: {e}", parent=self.root)
                             continue
@@ -1503,7 +1498,7 @@ class PharmacyPOS:
                     """, (
                         str(uuid.uuid4()),
                         "Upload Inventory CSV",
-                        f"Added {items_added} items, updated {items_updated} items from CSV",
+                        f"Added {items_added} items, skipped {items_skipped} duplicates from CSV",
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         self.current_user
                     ))
@@ -1511,9 +1506,10 @@ class PharmacyPOS:
 
             # Refresh inventory table
             self.update_inventory_table()
-            messagebox.showinfo("Success", f"Inventory updated: {items_added} items added, {items_updated} items updated", parent=self.root)
+            messagebox.showinfo("Success", f"Inventory updated: {items_added} items added, {items_skipped} duplicates skipped", parent=self.root)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to process CSV file: {e}", parent=self.root)
+
 
     def confirm_delete_item(self) -> None:
         selected_item = self.inventory_table.selection()
@@ -1539,9 +1535,9 @@ class PharmacyPOS:
             return
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 item_name = self.inventory_table.item(selected_item)["values"][0]
                 cursor.execute("SELECT item_id FROM inventory WHERE name = ?", (item_name,))
                 item_id = cursor.fetchone()[0]
@@ -2206,9 +2202,9 @@ class PharmacyPOS:
         transaction_id = self.transactions_table.item(selected_item)["values"][0]
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 try:
                     cursor.execute("SELECT status FROM transactions WHERE transaction_id = ?", (transaction_id,))
                     status = cursor.fetchone()
@@ -2245,9 +2241,9 @@ class PharmacyPOS:
         transaction_id = self.transactions_table.item(selected_item)["values"][0]
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 window.destroy()
                 self.show_edit_transaction(transaction_id)
             else:
@@ -3227,9 +3223,9 @@ class PharmacyPOS:
             return
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 username = self.users_table.item(selected_item)["values"][0]
                 if username == self.current_user:
                     window.destroy()
@@ -3478,9 +3474,9 @@ class PharmacyPOS:
             return
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 customer_id = self.customer_table.item(selected_item)["values"][0]
                 cursor.execute("DELETE FROM customers WHERE customer_id = ?", (customer_id,))
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
@@ -3562,9 +3558,9 @@ class PharmacyPOS:
                 raise ValueError("Amount cannot be negative")
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-                admin_password = cursor.fetchone()
-                if admin_password and password == admin_password[0]:
+                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+                admin_passwords = [row[0] for row in cursor.fetchall()]
+                if password in admin_passwords:
                     cursor.execute("INSERT INTO funds (fund_id, type, amount, timestamp, user) VALUES (?, ?, ?, ?, ?)",
                                 (str(uuid.uuid4()), fund_type, amount,
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
@@ -3914,9 +3910,9 @@ class PharmacyPOS:
 
         with self.conn:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord' LIMIT 1")
-            admin_password = cursor.fetchone()
-            if admin_password and password == admin_password[0]:
+            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+            admin_passwords = [row[0] for row in cursor.fetchall()]
+            if password in admin_passwords:
                 self.show_return_transaction(transaction_id)
                 window.destroy()
                 if return_window != window:
