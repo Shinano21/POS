@@ -369,12 +369,12 @@ class PharmacyPOS:
         self.header.pack(side="top", fill="x", pady=8)
 
         self.hamburger_btn = tk.Button(self.header, text="✕", command=self.toggle_sidebar,
-                                    bg="#F5F6F5", fg="#2C3E50", font=("Helvetica", 18),  # Soft White, Dark Slate
+                                    bg="#F5F6F5", fg="#2C3E50", font=("Helvetica", 14),  # Soft White, Dark Slate
                                     activebackground="#4DA8DA", activeforeground="#F5F6F5",  # Aqua Blue, Soft White
                                     padx=8, pady=4, bd=0)
         self.hamburger_btn.pack(side="left", padx=5)
 
-        tk.Label(self.header, text="Gem's Pharmacy", font=("Helvetica", 18, "bold"),
+        tk.Label(self.header, text="Gem's Pharmacy", font=("Helvetica", 14, "bold"),
                 bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
         tk.Label(self.header, text=datetime.now().strftime("%B %d, %Y %I:%M %p PST"),
                 font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
@@ -427,7 +427,7 @@ class PharmacyPOS:
         auth_box = tk.Frame(window, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         auth_box.pack(pady=20)
 
-        tk.Label(auth_box, text=title, font=("Helvetica", 18, "bold"),
+        tk.Label(auth_box, text=title, font=("Helvetica", 14, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=12)  # Soft White, Dark Slate
         tk.Label(auth_box, text=prompt, font=("Helvetica", 12),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=8)  # Soft White, Dark Slate
@@ -472,7 +472,7 @@ class PharmacyPOS:
         login_box = tk.Frame(login_frame, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         login_box.pack(pady=20)
 
-        tk.Label(login_box, text="Login", font=("Helvetica", 18, "bold"),
+        tk.Label(login_box, text="Login", font=("Helvetica", 14, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=12)  # Soft White, Dark Slate
         tk.Label(login_box, text="Welcome to the POS! Please enter your credentials.",
                 font=("Helvetica", 12), bg="#F5F6F5", fg="#2C3E50").pack(pady=8)  # Soft White, Dark Slate
@@ -1568,11 +1568,11 @@ class PharmacyPOS:
                     profitability_label.config(text="Not Profitable", fg="#3C2F2F")
             else:
                 markup_label.config(text="0.00%")
-                profitability_label.config(text="N/A", fg="#2C1B18")
+                profitability_label.config(text="N/A", fg="#2C1B14")
             error_label.config(text="")
         except ValueError:
             markup_label.config(text="0.00%")
-            profitability_label.config(text="N/A", fg="#2C1B18")
+            profitability_label.config(text="N/A", fg="#2C1B14")
             error_label.config(text="Enter valid prices", fg="#3C2F2F")
 
 
@@ -1580,14 +1580,14 @@ class PharmacyPOS:
     def show_add_item(self) -> None:
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
-        window.geometry("600x450")  # Increased width for 2-column layout
+        window.geometry("800x520")  # Increased width for 2-column layout
         window.configure(bg="#F5F5DC")
 
         add_box = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20, bd=1, relief="flat")
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
-        tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
-                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
+        tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 14, "bold"),
+                bg="#FFF8E7", fg="#2C1B14").grid(row=0, column=0, columnspan=4, pady=15)
 
         # Fields matching show_update_item, excluding Type which is handled separately
         fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
@@ -1608,8 +1608,8 @@ class PharmacyPOS:
             frame = tk.Frame(add_box, bg="#FFF8E7")
             frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
             
-            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18")
+            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
             if field == "Item ID (Barcode)":
@@ -1620,19 +1620,19 @@ class PharmacyPOS:
 
         markup_frame = tk.Frame(add_box, bg="#FFF8E7")
         markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
-        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18", width=10, anchor="w")
+        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=10, anchor="w")
         markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
         profitability_frame = tk.Frame(add_box, bg="#FFF8E7")
         profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
-        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18", width=15, anchor="w")
+        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=15, anchor="w")
         profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
         type_frame = tk.Frame(add_box, bg="#FFF8E7")
         type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
-        tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack()
+        tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack()
         type_var = tk.StringVar(value="Medicine")
         ttk.Combobox(type_frame, textvariable=type_var,
                     values=["Medicine", "Supplement", "Medical Device", "Beverage", 
@@ -1685,6 +1685,7 @@ class PharmacyPOS:
             retail_price = float(retail_price) if retail_price.strip() else 0.0
             unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
             quantity = int(quantity) if quantity.strip() else 0
+
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Name and Type are required", parent=self.root)
                 return
@@ -1697,37 +1698,54 @@ class PharmacyPOS:
             if quantity < 0:
                 messagebox.showerror("Error", "Quantity cannot be negative", parent=self.root)
                 return
+
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else str(uuid.uuid4())
 
-            # Debugging: Log values before insertion
-            print(f"Inserting into inventory: item_id={item_id}, name={name}, type={item_type}, "
-                f"retail_price={retail_price}, unit_price={unit_price}, quantity={quantity}, supplier={supplier}")
-
             with self.conn:
                 cursor = self.conn.cursor()
-                cursor.execute("INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                            (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
-                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (str(uuid.uuid4()), "Add Item", f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                # 🔍 Check if item already exists (same NAME + PRICE + SUPPLIER)
+                cursor.execute("""
+                    SELECT item_id FROM inventory
+                    WHERE name = ? AND retail_price = ? AND supplier = ?
+                """, (name, retail_price, supplier))
+                existing = cursor.fetchone()
+
+                if existing:
+                    # 🚫 Block duplicate
+                    messagebox.showerror("Error", f"Item '{name}' with same price and supplier already exists.", parent=self.root)
+                    return
+
+                # ✅ Insert new item
+                cursor.execute("""
+                    INSERT INTO inventory (item_id, name, type, retail_price, unit_price, quantity, supplier)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier))
+
+                cursor.execute("""
+                    INSERT INTO transaction_log (log_id, action, details, timestamp, user)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    str(uuid.uuid4()), "Add Item",
+                    f"Added item {item_id}: {name}, {quantity} units, Supplier: {supplier}",
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    self.current_user
+                ))
+
                 self.conn.commit()
-
-                # Debugging: Verify insertion
-                cursor.execute("SELECT item_id, name, type, retail_price, unit_price, quantity, supplier FROM inventory WHERE item_id = ?", (item_id,))
-                result = cursor.fetchone()
-                print(f"Inserted record: {result}")
-
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", "Item added successfully", parent=self.root)
+
                 if quantity <= 5:
                     self.check_low_inventory()
+
         except ValueError:
             messagebox.showerror("Error", "Invalid retail price, unit price, or quantity", parent=self.root)
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Item ID already exists", parent=self.root)
+
 
 
     def on_inventory_right_click(self, event: tk.Event) -> None:
@@ -1754,14 +1772,14 @@ class PharmacyPOS:
             if item:
                 window = tk.Toplevel(self.root)
                 window.title("Update Item")
-                window.geometry("600x450")  # Increased width for 2-column layout
+                window.geometry("800x520")  # Increased width for 2-column layout
                 window.configure(bg="#F5F5DC")
 
                 update_box = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20, bd=1, relief="flat")
                 update_box.pack(pady=20, padx=20, fill="both", expand=True)
 
-                tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
-                         bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
+                tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 14, "bold"),
+                         bg="#FFF8E7", fg="#2C1B14").grid(row=0, column=0, columnspan=4, pady=15)
 
                 fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
@@ -1780,8 +1798,8 @@ class PharmacyPOS:
                     frame = tk.Frame(update_box, bg="#FFF8E7")
                     frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
                     
-                    tk.Label(frame, text=field, font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18")
+                    tk.Label(frame, text=field, font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14")
                     entry.pack(side="left", fill="x", expand=True, padx=5)
                     entries[field] = entry
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
@@ -1791,19 +1809,19 @@ class PharmacyPOS:
 
                 markup_frame = tk.Frame(update_box, bg="#FFF8E7")
                 markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
-                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18", width=10, anchor="w")
+                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=10, anchor="w")
                 markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
                 profitability_frame = tk.Frame(update_box, bg="#FFF8E7")
                 profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
-                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B18", width=15, anchor="w")
+                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=15, anchor="w")
                 profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
                 type_frame = tk.Frame(update_box, bg="#FFF8E7")
                 type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
-                tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B18").pack()
+                tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack()
                 type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")
                 ttk.Combobox(type_frame, textvariable=type_var,
                              values=["Medicine", "Supplement", "Medical Device", "Beverage", 
@@ -1861,6 +1879,7 @@ class PharmacyPOS:
             retail_price = float(retail_price) if retail_price.strip() else 0.0
             unit_price = float(unit_price) if unit_price.strip() else 0.0  # Allow optional unit_price
             quantity = int(quantity) if quantity.strip() else 0
+
             if retail_price <= 0:
                 messagebox.showerror("Error", "Retail Price must be greater than zero", parent=self.root)
                 return
@@ -1873,37 +1892,64 @@ class PharmacyPOS:
             if not all([name, item_type]):
                 messagebox.showerror("Error", "Name and Type are required", parent=self.root)
                 return
+
             name = name.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else original_item_id
+
             with self.conn:
                 cursor = self.conn.cursor()
+
+                # 🔍 Check if Item ID already taken by another product
                 if item_id != original_item_id:
                     cursor.execute("SELECT item_id FROM inventory WHERE item_id = ?", (item_id,))
                     if cursor.fetchone():
                         messagebox.showerror("Error", "Item ID already exists", parent=self.root)
                         return
+
+                # 🔍 Check if another item already exists with same NAME + PRICE + SUPPLIER
+                cursor.execute("""
+                    SELECT item_id FROM inventory
+                    WHERE name = ? AND retail_price = ? AND supplier = ? AND item_id != ?
+                """, (name, retail_price, supplier, original_item_id))
+                duplicate = cursor.fetchone()
+                if duplicate:
+                    messagebox.showerror("Error", f"Another item with the same name, price, and supplier already exists.", parent=self.root)
+                    return
+
+                # ✅ Update item
                 cursor.execute("""
                     UPDATE inventory
                     SET item_id = ?, name = ?, type = ?, retail_price = ?, unit_price = ?, quantity = ?, supplier = ?
                     WHERE item_id = ?
                 """, (item_id, name, item_type, retail_price, unit_price, quantity, supplier, original_item_id))
-                cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                              (str(uuid.uuid4()), "Update Item", f"Updated item {item_id}: {name}, {quantity} units, Retail Price: {retail_price:.2f}, Supplier: {supplier}",
-                              datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+
+                cursor.execute("""
+                    INSERT INTO transaction_log (log_id, action, details, timestamp, user)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    str(uuid.uuid4()), "Update Item",
+                    f"Updated item {item_id}: {name}, {quantity} units, Retail Price: {retail_price:.2f}, Supplier: {supplier}",
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    self.current_user
+                ))
+
                 self.conn.commit()
                 self.update_inventory_table()
                 window.destroy()
                 messagebox.showinfo("Success", f"Item '{name}' updated successfully", parent=self.root)
+
                 # Check for low inventory after updating
                 if quantity <= 5:
                     self.check_low_inventory()
+
         except ValueError:
             messagebox.showerror("Error", "Invalid retail price, unit price, or quantity", parent=self.root)
         except sqlite3.IntegrityError as e:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to update item: {e}", parent=self.root)
+
 
 
     def on_inventory_select(self, event: Optional[tk.Event] = None) -> None:
@@ -2091,10 +2137,18 @@ class PharmacyPOS:
         self.transactions_table.bind("<Shift-Button-5>", scroll_horizontal_unix)
 
         def update_scroll_region(event=None):
-            total_width = sum(self.transactions_table.column(col, "width") for col in columns)
-            total_height = self.transactions_table.winfo_reqheight()
-            canvas.configure(scrollregion=(0, 0, total_width, total_height))
-            canvas.itemconfig(canvas_window, width=total_width)
+            if not canvas.winfo_exists() or not self.transactions_table.winfo_exists():
+                return  # widget already destroyed
+
+            try:
+                total_width = sum(self.transactions_table.column(col, "width") for col in columns)
+                total_height = self.transactions_table.winfo_reqheight()
+                canvas.configure(scrollregion=(0, 0, total_width, total_height))
+                canvas.itemconfig(canvas_window, width=total_width)
+            except tk.TclError:
+                # Either canvas or table is already gone
+                pass
+
 
         self.transactions_table.bind("<Configure>", update_scroll_region)
 
@@ -2287,8 +2341,8 @@ class PharmacyPOS:
             content_frame = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20)
             content_frame.pack(fill="both", expand=True)
 
-            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", 18, "bold"),
-                    bg="#FFF8E7", fg="#2C1B18").pack(pady=10)
+            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", 14, "bold"),
+                    bg="#FFF8E7", fg="#2C1B14").pack(pady=10)
 
             columns = ("Item", "OriginalQuantity", "NewQuantity")
             headers = ("ITEM", "ORIGINAL QTY", "NEW QTY")
@@ -2300,7 +2354,7 @@ class PharmacyPOS:
 
             # Apply Treeview styling
             style = ttk.Style()
-            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7")
+            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B14", fieldbackground="#FFF8E7")
 
             quantity_entries = {}
             for item in edit_items:
@@ -2312,8 +2366,8 @@ class PharmacyPOS:
                     item_data = quantity_entries[item_iid]["item"]
                     frame = tk.Frame(content_frame, bg="#FFF8E7")
                     frame.pack(fill="x", pady=2)
-                    tk.Label(frame, text=item_data["name"], font=("Helvetica", 12), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 12), bg="#F5F5DC", fg="#2C1B18", width=10)
+                    tk.Label(frame, text=item_data["name"], font=("Helvetica", 12), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 12), bg="#F5F5DC", fg="#2C1B14", width=10)
                     entry.insert(0, str(item_data["current_quantity"]))
                     entry.pack(side="left", padx=5)
                     quantity_entries[item_iid]["entry"] = entry
@@ -2611,21 +2665,39 @@ class PharmacyPOS:
             table.bind("<Shift-Button-5>", on_table_shift_mouse_wheel(table, h_scrollbar))
 
         # Update scroll region and handle resizing
-        def update_scroll_region(event=None):
-            canvas.configure(scrollregion=canvas.bbox("all"))
+        def update_sales_summary_scroll(event=None):
+            if not canvas.winfo_exists():
+                return
+            try:
+                bbox = canvas.bbox("all")
+                if bbox:
+                    canvas.configure(scrollregion=bbox)
+            except tk.TclError:
+                return
+
             window_width = self.root.winfo_width()
             base_column_width = max(self.scale_size(100), window_width // 6)
+
             for col in columns:
-                monthly_table.column(col, width=base_column_width if col != "Month" else int(base_column_width * 1.5), stretch=True)
+                monthly_table.column(
+                    col,
+                    width=base_column_width if col != "Month" else int(base_column_width * 1.5),
+                    stretch=True
+                )
             for col in daily_columns:
-                daily_table.column(col, width=base_column_width if col != "Date" else int(base_column_width * 1.5), stretch=True)
+                daily_table.column(
+                    col,
+                    width=base_column_width if col != "Date" else int(base_column_width * 1.5),
+                    stretch=True
+                )
+
             month_combobox.configure(width=max(5, window_width // 100))
             year_combobox.configure(width=max(7, window_width // 80))
             apply_filter_btn.configure(padx=self.scale_size(12), pady=self.scale_size(8))
             print_report_btn.configure(padx=self.scale_size(12), pady=self.scale_size(8))
 
-        content_frame.bind("<Configure>", update_scroll_region)
-        self.root.bind("<Configure>", update_scroll_region)
+        content_frame.bind("<Configure>", update_sales_summary_scroll)
+        self.root.bind("<Configure>", update_sales_summary_scroll)
 
         # Configure content_frame grid for responsiveness
         content_frame.configure(padx=self.scale_size(20), pady=self.scale_size(20))
@@ -2644,38 +2716,38 @@ class PharmacyPOS:
         filter_frame.grid_columnconfigure(4, weight=0)
         filter_frame.grid_columnconfigure(5, weight=0)
 
-        tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(14)),
-                bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=0, padx=self.scale_size(5), sticky="w")  # Soft White, Dark Slate
+        tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(18)),
+                bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var, values=[str(i) for i in range(1, 13)],
-                                    font=("Helvetica", self.scale_size(14)), width=5, state="readonly")
+                                    font=("Helvetica", self.scale_size(18)), width=5, state="readonly")
         month_combobox.grid(row=0, column=1, padx=self.scale_size(5), sticky="ew")
 
-        tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(14)),
-                bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=2, padx=self.scale_size(5), sticky="w")  # Soft White, Dark Slate
+        tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(18)),
+                bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=2, padx=self.scale_size(5), sticky="w")
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
                                     values=[str(i) for i in range(2020, datetime.now().year + 1)],
-                                    font=("Helvetica", self.scale_size(14)), width=7, state="readonly")
+                                    font=("Helvetica", self.scale_size(18)), width=7, state="readonly")
         year_combobox.grid(row=0, column=3, padx=self.scale_size(5), sticky="ew")
 
         apply_filter_btn = tk.Button(filter_frame, text="Apply Filter",
                                     command=lambda: self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                                    bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
-                                    activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                                    bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
+                                    activebackground="#2C3E50", activeforeground="#F5F6F5",
                                     padx=self.scale_size(12), pady=self.scale_size(8), bd=0)
         apply_filter_btn.grid(row=0, column=4, padx=self.scale_size(5), sticky="ew")
 
         print_report_btn = tk.Button(filter_frame, text="Print Report",
                                     command=lambda: self.print_sales_report(month_var.get(), year_var.get()),
-                                    bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
-                                    activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                                    bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
+                                    activebackground="#2C3E50", activeforeground="#F5F6F5",
                                     padx=self.scale_size(12), pady=self.scale_size(8), bd=0)
         print_report_btn.grid(row=0, column=5, padx=self.scale_size(5), sticky="ew")
 
         # Monthly sales summary
         tk.Label(content_frame, text="Monthly Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#F5F6F5", fg="#2C3E50").grid(row=1, column=0, pady=self.scale_size(10), sticky="w")  # Soft White, Dark Slate
+                bg="#F5F6F5", fg="#2C3E50").grid(row=1, column=0, pady=self.scale_size(10), sticky="w")
         monthly_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         monthly_frame.grid(row=2, column=0, sticky="nsew", pady=self.scale_size(5))
         monthly_frame.grid_rowconfigure(0, weight=1)
@@ -2700,7 +2772,7 @@ class PharmacyPOS:
 
         # Daily sales summary
         tk.Label(content_frame, text="Daily Sales Summary", font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#F5F6F5", fg="#2C3E50").grid(row=3, column=0, pady=self.scale_size(10), sticky="w")  # Soft White, Dark Slate
+                bg="#F5F6F5", fg="#2C3E50").grid(row=3, column=0, pady=self.scale_size(10), sticky="w")
         daily_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         daily_frame.grid(row=4, column=0, sticky="nsew", pady=self.scale_size(5))
         daily_frame.grid_rowconfigure(0, weight=1)
@@ -2744,6 +2816,7 @@ class PharmacyPOS:
         canvas.update_idletasks()
         canvas.yview_moveto(0)
         canvas.xview_moveto(0)
+
 
     def update_tables(self, month_var: tk.StringVar, year_var: tk.StringVar, monthly_table: ttk.Treeview, daily_table: ttk.Treeview, monthly_frame: tk.Frame, daily_frame: tk.Frame) -> None:
         # Clear existing table data
@@ -3006,7 +3079,7 @@ class PharmacyPOS:
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         canvas.bind("<MouseWheel>", on_mouse_wheel)
 
-        tk.Label(content_frame, text="Account Management", font=("Helvetica", 18, "bold"),
+        tk.Label(content_frame, text="Account Management", font=("Helvetica", 14, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=10, anchor="w")  # Soft White, Dark Slate
 
         # Users table with its own scrollbar
@@ -3054,7 +3127,7 @@ class PharmacyPOS:
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
-        tk.Label(content_frame, text="Transaction Log", font=("Helvetica", 18, "bold"),
+        tk.Label(content_frame, text="Transaction Log", font=("Helvetica", 14, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=10, anchor="w")  # Soft White, Dark Slate
         
         # Log table with its own scrollbar
@@ -3100,7 +3173,7 @@ class PharmacyPOS:
         add_box = tk.Frame(window, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         add_box.pack(pady=20)
 
-        tk.Label(add_box, text="Add New User", font=("Helvetica", 18, "bold"),
+        tk.Label(add_box, text="Add New User", font=("Helvetica", 14, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=15)  # Soft White, Dark Slate
 
         fields = ["Username", "Password"]
@@ -3163,7 +3236,7 @@ class PharmacyPOS:
                 update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
                 update_box.pack(pady=20)
 
-                tk.Label(update_box, text="Update User", font=("Helvetica", 18, "bold"),
+                tk.Label(update_box, text="Update User", font=("Helvetica", 14, "bold"),
                         bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
                 fields = ["Username", "Password"]
@@ -3261,7 +3334,7 @@ class PharmacyPOS:
         content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True, padx=(10, 0))
 
-        tk.Label(content_frame, text="Customer Management", font=("Helvetica", 18, "bold"),
+        tk.Label(content_frame, text="Customer Management", font=("Helvetica", 14, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")
 
         search_frame = tk.Frame(content_frame, bg="#ffffff")
@@ -3359,7 +3432,7 @@ class PharmacyPOS:
         add_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         add_box.pack(pady=20)
 
-        tk.Label(add_box, text="Add New Customer", font=("Helvetica", 18, "bold"),
+        tk.Label(add_box, text="Add New Customer", font=("Helvetica", 14, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
         fields = ["Customer ID", "Name", "Contact", "Address"]
@@ -3420,7 +3493,7 @@ class PharmacyPOS:
                 update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
                 update_box.pack(pady=20)
 
-                tk.Label(update_box, text="Update Customer", font=("Helvetica", 18, "bold"),
+                tk.Label(update_box, text="Update Customer", font=("Helvetica", 14, "bold"),
                         bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
                 fields = ["Customer ID", "Name", "Contact", "Address"]
@@ -3499,7 +3572,7 @@ class PharmacyPOS:
         content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True)
 
-        tk.Label(content_frame, text="Select Customer", font=("Helvetica", 18, "bold"),
+        tk.Label(content_frame, text="Select Customer", font=("Helvetica", 14, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10)
 
         search_frame = tk.Frame(content_frame, bg="#ffffff")
@@ -3652,7 +3725,7 @@ class PharmacyPOS:
         content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True)
 
-        tk.Label(content_frame, text="Unpaid Transactions", font=("Helvetica", 18, "bold"),
+        tk.Label(content_frame, text="Unpaid Transactions", font=("Helvetica", 14, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10)
 
         columns = ("TransactionID", "ItemsList", "TotalAmount", "Timestamp")
@@ -3842,7 +3915,7 @@ class PharmacyPOS:
         payment_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         payment_box.pack(pady=20)
 
-        tk.Label(payment_box, text="Select Payment Method", font=("Helvetica", 18, "bold"),
+        tk.Label(payment_box, text="Select Payment Method", font=("Helvetica", 14, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
         payment_var = tk.StringVar()
@@ -3874,7 +3947,7 @@ class PharmacyPOS:
         return_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         return_box.pack(pady=20)
 
-        tk.Label(return_box, text="Return Transaction", font=("Helvetica", 18, "bold"),
+        tk.Label(return_box, text="Return Transaction", font=("Helvetica", 14, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
         tk.Label(return_box, text="Transaction ID", font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack()
@@ -3963,7 +4036,7 @@ class PharmacyPOS:
             content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
             content_frame.pack(fill="both", expand=True)
 
-            tk.Label(content_frame, text=f"Return Transaction {transaction_id}", font=("Helvetica", 18, "bold"),
+            tk.Label(content_frame, text=f"Return Transaction {transaction_id}", font=("Helvetica", 14, "bold"),
                     bg="#ffffff", fg="#8B5A2B").pack(pady=10)
 
             columns = ("Item", "Quantity", "RetailPrice")
