@@ -369,12 +369,12 @@ class PharmacyPOS:
         self.header.pack(side="top", fill="x", pady=8)
 
         self.hamburger_btn = tk.Button(self.header, text="✕", command=self.toggle_sidebar,
-                                    bg="#F5F6F5", fg="#2C3E50", font=("Helvetica", 14),  # Soft White, Dark Slate
+                                    bg="#F5F6F5", fg="#2C3E50", font=("Helvetica", 18),  # Soft White, Dark Slate
                                     activebackground="#4DA8DA", activeforeground="#F5F6F5",  # Aqua Blue, Soft White
                                     padx=8, pady=4, bd=0)
         self.hamburger_btn.pack(side="left", padx=5)
 
-        tk.Label(self.header, text="Gem's Pharmacy", font=("Helvetica", 14, "bold"),
+        tk.Label(self.header, text="Gem's Pharmacy", font=("Helvetica", 18, "bold"),
                 bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
         tk.Label(self.header, text=datetime.now().strftime("%B %d, %Y %I:%M %p PST"),
                 font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
@@ -401,7 +401,7 @@ class PharmacyPOS:
         for text, command in nav_buttons:
             btn = tk.Button(self.sidebar, text=text, command=command,
                             bg="#1B263B" if "Dashboard" not in text else "#4DA8DA",  # Deep Ocean Blue, Aqua Blue
-                            fg="#F5F6F5", font=("Helvetica", 14),  # Soft White
+                            fg="#F5F6F5", font=("Helvetica", 18),  # Soft White
                             activebackground="#4DA8DA" if "Dashboard" in text else "#2C3E50",  # Aqua Blue, Dark Slate
                             activeforeground="#F5F6F5",  # Soft White
                             padx=12, pady=8, bd=0)
@@ -427,14 +427,14 @@ class PharmacyPOS:
         auth_box = tk.Frame(window, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         auth_box.pack(pady=20)
 
-        tk.Label(auth_box, text=title, font=("Helvetica", 14, "bold"),
+        tk.Label(auth_box, text=title, font=("Helvetica", 18, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=12)  # Soft White, Dark Slate
         tk.Label(auth_box, text=prompt, font=("Helvetica", 12),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=8)  # Soft White, Dark Slate
 
-        tk.Label(auth_box, text="Admin Password", font=("Helvetica", 14),
+        tk.Label(auth_box, text="Admin Password", font=("Helvetica", 18),
                 bg="#F5F6F5", fg="#2C3E50").pack()  # Soft White, Dark Slate
-        password_entry = tk.Entry(auth_box, show="*", font=("Helvetica", 14), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
+        password_entry = tk.Entry(auth_box, show="*", font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
         password_entry.pack(pady=5, fill="x")
 
         show_password_var = tk.BooleanVar()
@@ -444,7 +444,7 @@ class PharmacyPOS:
 
         tk.Button(auth_box, text="Authenticate",
                 command=lambda: callback(password_entry.get(), window, **kwargs),
-                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=12, pady=8, bd=0).pack(pady=12)
 
@@ -472,19 +472,19 @@ class PharmacyPOS:
         login_box = tk.Frame(login_frame, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         login_box.pack(pady=20)
 
-        tk.Label(login_box, text="Login", font=("Helvetica", 14, "bold"),
+        tk.Label(login_box, text="Login", font=("Helvetica", 18, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=12)  # Soft White, Dark Slate
         tk.Label(login_box, text="Welcome to the POS! Please enter your credentials.",
                 font=("Helvetica", 12), bg="#F5F6F5", fg="#2C3E50").pack(pady=8)  # Soft White, Dark Slate
 
-        tk.Label(login_box, text="Username", font=("Helvetica", 14),
+        tk.Label(login_box, text="Username", font=("Helvetica", 18),
                 bg="#F5F6F5", fg="#2C3E50").pack(anchor="w")  # Soft White, Dark Slate
-        username_entry = tk.Entry(login_box, font=("Helvetica", 14), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
+        username_entry = tk.Entry(login_box, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
         username_entry.pack(pady=5, fill="x")
 
-        tk.Label(login_box, text="Password", font=("Helvetica", 14),
+        tk.Label(login_box, text="Password", font=("Helvetica", 18),
                 bg="#F5F6F5", fg="#2C3E50").pack(anchor="w")  # Soft White, Dark Slate
-        password_entry = tk.Entry(login_box, show="*", font=("Helvetica", 14), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
+        password_entry = tk.Entry(login_box, show="*", font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
         password_entry.pack(pady=5, fill="x")
 
         show_password_var = tk.BooleanVar()
@@ -493,7 +493,7 @@ class PharmacyPOS:
                     font=("Helvetica", 12), bg="#F5F6F5", fg="#2C3E50").pack(anchor="w", pady=8)  # Soft White, Dark Slate
 
         tk.Button(login_box, text="Login", command=lambda: self.validate_login(username_entry.get(), password_entry.get()),
-                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=12, pady=8, bd=0).pack(pady=12)
 
@@ -537,13 +537,13 @@ class PharmacyPOS:
         search_frame = tk.Frame(search_container, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
         search_frame.pack(fill="x", padx=self.scale_size(2), pady=self.scale_size(2))
 
-        tk.Label(search_frame, text="Search Item:", font=("Helvetica", self.scale_size(14)),
+        tk.Label(search_frame, text="Search Item:", font=("Helvetica", self.scale_size(18)),
                 bg="#F5F6F5", fg="#2C3E50").pack(side="left", padx=self.scale_size(12))  # Soft White, Dark Slate
 
         entry_frame = tk.Frame(search_frame, bg="#F5F6F5")  # Soft White
         entry_frame.pack(side="left", fill="x", expand=True, padx=(0, self.scale_size(12)), pady=self.scale_size(5))
 
-        self.search_entry = tk.Entry(entry_frame, font=("Helvetica", self.scale_size(14)), bg="#F4E1C1", fg="#2C3E50", bd=0, highlightthickness=0)  # Sandy Beige, Dark Slate
+        self.search_entry = tk.Entry(entry_frame, font=("Helvetica", self.scale_size(18)), bg="#F4E1C1", fg="#2C3E50", bd=0, highlightthickness=0)  # Sandy Beige, Dark Slate
         self.search_entry.pack(side="left", fill="x", expand=True, ipady=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_suggestions)
         self.search_entry.bind("<FocusOut>", self.on_entry_focus_out)
@@ -564,14 +564,14 @@ class PharmacyPOS:
         self.clear_btn.pack_forget()
 
         tk.Button(search_frame, text="🛒", command=self.select_suggestion,
-                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Seafoam Green, Soft White
+                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),  # Seafoam Green, Soft White
                 activebackground="#27AE60", activeforeground="#F5F6F5",  # Darker Seafoam Green, Soft White
                 padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(side="left", padx=self.scale_size(5))
 
         if self.get_user_role() == "Drug Lord":
             tk.Button(search_frame, text="🗑️", command=lambda: self.create_password_auth_window(
                 "Authenticate Deletion", "Enter admin password to delete item", self.validate_delete_item_auth),
-                bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Coral Red, Soft White
+                bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),  # Coral Red, Soft White
                 activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                 padx=self.scale_size(8), pady=self.scale_size(4), bd=0).pack(side="left", padx=self.scale_size(5))
 
@@ -923,7 +923,7 @@ class PharmacyPOS:
         edit_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         edit_box.pack(pady=20)
 
-        tk.Label(edit_box, text=f"Edit Quantity for {item['name']}", font=("Helvetica", 14, "bold"),
+        tk.Label(edit_box, text=f"Edit Quantity for {item['name']}", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10)
         tk.Label(edit_box, text="Quantity", font=("Helvetica", 12),
                 bg="#ffffff", fg="#8B5A2B").pack()
@@ -1332,31 +1332,31 @@ class PharmacyPOS:
         search_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         search_frame.grid(row=0, column=0, sticky="ew", pady=self.scale_size(10))
 
-        tk.Label(search_frame, text="Search:", font=("Helvetica", self.scale_size(14)),
+        tk.Label(search_frame, text="Search:", font=("Helvetica", self.scale_size(18)),
                 bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
-        self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(14)), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
+        self.inventory_search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(18)), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
         self.inventory_search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
         self.inventory_search_entry.bind("<KeyRelease>", self.update_inventory_table)
 
-        tk.Label(search_frame, text="Filter:", font=("Helvetica", self.scale_size(14)),
+        tk.Label(search_frame, text="Filter:", font=("Helvetica", self.scale_size(18)),
                 bg="#F5F6F5", fg="#2C3E50").pack(side="left", padx=(self.scale_size(6), self.scale_size(5)))  # Soft White, Dark Slate
         self.type_filter_var = tk.StringVar()
         self.type_filter_combobox = ttk.Combobox(search_frame, textvariable=self.type_filter_var,
                                                 values=["Medicine", "Supplement", "Medical Device", "Beverage", "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                                                state="readonly", font=("Helvetica", self.scale_size(14)))
+                                                state="readonly", font=("Helvetica", self.scale_size(18)))
         self.type_filter_combobox.pack(side="left", padx=self.scale_size(5))
         self.type_filter_combobox.set("All")
         self.type_filter_combobox.bind("<<ComboboxSelected>>", self.update_inventory_table)
 
         tk.Button(search_frame, text="Add Item",
                 command=self.show_add_item,
-                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),  # Aqua Blue, Soft White
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
         tk.Button(search_frame, text="📤 Upload CSV",
                 command=self.upload_inventory_csv,
-                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),  # Aqua Blue, Soft White
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
@@ -1398,14 +1398,14 @@ class PharmacyPOS:
 
         self.update_item_btn = tk.Button(button_frame, text="Update Item",
                                         command=self.show_update_item_from_selection,
-                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Aqua Blue, Soft White
+                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),  # Aqua Blue, Soft White
                                         activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                         padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
         self.update_item_btn.grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
 
         self.delete_item_btn = tk.Button(button_frame, text="Delete Item",
                                         command=self.confirm_delete_item,
-                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14)),  # Coral Red, Soft White
+                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),  # Coral Red, Soft White
                                         activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                                         padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
         self.delete_item_btn.grid(row=0, column=1, padx=self.scale_size(5), sticky="w")
@@ -1568,11 +1568,11 @@ class PharmacyPOS:
                     profitability_label.config(text="Not Profitable", fg="#3C2F2F")
             else:
                 markup_label.config(text="0.00%")
-                profitability_label.config(text="N/A", fg="#2C1B14")
+                profitability_label.config(text="N/A", fg="#2C1B18")
             error_label.config(text="")
         except ValueError:
             markup_label.config(text="0.00%")
-            profitability_label.config(text="N/A", fg="#2C1B14")
+            profitability_label.config(text="N/A", fg="#2C1B18")
             error_label.config(text="Enter valid prices", fg="#3C2F2F")
 
 
@@ -1586,8 +1586,8 @@ class PharmacyPOS:
         add_box = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20, bd=1, relief="flat")
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
-        tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 14, "bold"),
-                bg="#FFF8E7", fg="#2C1B14").grid(row=0, column=0, columnspan=4, pady=15)
+        tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
+                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
 
         # Fields matching show_update_item, excluding Type which is handled separately
         fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
@@ -1608,8 +1608,8 @@ class PharmacyPOS:
             frame = tk.Frame(add_box, bg="#FFF8E7")
             frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
             
-            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14")
+            tk.Label(frame, text=field, font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+            entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18")
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
             if field == "Item ID (Barcode)":
@@ -1620,24 +1620,24 @@ class PharmacyPOS:
 
         markup_frame = tk.Frame(add_box, bg="#FFF8E7")
         markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
-        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=10, anchor="w")
+        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18", width=10, anchor="w")
         markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
         profitability_frame = tk.Frame(add_box, bg="#FFF8E7")
         profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
-        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=15, anchor="w")
+        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18", width=15, anchor="w")
         profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
         type_frame = tk.Frame(add_box, bg="#FFF8E7")
         type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
-        tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack()
+        tk.Label(type_frame, text="Type", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack()
         type_var = tk.StringVar(value="Medicine")
         ttk.Combobox(type_frame, textvariable=type_var,
                     values=["Medicine", "Supplement", "Medical Device", "Beverage", 
                             "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                    state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
+                    state="readonly", font=("Helvetica", 18)).pack(fill="x", pady=5)
 
         price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#FFF8E7", fg="#3C2F2F")
         price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
@@ -1673,7 +1673,7 @@ class PharmacyPOS:
                     entries["Supplier"].get(),
                     window
                 ),
-                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
+                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 18),
                 activebackground="#8B5A2B", activeforeground="#FFF8E7",
                 padx=12, pady=8, bd=0).pack()
 
@@ -1778,8 +1778,8 @@ class PharmacyPOS:
                 update_box = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20, bd=1, relief="flat")
                 update_box.pack(pady=20, padx=20, fill="both", expand=True)
 
-                tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 14, "bold"),
-                         bg="#FFF8E7", fg="#2C1B14").grid(row=0, column=0, columnspan=4, pady=15)
+                tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
+                         bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
 
                 fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
@@ -1798,8 +1798,8 @@ class PharmacyPOS:
                     frame = tk.Frame(update_box, bg="#FFF8E7")
                     frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
                     
-                    tk.Label(frame, text=field, font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14")
+                    tk.Label(frame, text=field, font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18")
                     entry.pack(side="left", fill="x", expand=True, padx=5)
                     entries[field] = entry
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
@@ -1809,24 +1809,24 @@ class PharmacyPOS:
 
                 markup_frame = tk.Frame(update_box, bg="#FFF8E7")
                 markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
-                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=10, anchor="w")
+                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18", width=10, anchor="w")
                 markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
                 profitability_frame = tk.Frame(update_box, bg="#FFF8E7")
                 profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
-                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 14), bg="#F5F5DC", fg="#2C1B14", width=15, anchor="w")
+                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18", width=15, anchor="w")
                 profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
                 type_frame = tk.Frame(update_box, bg="#FFF8E7")
                 type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
-                tk.Label(type_frame, text="Type", font=("Helvetica", 14), bg="#FFF8E7", fg="#2C1B14").pack()
+                tk.Label(type_frame, text="Type", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack()
                 type_var = tk.StringVar(value=item[2] if item[2] else "Medicine")
                 ttk.Combobox(type_frame, textvariable=type_var,
                              values=["Medicine", "Supplement", "Medical Device", "Beverage", 
                                      "Personal Hygiene", "Baby Product", "Toiletries", "Other"],
-                             state="readonly", font=("Helvetica", 14)).pack(fill="x", pady=5)
+                             state="readonly", font=("Helvetica", 18)).pack(fill="x", pady=5)
 
                 price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#FFF8E7", fg="#3C2F2F")
                 price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
@@ -1865,7 +1865,7 @@ class PharmacyPOS:
                               item[0],
                               window
                           ),
-                          bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
+                          bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 18),
                           activebackground="#8B5A2B", activeforeground="#FFF8E7",
                           padx=12, pady=8, bd=0).pack()
 
@@ -2064,13 +2064,13 @@ class PharmacyPOS:
 
         search_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         search_frame.pack(fill="x", pady=10)
-        tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", 14),
+        tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", 18),
                 bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
-        self.search_entry = tk.Entry(search_frame, font=("Helvetica", 14), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
+        self.search_entry = tk.Entry(search_frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
         self.search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.search_entry.bind("<KeyRelease>", self.update_transactions_table)
         tk.Button(search_frame, text="Refresh Transactions", command=self.update_transactions_table,
-                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", 14),  # Seafoam Green, Soft White
+                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", 18),  # Seafoam Green, Soft White
                 activebackground="#27AE60", activeforeground="#F5F6F5",  # Darker Seafoam Green, Soft White
                 padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
@@ -2137,18 +2137,10 @@ class PharmacyPOS:
         self.transactions_table.bind("<Shift-Button-5>", scroll_horizontal_unix)
 
         def update_scroll_region(event=None):
-            if not canvas.winfo_exists() or not self.transactions_table.winfo_exists():
-                return  # widget already destroyed
-
-            try:
-                total_width = sum(self.transactions_table.column(col, "width") for col in columns)
-                total_height = self.transactions_table.winfo_reqheight()
-                canvas.configure(scrollregion=(0, 0, total_width, total_height))
-                canvas.itemconfig(canvas_window, width=total_width)
-            except tk.TclError:
-                # Either canvas or table is already gone
-                pass
-
+            total_width = sum(self.transactions_table.column(col, "width") for col in columns)
+            total_height = self.transactions_table.winfo_reqheight()
+            canvas.configure(scrollregion=(0, 0, total_width, total_height))
+            canvas.itemconfig(canvas_window, width=total_width)
 
         self.transactions_table.bind("<Configure>", update_scroll_region)
 
@@ -2158,7 +2150,7 @@ class PharmacyPOS:
         self.transaction_button_frame = tk.Frame(transactions_frame, bg="#F5F6F5")  # Soft White
         self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=10)
         self.print_btn = tk.Button(self.transaction_button_frame, text="Print Receipt", command=self.print_receipt,
-                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                 padx=12, pady=8, bd=0, state="disabled")
         self.print_btn.pack(side="left", padx=5)
@@ -2166,7 +2158,7 @@ class PharmacyPOS:
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Edit", "Enter admin password to edit transaction",
                                                 self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                                             activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                             padx=12, pady=8, bd=0, state="disabled")
         self.edit_transaction_btn.pack(side="left", padx=5)
@@ -2174,7 +2166,7 @@ class PharmacyPOS:
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Deletion", "Enter admin password to delete transaction",
                                                 self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14),  # Coral Red, Soft White
+                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),  # Coral Red, Soft White
                                             activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                                             padx=12, pady=8, bd=0, state="disabled")
         self.delete_transaction_btn.pack(side="left", padx=5)
@@ -2182,7 +2174,7 @@ class PharmacyPOS:
                                     command=lambda: self.create_password_auth_window(
                                         "Authenticate Refund", "Enter admin password to process refund",
                                         self.validate_refund_auth, selected_item=self.transactions_table.selection()),
-                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14),  # Coral Red, Soft White
+                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),  # Coral Red, Soft White
                                     activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                                     padx=12, pady=8, bd=0, state="disabled")
         self.refund_btn.pack(side="left", padx=5)
@@ -2341,8 +2333,8 @@ class PharmacyPOS:
             content_frame = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20)
             content_frame.pack(fill="both", expand=True)
 
-            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", 14, "bold"),
-                    bg="#FFF8E7", fg="#2C1B14").pack(pady=10)
+            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", 18, "bold"),
+                    bg="#FFF8E7", fg="#2C1B18").pack(pady=10)
 
             columns = ("Item", "OriginalQuantity", "NewQuantity")
             headers = ("ITEM", "ORIGINAL QTY", "NEW QTY")
@@ -2354,7 +2346,7 @@ class PharmacyPOS:
 
             # Apply Treeview styling
             style = ttk.Style()
-            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B14", fieldbackground="#FFF8E7")
+            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7")
 
             quantity_entries = {}
             for item in edit_items:
@@ -2366,8 +2358,8 @@ class PharmacyPOS:
                     item_data = quantity_entries[item_iid]["item"]
                     frame = tk.Frame(content_frame, bg="#FFF8E7")
                     frame.pack(fill="x", pady=2)
-                    tk.Label(frame, text=item_data["name"], font=("Helvetica", 12), bg="#FFF8E7", fg="#2C1B14").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 12), bg="#F5F5DC", fg="#2C1B14", width=10)
+                    tk.Label(frame, text=item_data["name"], font=("Helvetica", 12), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 12), bg="#F5F5DC", fg="#2C1B18", width=10)
                     entry.insert(0, str(item_data["current_quantity"]))
                     entry.pack(side="left", padx=5)
                     quantity_entries[item_iid]["entry"] = entry
@@ -2377,7 +2369,7 @@ class PharmacyPOS:
 
             tk.Button(content_frame, text="Confirm Changes",
                     command=lambda: self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
-                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 14),
+                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 18),
                     activebackground="#8B5A2B", activeforeground="#FFF8E7",
                     padx=12, pady=8, bd=0).pack(pady=10)
             
@@ -2461,7 +2453,7 @@ class PharmacyPOS:
         # Header
         c.drawString(100, 750, "Shinano POS")
         c.drawString(100, 732, "Gem's Pharmacy.")
-        # c.drawString(100, 714, "VAT REG TIN: 123-456-789-000")
+        # c.drawString(100, 718, "VAT REG TIN: 123-456-789-000")
         # c.drawString(100, 696, "SN: 987654321 MIN: 123456789")
         c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
         c.drawString(100, 650, f"Date: {timestamp}")
@@ -3079,7 +3071,7 @@ class PharmacyPOS:
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         canvas.bind("<MouseWheel>", on_mouse_wheel)
 
-        tk.Label(content_frame, text="Account Management", font=("Helvetica", 14, "bold"),
+        tk.Label(content_frame, text="Account Management", font=("Helvetica", 18, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=10, anchor="w")  # Soft White, Dark Slate
 
         # Users table with its own scrollbar
@@ -3107,7 +3099,7 @@ class PharmacyPOS:
         self.users_button_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         self.users_button_frame.pack(fill="x", pady=10)
         self.update_user_btn = tk.Button(self.users_button_frame, text="Update", command=self.show_update_user,
-                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                                         activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                                         padx=12, pady=8, bd=0, state="disabled")
         self.update_user_btn.pack(side="left", padx=5)
@@ -3115,7 +3107,7 @@ class PharmacyPOS:
                                         command=lambda: self.create_password_auth_window(
                                             "Authenticate Deletion", "Enter admin password to delete user",
                                             self.validate_delete_user_auth, selected_item=self.users_table.selection()),
-                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14),  # Coral Red, Soft White
+                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),  # Coral Red, Soft White
                                         activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
                                         padx=12, pady=8, bd=0, state="disabled")
         self.delete_user_btn.pack(side="left", padx=5)
@@ -3123,11 +3115,11 @@ class PharmacyPOS:
         button_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
         button_frame.pack(fill="x")
         tk.Button(button_frame, text="Add New User", command=self.show_add_user,
-                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
-        tk.Label(content_frame, text="Transaction Log", font=("Helvetica", 14, "bold"),
+        tk.Label(content_frame, text="Transaction Log", font=("Helvetica", 18, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=10, anchor="w")  # Soft White, Dark Slate
         
         # Log table with its own scrollbar
@@ -3173,7 +3165,7 @@ class PharmacyPOS:
         add_box = tk.Frame(window, bg="#F5F6F5", padx=20, pady=20, bd=1, relief="flat")  # Soft White
         add_box.pack(pady=20)
 
-        tk.Label(add_box, text="Add New User", font=("Helvetica", 14, "bold"),
+        tk.Label(add_box, text="Add New User", font=("Helvetica", 18, "bold"),
                 bg="#F5F6F5", fg="#2C3E50").pack(pady=15)  # Soft White, Dark Slate
 
         fields = ["Username", "Password"]
@@ -3181,20 +3173,20 @@ class PharmacyPOS:
         for field in fields:
             frame = tk.Frame(add_box, bg="#F5F6F5")  # Soft White
             frame.pack(fill="x", pady=5)
-            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
-            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F4E1C1", fg="#2C3E50", show="*" if field == "Password" else "")  # Sandy Beige, Dark Slate
+            tk.Label(frame, text=field, font=("Helvetica", 18), bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
+            entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50", show="*" if field == "Password" else "")  # Sandy Beige, Dark Slate
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
 
         role_var = tk.StringVar()
-        tk.Label(add_box, text="Role", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)  # Soft White, Dark Slate
+        tk.Label(add_box, text="Role", font=("Helvetica", 18), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)  # Soft White, Dark Slate
         ttk.Combobox(add_box, textvariable=role_var, values=["User", "Drug Lord"],
-                    state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                    state="readonly", font=("Helvetica", 18)).pack(pady=5)
 
         tk.Button(add_box, text="Add User",
                 command=lambda: self.add_user(entries["Username"].get(), entries["Password"].get(),
                                             role_var.get(), window),
-                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14),  # Aqua Blue, Soft White
+                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
                 activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
                 padx=12, pady=8, bd=0).pack(pady=15)
 
@@ -3236,7 +3228,7 @@ class PharmacyPOS:
                 update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
                 update_box.pack(pady=20)
 
-                tk.Label(update_box, text="Update User", font=("Helvetica", 14, "bold"),
+                tk.Label(update_box, text="Update User", font=("Helvetica", 18, "bold"),
                         bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
                 fields = ["Username", "Password"]
@@ -3244,21 +3236,21 @@ class PharmacyPOS:
                 for i, field in enumerate(fields):
                     frame = tk.Frame(update_box, bg="#ffffff")
                     frame.pack(fill="x", pady=5)
-                    tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC", show="*" if field == "Password" else "")
+                    tk.Label(frame, text=field, font=("Helvetica", 18), bg="#ffffff", fg="#8B5A2B").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC", show="*" if field == "Password" else "")
                     entry.pack(side="left", fill="x", expand=True, padx=5)
                     entries[field] = entry
                     entry.insert(0, user[i])
 
                 role_var = tk.StringVar(value=user[2])
-                tk.Label(update_box, text="Role", font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack(pady=5)
+                tk.Label(update_box, text="Role", font=("Helvetica", 18), bg="#ffffff", fg="#8B5A2B").pack(pady=5)
                 ttk.Combobox(update_box, textvariable=role_var, values=["User", "Drug Lord"],
-                            state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                            state="readonly", font=("Helvetica", 18)).pack(pady=5)
 
                 tk.Button(update_box, text="Update User",
                          command=lambda: self.update_user(entries["Username"].get(), entries["Password"].get(),
                                                         role_var.get(), user[0], window),
-                         bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                         bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                          activebackground="#27ae60", activeforeground="#ffffff",
                          padx=12, pady=8, bd=0).pack(pady=15)
 
@@ -3334,18 +3326,18 @@ class PharmacyPOS:
         content_frame = tk.Frame(main_frame, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True, padx=(10, 0))
 
-        tk.Label(content_frame, text="Customer Management", font=("Helvetica", 14, "bold"),
+        tk.Label(content_frame, text="Customer Management", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10, anchor="w")
 
         search_frame = tk.Frame(content_frame, bg="#ffffff")
         search_frame.pack(fill="x", pady=10)
-        tk.Label(search_frame, text="Search by Name:", font=("Helvetica", 14),
+        tk.Label(search_frame, text="Search by Name:", font=("Helvetica", 18),
                 bg="#ffffff", fg="#8B5A2B").pack(side="left")
-        self.customer_search_entry = tk.Entry(search_frame, font=("Helvetica", 14), bg="#F5F5DC")
+        self.customer_search_entry = tk.Entry(search_frame, font=("Helvetica", 18), bg="#F5F5DC")
         self.customer_search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.customer_search_entry.bind("<KeyRelease>", self.update_customer_table)
         tk.Button(search_frame, text="Add New Customer", command=self.show_add_customer,
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                  activebackground="#27ae60", activeforeground="#ffffff",
                  padx=12, pady=8, bd=0).pack(side="right", padx=5)
 
@@ -3365,7 +3357,7 @@ class PharmacyPOS:
         button_frame.pack(fill="x", pady=10)
         self.update_customer_btn = tk.Button(button_frame, text="Update Customer",
                                            command=self.show_update_customer,
-                                           bg="#3498db", fg="#ffffff", font=("Helvetica", 14),
+                                           bg="#3498db", fg="#ffffff", font=("Helvetica", 18),
                                            activebackground="#2980b9", activeforeground="#ffffff",
                                            padx=12, pady=8, bd=0, state="disabled")
         self.update_customer_btn.pack(side="left", padx=5)
@@ -3373,7 +3365,7 @@ class PharmacyPOS:
                                            command=lambda: self.create_password_auth_window(
                                                "Authenticate Deletion", "Enter admin password to delete customer",
                                                self.validate_delete_customer_auth, selected_item=self.customer_table.selection()),
-                                           bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
+                                           bg="#e74c3c", fg="#ffffff", font=("Helvetica", 18),
                                            activebackground="#c0392b", activeforeground="#ffffff",
                                            padx=12, pady=8, bd=0, state="disabled")
         self.delete_customer_btn.pack(side="left", padx=5)
@@ -3432,7 +3424,7 @@ class PharmacyPOS:
         add_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         add_box.pack(pady=20)
 
-        tk.Label(add_box, text="Add New Customer", font=("Helvetica", 14, "bold"),
+        tk.Label(add_box, text="Add New Customer", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
         fields = ["Customer ID", "Name", "Contact", "Address"]
@@ -3440,8 +3432,8 @@ class PharmacyPOS:
         for field in fields:
             frame = tk.Frame(add_box, bg="#ffffff")
             frame.pack(fill="x", pady=5)
-            tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack(side="left")
-            entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC")
+            tk.Label(frame, text=field, font=("Helvetica", 18), bg="#ffffff", fg="#8B5A2B").pack(side="left")
+            entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC")
             if field == "Customer ID":
                 entry.insert(0, self.generate_customer_id())
                 entry.config(state="readonly")  # Make Customer ID read-only
@@ -3451,7 +3443,7 @@ class PharmacyPOS:
         tk.Button(add_box, text="Add Customer",
                 command=lambda: self.add_customer(entries["Customer ID"].get(), entries["Name"].get(),
                                                 entries["Contact"].get(), entries["Address"].get(), window),
-                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                 activebackground="#27ae60", activeforeground="#ffffff",
                 padx=12, pady=8, bd=0).pack(pady=15)
 
@@ -3493,7 +3485,7 @@ class PharmacyPOS:
                 update_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
                 update_box.pack(pady=20)
 
-                tk.Label(update_box, text="Update Customer", font=("Helvetica", 14, "bold"),
+                tk.Label(update_box, text="Update Customer", font=("Helvetica", 18, "bold"),
                         bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
                 fields = ["Customer ID", "Name", "Contact", "Address"]
@@ -3501,8 +3493,8 @@ class PharmacyPOS:
                 for i, field in enumerate(fields):
                     frame = tk.Frame(update_box, bg="#ffffff")
                     frame.pack(fill="x", pady=5)
-                    tk.Label(frame, text=field, font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 14), bg="#F5F5DC")
+                    tk.Label(frame, text=field, font=("Helvetica", 18), bg="#ffffff", fg="#8B5A2B").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC")
                     entry.pack(side="left", fill="x", expand=True, padx=5)
                     entries[field] = entry
                     entry.insert(0, customer[i])
@@ -3511,7 +3503,7 @@ class PharmacyPOS:
                          command=lambda: self.update_customer(entries["Customer ID"].get(), entries["Name"].get(),
                                                             entries["Contact"].get(), entries["Address"].get(),
                                                             customer[0], window),
-                         bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                         bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                          activebackground="#27ae60", activeforeground="#ffffff",
                          padx=12, pady=8, bd=0).pack(pady=15)
 
@@ -3572,14 +3564,14 @@ class PharmacyPOS:
         content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True)
 
-        tk.Label(content_frame, text="Select Customer", font=("Helvetica", 14, "bold"),
+        tk.Label(content_frame, text="Select Customer", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10)
 
         search_frame = tk.Frame(content_frame, bg="#ffffff")
         search_frame.pack(fill="x", pady=5)
-        tk.Label(search_frame, text="Search by Name:", font=("Helvetica", 14),
+        tk.Label(search_frame, text="Search by Name:", font=("Helvetica", 18),
                 bg="#ffffff", fg="#8B5A2B").pack(side="left")
-        search_entry = tk.Entry(search_frame, font=("Helvetica", 14), bg="#F5F5DC")
+        search_entry = tk.Entry(search_frame, font=("Helvetica", 18), bg="#F5F5DC")
         search_entry.pack(side="left", fill="x", expand=True, padx=5)
 
         customers_frame = tk.Frame(content_frame, bg="#ffffff", bd=1, relief="flat")
@@ -3618,7 +3610,7 @@ class PharmacyPOS:
             window.destroy()
 
         tk.Button(content_frame, text="Confirm Selection", command=confirm_selection,
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                  activebackground="#27ae60", activeforeground="#ffffff",
                  padx=12, pady=8, bd=0).pack(pady=10)
 
@@ -3725,7 +3717,7 @@ class PharmacyPOS:
         content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True)
 
-        tk.Label(content_frame, text="Unpaid Transactions", font=("Helvetica", 14, "bold"),
+        tk.Label(content_frame, text="Unpaid Transactions", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=10)
 
         columns = ("TransactionID", "ItemsList", "TotalAmount", "Timestamp")
@@ -3762,14 +3754,14 @@ class PharmacyPOS:
 
         self.resume_btn = tk.Button(button_frame, text="Resume Transaction", 
                                     command=lambda: self.resume_transaction(unpaid_table, window),
-                                    bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                                    bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                                     activebackground="#27ae60", activeforeground="#ffffff",
                                     padx=12, pady=8, bd=0, state="disabled")
         self.resume_btn.pack(side="left", padx=5)
 
         self.delete_btn = tk.Button(button_frame, text="Delete Transaction",
                                     command=lambda: self.delete_unpaid_transaction(unpaid_table, window),
-                                    bg="#e74c3c", fg="#ffffff", font=("Helvetica", 14),
+                                    bg="#e74c3c", fg="#ffffff", font=("Helvetica", 18),
                                     activebackground="#c0392b", activeforeground="#ffffff",
                                     padx=12, pady=8, bd=0, state="disabled")
         self.delete_btn.pack(side="left", padx=5)
@@ -3915,7 +3907,7 @@ class PharmacyPOS:
         payment_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         payment_box.pack(pady=20)
 
-        tk.Label(payment_box, text="Select Payment Method", font=("Helvetica", 14, "bold"),
+        tk.Label(payment_box, text="Select Payment Method", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
         payment_var = tk.StringVar()
@@ -3926,7 +3918,7 @@ class PharmacyPOS:
 
         tk.Button(payment_box, text="Confirm",
                  command=lambda: self.set_payment_method(payment_var.get(), window),
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                  activebackground="#27ae60", activeforeground="#ffffff",
                  padx=12, pady=8, bd=0).pack(pady=15)
 
@@ -3947,18 +3939,18 @@ class PharmacyPOS:
         return_box = tk.Frame(window, bg="#ffffff", padx=20, pady=20, bd=1, relief="flat")
         return_box.pack(pady=20)
 
-        tk.Label(return_box, text="Return Transaction", font=("Helvetica", 14, "bold"),
+        tk.Label(return_box, text="Return Transaction", font=("Helvetica", 18, "bold"),
                 bg="#ffffff", fg="#8B5A2B").pack(pady=15)
 
-        tk.Label(return_box, text="Transaction ID", font=("Helvetica", 14), bg="#ffffff", fg="#8B5A2B").pack()
-        transaction_id_entry = tk.Entry(return_box, font=("Helvetica", 14), bg="#F5F5DC")
+        tk.Label(return_box, text="Transaction ID", font=("Helvetica", 18), bg="#ffffff", fg="#8B5A2B").pack()
+        transaction_id_entry = tk.Entry(return_box, font=("Helvetica", 18), bg="#F5F5DC")
         transaction_id_entry.pack(pady=5, fill="x")
 
         tk.Button(return_box, text="Submit",
                  command=lambda: self.create_password_auth_window(
                      "Authenticate Return", "Enter admin password to process return",
                      self.validate_return_auth, transaction_id=transaction_id_entry.get(), window=window),
-                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                 bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                  activebackground="#27ae60", activeforeground="#ffffff",
                  padx=12, pady=8, bd=0).pack(pady=15)
 
@@ -4036,7 +4028,7 @@ class PharmacyPOS:
             content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
             content_frame.pack(fill="both", expand=True)
 
-            tk.Label(content_frame, text=f"Return Transaction {transaction_id}", font=("Helvetica", 14, "bold"),
+            tk.Label(content_frame, text=f"Return Transaction {transaction_id}", font=("Helvetica", 18, "bold"),
                     bg="#ffffff", fg="#8B5A2B").pack(pady=10)
 
             columns = ("Item", "Quantity", "RetailPrice")
@@ -4052,7 +4044,7 @@ class PharmacyPOS:
 
             tk.Button(content_frame, text="Confirm Return",
                     command=lambda: self.process_return(transaction_id, return_items, window),
-                    bg="#2ecc71", fg="#ffffff", font=("Helvetica", 14),
+                    bg="#2ecc71", fg="#ffffff", font=("Helvetica", 18),
                     activebackground="#27ae60", activeforeground="#ffffff",
                     padx=12, pady=8, bd=0).pack(pady=10)
 
