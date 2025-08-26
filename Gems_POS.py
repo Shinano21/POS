@@ -1,22 +1,23 @@
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")
-
+warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")  # Verify if needed (remove if no warnings occur)
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog  # Verify if filedialog is used
 import sqlite3
-from datetime import datetime
+from datetime import datetime, date, timedelta  # Merged datetime imports; verify if date, timedelta are used
 import uuid
 from PIL import Image, ImageTk
 from typing import Optional, List, Dict, Callable
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from reportlab.lib import colors  # Verify if used (PDF generation)
+from reportlab.lib.pagesizes import letter  # Verify if used
+from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak)  # Verify if used
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # Verify if used
+from reportlab.lib.units import inch  # Verify if used
+from reportlab.pdfgen import canvas  # Verify if used
 import os
-from pathlib import Path
-import webbrowser
-from datetime import datetime, date
-from tkcalendar import DateEntry
-import csv
-from tkinter import filedialog
+#from pathlib import Path
+import webbrowser  # Verify if used (e.g., opening PDFs/URLs)
+#from tkcalendar import DateEntry  # Verify if used (e.g., date selection in UI)
+import csv  # Verify if used (e.g., exporting reports)
 import logging
 
 class PharmacyPOS:
@@ -368,20 +369,30 @@ class PharmacyPOS:
         self.header = tk.Frame(parent, bg="#F4E1C1")  # Sandy Beige
         self.header.pack(side="top", fill="x", pady=8)
 
-        self.hamburger_btn = tk.Button(self.header, text="✕", command=self.toggle_sidebar,
-                                    bg="#F5F6F5", fg="#2C3E50", font=("Helvetica", 18),  # Soft White, Dark Slate
-                                    activebackground="#4DA8DA", activeforeground="#F5F6F5",  # Aqua Blue, Soft White
-                                    padx=8, pady=4, bd=0)
+        self.hamburger_btn = tk.Button(
+            self.header, text="✕", command=self.toggle_sidebar,
+            bg="#F5F6F5", fg="#2C3E50", font=("Helvetica", 18),  # Soft White, Dark Slate
+            activebackground="#4DA8DA", activeforeground="#F5F6F5",  # Aqua Blue, Soft White
+            padx=8, pady=4, bd=0
+        )
         self.hamburger_btn.pack(side="left", padx=5)
 
-        tk.Label(self.header, text="Gem's Pharmacy", font=("Helvetica", 18, "bold"),
-                bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
-        tk.Label(self.header, text=datetime.now().strftime("%B %d, %Y %I:%M %p PST"),
-                font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50").pack(side="left", padx=12)  # Sandy Beige, Dark Slate
-        tk.Label(self.header, text=f"{self.current_user} ({self.get_user_role()})" if self.current_user else "",
-                font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50").pack(side="right", padx=12)  # Sandy Beige, Dark Slate
+        tk.Label(
+            self.header, text="Gem's Pharmacy", font=("Helvetica", 18, "bold"),
+            bg="#F4E1C1", fg="#2C3E50"
+        ).pack(side="left", padx=12)  # Sandy Beige, Dark Slate
 
-        nav_buttons = []
+        # Create a label for the time that will update dynamically
+        self.time_label = tk.Label(self.header, font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50")
+        self.time_label.pack(side="left", padx=12)
+        self.update_time()  # Start the time update loop
+
+        tk.Label(
+            self.header,
+            text=f"{self.current_user} ({self.get_user_role()})" if self.current_user else "",
+            font=("Helvetica", 12), bg="#F4E1C1", fg="#2C3E50"
+        ).pack(side="right", padx=12)
+
         if self.get_user_role() == "Drug Lord":
             nav_buttons = [
                 ("👤 Account Management", self.show_account_management),
@@ -399,15 +410,22 @@ class PharmacyPOS:
             ]
 
         for text, command in nav_buttons:
-            btn = tk.Button(self.sidebar, text=text, command=command,
-                            bg="#1B263B" if "Dashboard" not in text else "#4DA8DA",  # Deep Ocean Blue, Aqua Blue
-                            fg="#F5F6F5", font=("Helvetica", 18),  # Soft White
-                            activebackground="#4DA8DA" if "Dashboard" in text else "#2C3E50",  # Aqua Blue, Dark Slate
-                            activeforeground="#F5F6F5",  # Soft White
-                            padx=12, pady=8, bd=0)
+            btn = tk.Button(
+                self.sidebar, text=text, command=command,
+                bg="#1B263B",  # Same Deep Ocean Blue for all
+                fg="#F5F6F5", font=("Helvetica", 18),  # Soft White
+                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate hover
+                padx=12, pady=8, bd=0
+            )
             btn.pack(fill="x", pady=2)
-            btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#4DA8DA" if "Dashboard" in b["text"] else "#2C3E50"))
-            btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#1B263B" if "Dashboard" not in b["text"] else "#4DA8DA"))
+            # Hover effect (darken)
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#2C3E50"))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#1B263B"))
+
+    
+    def update_time(self) -> None:
+        self.time_label.config(text=datetime.now().strftime("%B %d, %Y %I:%M:%S %p PST"))
+        self.root.after(1000, self.update_time)  # Schedule the next update in 1 second
 
     def get_user_role(self) -> str:
         if not self.current_user:
@@ -2519,46 +2537,11 @@ class PharmacyPOS:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to print receipt: {e}", parent=self.root)
 
-    def print_sales_report(self, month, year, total_unit_sales, daily_sales):
-                try:
-                    month = int(month)
-                    year = int(year)
-                except ValueError:
-                    messagebox.showerror("Error", "Invalid month or year for report.", parent=self.root)
-                    return
+    
 
-                # Generate report filename
-                filename = f"sales_report_{year}-{month:02d}.txt"
-                month_name = datetime.strptime(str(month), "%m").strftime("%B")
+ 
 
-                # Create report content
-                report = f"Sales Report for {month_name} {year}\n"
-                report += "=" * 50 + "\n\n"
-                report += f"Unit Cost for the Month: ${total_unit_sales:.2f}\n\n"
-                report += "Daily Sales Summary:\n"
-                report += f"{'Date':<12} {'Total Sales':>12} {'Unit Cost':>15} {'Net Profit':>12}\n"
-                report += "-" * 50 + "\n"
-
-                if daily_sales:
-                    total_grand_sales = sum(data["grand_sales"] for data in daily_sales.values())
-                    total_net_profit = total_grand_sales - total_unit_sales
-                    for date in sorted(daily_sales.keys()):
-                        grand_sales = daily_sales[date]["grand_sales"]
-                        unit_sales = daily_sales[date]["unit_sales"]
-                        net_profit = grand_sales - unit_sales
-                        report += f"{date:<12} {grand_sales:>12.2f} {unit_sales:>15.2f} {net_profit:>12.2f}\n"
-                    report += "-" * 50 + "\n"
-                    report += f"{'Total':<12} {total_grand_sales:>12.2f} {total_unit_sales:>15.2f} {total_net_profit:>12.2f}\n"
-                else:
-                    report += "No transactions found for the selected period.\n"
-
-                # Save report to file
-                try:
-                    with open(filename, "w") as f:
-                        f.write(report)
-                    messagebox.showinfo("Success", f"Sales report saved to {filename}", parent=self.root)
-                except IOError as e:
-                    messagebox.showerror("Error", f"Failed to save report: {e}", parent=self.root)
+   
 
     def show_sales_summary(self) -> None:
         if not hasattr(self, 'root') or self.root is None:
@@ -2633,9 +2616,9 @@ class PharmacyPOS:
         year_combobox.pack(side="left", padx=5)
 
         apply_filter_btn = tk.Button(filter_frame, text="🔄 Apply Filter",
-                                    command=lambda: self.update_tables(month_var, year_var,
-                                                                        monthly_table, daily_table,
-                                                                        monthly_frame, daily_frame),
+                                    command=lambda: self.update_tables_and_kpis(month_var, year_var,
+                                                                               monthly_table, daily_table,
+                                                                               monthly_frame, daily_frame),
                                     bg="#4DA8DA", fg="white", font=("Helvetica", 14, "bold"),
                                     padx=12, pady=6, bd=0)
         apply_filter_btn.pack(side="left", padx=10)
@@ -2646,17 +2629,26 @@ class PharmacyPOS:
                                     padx=12, pady=6, bd=0)
         print_report_btn.pack(side="left", padx=10)
 
+        # Toggle button for switching between daily and monthly sales
+        self.display_mode = tk.StringVar(value="Daily")  # Default to Daily
+        toggle_btn = tk.Button(filter_frame, text="Show Monthly Sales",
+                              command=lambda: self.toggle_sales_view(toggle_btn, monthly_frame, daily_frame, table_container),
+                              bg="#E67E22", fg="white", font=("Helvetica", 14, "bold"),
+                              padx=12, pady=6, bd=0)
+        toggle_btn.pack(side="left", padx=10)
+
         # --- Tables ---
         table_container = tk.Frame(main_frame, bg="#F5F6F5", padx=20, pady=20)
         table_container.pack(fill="both", expand=True)
 
         # Monthly Summary
-        tk.Label(table_container, text="Monthly Sales Summary",
-                font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#F5F6F5", fg="#2C3E50").pack(anchor="w", pady=(0, 5))
+        monthly_label = tk.Label(table_container, text="Monthly Sales Summary",
+                                font=("Helvetica", self.scale_size(18), "bold"),
+                                bg="#F5F6F5", fg="#2C3E50", name="monthly_label")
+        monthly_label.pack_forget()
 
-        monthly_frame = tk.Frame(table_container, bg="#F5F6F5")
-        monthly_frame.pack(fill="both", expand=True, pady=5)
+        monthly_frame = tk.Frame(table_container, bg="#F5F6F5", name="monthly_frame")
+        monthly_frame.pack_forget()
 
         columns = ("Month", "TotalSales", "UnitCost", "NetProfit")
         headers = ("MONTH", "TOTAL SALES", "UNIT COST", "NET PROFIT")
@@ -2667,11 +2659,12 @@ class PharmacyPOS:
         monthly_table.pack(fill="both", expand=True)
 
         # Daily Summary
-        tk.Label(table_container, text="Daily Sales Summary",
-                font=("Helvetica", self.scale_size(18), "bold"),
-                bg="#F5F6F5", fg="#2C3E50").pack(anchor="w", pady=(15, 5))
+        daily_label = tk.Label(table_container, text="Daily Sales Summary",
+                              font=("Helvetica", self.scale_size(18), "bold"),
+                              bg="#F5F6F5", fg="#2C3E50", name="daily_label")
+        daily_label.pack(anchor="w", pady=(15, 5))
 
-        daily_frame = tk.Frame(table_container, bg="#F5F6F5")
+        daily_frame = tk.Frame(table_container, bg="#F5F6F5", name="daily_frame")
         daily_frame.pack(fill="both", expand=True, pady=5)
 
         daily_columns = ("Date", "TotalSales", "UnitCost", "NetProfit")
@@ -2688,97 +2681,178 @@ class PharmacyPOS:
                         rowheight=self.scale_size(26), font=("Helvetica", self.scale_size(12)))
         style.map("Treeview", background=[("selected", "#4DA8DA")])
 
-        # Load data
-        self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
+        # Add scroll wheel support and hide scrollbars
+        def _on_mouse_wheel(event, treeview):
+            if event.delta > 0:
+                treeview.yview_scroll(-1, "units")
+            else:
+                treeview.yview_scroll(1, "units")
+
+        monthly_table.bind("<MouseWheel>", lambda event: _on_mouse_wheel(event, monthly_table))
+        daily_table.bind("<MouseWheel>", lambda event: _on_mouse_wheel(event, daily_table))
+        style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
+
+        # Toggle function
+        def toggle_sales_view(self, btn, monthly_frame, daily_frame, table_container):
+            if self.display_mode.get() == "Daily":
+                self.display_mode.set("Monthly")
+                btn.config(text="Show Daily Sales")
+                table_container.children['daily_label'].pack_forget()
+                daily_frame.pack_forget()
+                table_container.children['monthly_label'].pack(anchor="w", pady=(0, 5))
+                monthly_frame.pack(fill="both", expand=True, pady=5)
+            else:
+                self.display_mode.set("Daily")
+                btn.config(text="Show Monthly Sales")
+                table_container.children['monthly_label'].pack_forget()
+                monthly_frame.pack_forget()
+                table_container.children['daily_label'].pack(anchor="w", pady=(15, 5))
+                daily_frame.pack(fill="both", expand=True, pady=5)
+
+        self.toggle_sales_view = toggle_sales_view.__get__(self, self.__class__)
+
+        # Update tables function (provided by user, modified for Net Profit)
+        def update_tables(self, month_var: tk.StringVar, year_var: tk.StringVar, monthly_table: ttk.Treeview, daily_table: ttk.Treeview, monthly_frame: tk.Frame, daily_frame: tk.Frame) -> None:
+            # Clear existing table data
+            for item in monthly_table.get_children():
+                monthly_table.delete(item)
+            for item in daily_table.get_children():
+                daily_table.delete(item)
+
+            try:
+                month = month_var.get()
+                year = year_var.get()
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    # Debug: Check table row counts
+                    cursor.execute("SELECT count(*) FROM daily_sales")
+                    daily_sales_count = cursor.fetchone()[0]
+                    cursor.execute("SELECT count(*) FROM transactions")
+                    transactions_count = cursor.fetchone()[0]
+                    print(f"Debug: daily_sales rows: {daily_sales_count}, transactions rows: {transactions_count}")
+
+                    # Monthly sales: Aggregate total sales, total unit cost, and calculate net profit
+                    cursor.execute('''
+                        SELECT strftime('%m', sale_date) AS month,
+                               SUM(total_sales) AS total_sales,
+                               SUM((
+                                   SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
+                                   FROM transactions t2
+                                   JOIN inventory i ON instr(t2.items, i.item_id) > 0
+                                   WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
+                               )) AS total_unit_cost
+                        FROM daily_sales d
+                        WHERE strftime('%Y', sale_date) = ?
+                        GROUP BY strftime('%m', sale_date)
+                        ORDER BY month
+                    ''', (year,))
+                    monthly_data = cursor.fetchall()
+                    print(f"Debug: Monthly data for {year}: {monthly_data}")
+                    month_names = {str(i).zfill(2): name for i, name in enumerate(
+                        ["January", "February", "March", "April", "May", "June",
+                         "July", "August", "September", "October", "November", "December"], 1)}
+                    for row in monthly_data:
+                        month_num, total_sales, total_unit_cost = row
+                        net_profit = (total_sales if total_sales is not None else 0) - (total_unit_cost if total_unit_cost is not None else 0)
+                        monthly_table.insert("", "end", values=(
+                            month_names.get(month_num, month_num),
+                            f"₱ {total_sales if total_sales is not None else 0:.2f}",
+                            f"₱ {total_unit_cost if total_unit_cost is not None else 0:.2f}",
+                            f"₱ {net_profit:.2f}"
+                        ))
+
+                    # Daily sales: Aggregate total sales, total unit cost, and calculate net profit
+                    cursor.execute('''
+                        SELECT sale_date,
+                               total_sales,
+                               (
+                                   SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
+                                   FROM transactions t2
+                                   JOIN inventory i ON instr(t2.items, i.item_id) > 0
+                                   WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
+                               ) AS total_unit_cost
+                        FROM daily_sales d
+                        WHERE strftime('%Y', sale_date) = ? AND strftime('%m', sale_date) = ?
+                        ORDER BY sale_date DESC
+                    ''', (year, month.zfill(2)))
+                    daily_data = cursor.fetchall()
+                    print(f"Debug: Daily data for {year}-{month.zfill(2)}: {daily_data}")
+                    for row in daily_data:
+                        sale_date, total_sales, total_unit_cost = row
+                        net_profit = (total_sales if total_sales is not None else 0) - (total_unit_cost if total_unit_cost is not None else 0)
+                        daily_table.insert("", "end", values=(
+                            sale_date,
+                            f"₱ {total_sales if total_sales is not None else 0:.2f}",
+                            f"₱ {total_unit_cost if total_unit_cost is not None else 0:.2f}",
+                            f"₱ {net_profit:.2f}"
+                        ))
+
+                    # If no data, display a message
+                    if not monthly_data:
+                        monthly_table.insert("", "end", values=("No data", "₱ 0.00", "₱ 0.00", "₱ 0.00"))
+                    if not daily_data:
+                        daily_table.insert("", "end", values=("No data", "₱ 0.00", "₱ 0.00", "₱ 0.00"))
+
+            except sqlite3.Error as e:
+                print(f"Debug: SQLite error in update_tables: {e}")
+                messagebox.showerror("Error", f"Failed to update sales tables: {e}", parent=self.root)
+
+        self.update_tables = update_tables.__get__(self, self.__class__)
+
+        # KPI update function (uses real table data)
+        def update_kpis(self, month_var, year_var):
+            try:
+                # Rely on daily table data populated by update_tables
+                sales_data = {
+                    "today_sales": 0.0,
+                    "week_sales": 0.0,
+                    "month_sales": 0.0
+                }
+                current_date = datetime.now()
+                week_start = current_date - timedelta(days=current_date.weekday())
+                month = int(month_var.get())
+                year = int(year_var.get())
+                for item in daily_table.get_children():
+                    values = daily_table.item(item, 'values')
+                    date_str = values[0]  # Date
+                    total_sales = float(values[1].replace("₱ ", "")) if values[1] and values[1] != "No data" else 0.0
+                    try:
+                        item_date = datetime.strptime(date_str, "%Y-%m-%d")
+                        if item_date.date() == current_date.date():
+                            sales_data["today_sales"] += total_sales
+                        if week_start.date() <= item_date.date() <= current_date.date():
+                            sales_data["week_sales"] += total_sales
+                        if item_date.month == month and item_date.year == year:
+                            sales_data["month_sales"] += total_sales
+                    except ValueError:
+                        continue
+
+                self.kpi_labels["Today"].config(text=f"₱ {sales_data['today_sales']:.2f}")
+                self.kpi_labels["This Week"].config(text=f"₱ {sales_data['week_sales']:.2f}")
+                self.kpi_labels["This Month"].config(text=f"₱ {sales_data['month_sales']:.2f}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update KPIs: {e}", parent=self.root)
+
+        self.update_kpis = update_kpis.__get__(self, self.__class__)
+
+        # Modified update function to include KPIs
+        def update_tables_and_kpis(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
+            try:
+                self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
+                self.update_kpis(month_var, year_var)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to update tables and KPIs: {e}", parent=self.root)
+
+        self.update_tables_and_kpis = update_tables_and_kpis.__get__(self, self.__class__)
+
+        # Initial data load
+        self.update_tables_and_kpis(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
+
+        
+        
 
 
-
-
-
-
-    def update_tables(self, month_var: tk.StringVar, year_var: tk.StringVar, monthly_table: ttk.Treeview, daily_table: ttk.Treeview, monthly_frame: tk.Frame, daily_frame: tk.Frame) -> None:
-        # Clear existing table data
-        for item in monthly_table.get_children():
-            monthly_table.delete(item)
-        for item in daily_table.get_children():
-            daily_table.delete(item)
-
-        try:
-            month = month_var.get()
-            year = year_var.get()
-            with self.conn:
-                cursor = self.conn.cursor()
-                # Debug: Check table row counts
-                cursor.execute("SELECT count(*) FROM daily_sales")
-                daily_sales_count = cursor.fetchone()[0]
-                cursor.execute("SELECT count(*) FROM transactions")
-                transactions_count = cursor.fetchone()[0]
-                print(f"Debug: daily_sales rows: {daily_sales_count}, transactions rows: {transactions_count}")
-
-                # Monthly sales: Aggregate total sales, total unit cost, and net profit
-                cursor.execute('''
-                    SELECT strftime('%m', sale_date) AS month,
-                           SUM(total_sales) AS total_sales,
-                           SUM((
-                               SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
-                               FROM transactions t2
-                               JOIN inventory i ON instr(t2.items, i.item_id) > 0
-                               WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
-                           )) AS total_unit_cost,
-                           SUM(net_profit) AS net_profit
-                    FROM daily_sales d
-                    WHERE strftime('%Y', sale_date) = ?
-                    GROUP BY strftime('%m', sale_date)
-                    ORDER BY month
-                ''', (year,))
-                monthly_data = cursor.fetchall()
-                print(f"Debug: Monthly data for {year}: {monthly_data}")
-                month_names = {str(i).zfill(2): name for i, name in enumerate(
-                    ["January", "February", "March", "April", "May", "June",
-                     "July", "August", "September", "October", "November", "December"], 1)}
-                for row in monthly_data:
-                    month_num = row[0]
-                    monthly_table.insert("", "end", values=(
-                        month_names.get(month_num, month_num),
-                        f"{row[1] if row[1] is not None else 0:.2f}",
-                        f"{row[2] if row[2] is not None else 0:.2f}",
-                        f"{row[3] if row[3] is not None else 0:.2f}"
-                    ))
-
-                # Daily sales: Aggregate total sales, total unit cost, and net profit
-                cursor.execute('''
-                    SELECT sale_date,
-                           total_sales,
-                           (
-                               SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
-                               FROM transactions t2
-                               JOIN inventory i ON instr(t2.items, i.item_id) > 0
-                               WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
-                           ) AS total_unit_cost,
-                           net_profit
-                    FROM daily_sales d
-                    WHERE strftime('%Y', sale_date) = ? AND strftime('%m', sale_date) = ?
-                    ORDER BY sale_date DESC
-                ''', (year, month.zfill(2)))
-                daily_data = cursor.fetchall()
-                print(f"Debug: Daily data for {year}-{month.zfill(2)}: {daily_data}")
-                for row in daily_data:
-                    daily_table.insert("", "end", values=(
-                        row[0],
-                        f"{row[1] if row[1] is not None else 0:.2f}",
-                        f"{row[2] if row[2] is not None else 0:.2f}",
-                        f"{row[3] if row[3] is not None else 0:.2f}"
-                    ))
-
-                # If no data, display a message
-                if not monthly_data:
-                    monthly_table.insert("", "end", values=("No data", "0.00", "0.00", "0.00"))
-                if not daily_data:
-                    daily_table.insert("", "end", values=("No data", "0.00", "0.00", "0.00"))
-
-        except sqlite3.Error as e:
-            print(f"Debug: SQLite error in update_tables: {e}")
-            messagebox.showerror("Error", f"Failed to update sales tables: {e}", parent=self.root)
+    
 
 
     def print_sales_report(self, month: str, year: str) -> None:
@@ -2858,56 +2932,76 @@ class PharmacyPOS:
             receipt_dir = os.path.join(os.path.dirname(self.db_path), "reports")
             os.makedirs(receipt_dir, exist_ok=True)
             report_path = os.path.join(receipt_dir, f"sales_report_{year}_{month:02d}.pdf")
-            c = canvas.Canvas(report_path, pagesize=letter)
-            c.setFont("Helvetica", 12)
 
-            # Header
-            c.drawString(100, 750, "Shinano Pharmacy Sales Report")
-            c.drawString(100, 730, f"Period: {year}-{month:02d}")
-            c.drawString(100, 710, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            c.drawString(100, 690, "-" * 60)
+            doc = SimpleDocTemplate(report_path, pagesize=letter)
+            styles = getSampleStyleSheet()
+            elements = []
 
-            # Monthly Sales
-            y = 670
-            c.drawString(100, y, "Monthly Sales Summary")
-            y -= 20
-            c.drawString(100, y, "Month | Total Sales | Unit Cost | Net Profit")
-            y -= 20
+            # --- Header ---
+            title = Paragraph("<b>Shinano Pharmacy Sales Report</b>", styles['Title'])
+            # Modified period format to "Month Year" (e.g., August 2025)
+            month_name = datetime.strptime(str(month), "%m").strftime("%B")
+            period = Paragraph(f"Period: {month_name} {year}", styles['Normal'])
+            generated = Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal'])
+
+            elements.extend([title, period, generated, Spacer(1, 12)])
+
+            # --- Monthly Sales Table ---
+            elements.append(Paragraph("<b>Monthly Sales Summary</b>", styles['Heading2']))
+            monthly_data = [["Month", "Total Sales (₱)", "Unit Cost (₱)", "Net Profit (₱)"]]
+
             if monthly_sales:
                 for month_str in sorted(monthly_sales.keys()):
                     grand_sales = monthly_sales[month_str]["grand_sales"]
                     unit_sales = monthly_sales[month_str]["unit_sales"]
                     net_profit = grand_sales - unit_sales
-                    c.drawString(100, y, f"{month_str} | ₱{grand_sales:.2f} | ₱{unit_sales:.2f} | ₱{net_profit:.2f}")
-                    y -= 20
+                    # Convert month_str (YYYY-MM) to Month Year format for display
+                    month_display = datetime.strptime(month_str, "%Y-%m").strftime("%B %Y")
+                    monthly_data.append([month_display, f"{grand_sales:,.2f}", f"{unit_sales:,.2f}", f"{net_profit:,.2f}"])
             else:
-                c.drawString(100, y, "No monthly sales data available")
-                y -= 20
+                monthly_data.append(["No data available", "-", "-", "-"])
 
-            y -= 20
-            c.drawString(100, y, "-" * 60)
-            y -= 20
+            monthly_table = Table(monthly_data, hAlign="LEFT")
+            monthly_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#003366")),
+                ('TEXTCOLOR',(0,0),(-1,0),colors.whitesmoke),
+                ('ALIGN',(1,1),(-1,-1),'RIGHT'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey])
+            ]))
+            elements.append(monthly_table)
+            elements.append(Spacer(1, 24))
 
-            # Daily Sales
-            c.drawString(100, y, "Daily Sales Summary")
-            y -= 20
-            c.drawString(100, y, "Date | Total Sales | Unit Cost | Net Profit")
-            y -= 20
+            # --- Daily Sales Table ---
+            elements.append(Paragraph("<b>Daily Sales Summary</b>", styles['Heading2']))
+            daily_data = [["Date", "Total Sales (₱)", "Unit Cost (₱)", "Net Profit (₱)"]]
+
             if daily_sales:
                 for date in sorted(daily_sales.keys()):
                     grand_sales = daily_sales[date]["grand_sales"]
                     unit_sales = daily_sales[date]["unit_sales"]
                     net_profit = grand_sales - unit_sales
-                    c.drawString(100, y, f"{date} | ₱{grand_sales:.2f} | ₱{unit_sales:.2f} | ₱{net_profit:.2f}")
-                    y -= 20
-                y -= 20
-                total_net_profit = total_grand_sales - total_unit_sales
-                c.drawString(100, y, f"Total | ₱{total_grand_sales:.2f} | ₱{total_unit_sales:.2f} | ₱{total_net_profit:.2f}")
-            else:
-                c.drawString(100, y, "No daily sales data available")
+                    daily_data.append([date, f"{grand_sales:,.2f}", f"{unit_sales:,.2f}", f"{net_profit:,.2f}"])
 
-            c.showPage()
-            c.save()
+                total_net_profit = total_grand_sales - total_unit_sales
+                daily_data.append(["TOTAL", f"{total_grand_sales:,.2f}", f"{total_unit_sales:,.2f}", f"{total_net_profit:,.2f}"])
+            else:
+                daily_data.append(["No data available", "-", "-", "-"])
+
+            daily_table = Table(daily_data, hAlign="LEFT")
+            daily_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#660000")),
+                ('TEXTCOLOR',(0,0),(-1,0),colors.whitesmoke),
+                ('ALIGN',(1,1),(-1,-1),'RIGHT'),
+                ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey])
+            ]))
+            elements.append(daily_table)
+
+            # Build PDF
+            doc.build(elements)
 
             # Open the report
             try:
@@ -2920,6 +3014,7 @@ class PharmacyPOS:
             messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}", parent=self.root)
+
 
 
     
@@ -3597,7 +3692,7 @@ class PharmacyPOS:
     def view_unpaid_transactions(self, event: Optional[tk.Event] = None) -> None:
         window = tk.Toplevel(self.root)
         window.title("Unpaid Transactions")
-        window.geometry("800x400")
+        window.geometry("800x525")
         window.configure(bg="#F5F5DC")
 
         content_frame = tk.Frame(window, bg="#ffffff", padx=20, pady=20)
@@ -3673,78 +3768,95 @@ class PharmacyPOS:
                 if not transaction:
                     messagebox.showerror("Error", "Transaction not found", parent=window)
                     return
+                # Process cart items
                 for item_data in transaction[0].split(";"):
                     if item_data:
                         try:
                             item_id, qty = item_data.split(":")
-                            cursor.execute("SELECT item_id, name, price FROM inventory WHERE item_id = ?", (item_id,))
+                            cursor.execute("SELECT item_id, name, retail_price FROM inventory WHERE item_id = ?", (item_id,))
                             item = cursor.fetchone()
                             if item:
                                 self.cart.append({
                                     "id": item[0],
                                     "name": item[1],
-                                    "price": item[2],
+                                    "retail_price": item[2],
                                     "quantity": int(qty),
                                     "subtotal": item[2] * int(qty)
                                 })
                             else:
                                 messagebox.showwarning("Warning", f"Item ID {item_id} not found in inventory", parent=window)
-                        except ValueError:
+                        except ValueError as e:
+                            print(f"Error parsing item data '{item_data}': {e}")
                             continue  # Skip malformed item data
+                # Handle customer_id
                 self.current_customer_id = transaction[2]
-                if self.current_customer_id:
-                    cursor.execute("SELECT name FROM customers WHERE customer_id = ?", (self.current_customer_id,))
-                    customer_name = cursor.fetchone()
-                    if customer_name:
-                        self.customer_id_label.config(text=f"{customer_name[0]} ({self.current_customer_id})")
+                if hasattr(self, 'customer_id_label') and self.customer_id_label.winfo_exists():
+                    if self.current_customer_id:
+                        cursor.execute("SELECT name FROM customers WHERE customer_id = ?", (self.current_customer_id,))
+                        customer = cursor.fetchone()
+                        if customer:
+                            self.customer_id_label.config(text=f"{customer[0]} ({self.current_customer_id})")
+                        else:
+                            self.customer_id_label.config(text="None Selected")
                     else:
                         self.customer_id_label.config(text="None Selected")
                 else:
-                    self.customer_id_label.config(text="None Selected")
+                    print("Warning: customer_id_label not initialized, skipping customer label update")
+                    # Optionally set current_customer_id to None if no label to display
+                    if not self.current_customer_id:
+                        print("No customer_id provided, skipping customer handling")
+                
+                # Delete transaction and log
                 cursor.execute("DELETE FROM transactions WHERE transaction_id = ?", (transaction_id,))
                 log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
                             (log_id, "Resume Transaction", f"Resumed and deleted transaction {transaction_id}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                 self.conn.commit()
-            
+
             window.destroy()
-            
+
             # Ensure dashboard is fully set up
-            self.show_dashboard()
-            
-            # Verify and update cart table
-            if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
-                # Clear existing items
+            if not hasattr(self, 'cart_table') or not self.cart_table.winfo_exists():
+                self.show_dashboard()
+
+            # Update cart table
+            try:
                 for item in self.cart_table.get_children():
                     self.cart_table.delete(item)
-                # Insert cart items
                 for item in self.cart:
                     self.cart_table.insert("", "end", values=(
-                        item["name"], f"{item['price']:.2f}", item["quantity"], f"{item['subtotal']:.2f}"
+                        item["name"],
+                        f"{item['retail_price']:.2f}",
+                        item["quantity"],
+                        f"{item['subtotal']:.2f}"
                     ))
-                # Re-grid cart table and parent frame
+                # Ensure cart table is properly gridded
                 self.cart_table.grid(row=1, column=0, columnspan=4, sticky="nsew")
-                if self.cart_table.winfo_parent():
-                    parent = self.cart_table.winfo_parent()
+                parent = self.cart_table.winfo_parent()
+                if parent:
                     parent_frame = self.cart_table._nametowidget(parent)
                     parent_frame.grid(row=0, column=0, sticky="nsew")
-                # Update totals and quantity
                 self.update_cart_totals()
                 self.update_quantity_display()
-            else:
-                messagebox.showwarning("Warning", "Cart table not initialized, retrying dashboard setup")
+            except AttributeError as e:
+                print(f"Error updating cart table: {e}")
+                messagebox.showwarning("Warning", "Cart table not initialized, retrying dashboard setup", parent=self.root)
                 self.show_dashboard()
                 self.update_cart_table()
-            
+
             # Force UI refresh
             self.root.update_idletasks()
             self.root.update()
-            
-            # Show success message after UI is fully updated
+
+            # Show success message
             self.root.after(200, lambda: messagebox.showinfo("Success", f"Transaction {transaction_id} resumed and removed from unpaid transactions", parent=self.root))
         except sqlite3.Error as e:
+            print(f"Database error in resume_transaction: {e}")
             messagebox.showerror("Error", f"Failed to resume transaction: {e}", parent=self.root)
+        except Exception as e:
+            print(f"Unexpected error in resume_transaction: {e}")
+            messagebox.showerror("Error", f"Unexpected error: {e}", parent=self.root)
 
     def delete_unpaid_transaction(self, unpaid_table: ttk.Treeview, window: tk.Toplevel) -> None:
         if not unpaid_table or not isinstance(unpaid_table, ttk.Treeview):
