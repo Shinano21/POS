@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['Gems_POS.py'],
+    ['E:\\Projects\\POS\\Separate\\login.py'],
     pathex=[],
     binaries=[],
-    datas=[('images', 'images')],
+    datas=[('E:\\Projects\\POS\\dist\\images', 'images'), ('E:\\Projects\\POS\\Separate\\login.py', '.'), ('E:\\Projects\\POS\\Separate\\inventory.py', '.'), ('E:\\Projects\\POS\\Separate\\transactions.py', '.'), ('E:\\Projects\\POS\\Separate\\sales_summary.py', '.'), ('E:\\Projects\\POS\\Separate\\dashboard.py', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['images\\shinano.ico'],
+    icon=['E:\\Projects\\POS\\dist\\images\\shinano.ico'],
 )

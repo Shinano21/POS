@@ -1,0 +1,325 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import sqlite3
+import os
+from typing import Optional
+from dashboard import Dashboard
+from inventory import InventoryManager
+from transactions import TransactionManager
+from sales_summary import SalesSummary
+
+class LoginApp:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("Shinano POS - Login")
+        self.root.geometry("400x300")
+        self.root.configure(bg="#F5F6F5")
+        self.db_path = self.get_writable_db_path()
+        self.conn = None
+        self.setup_database()
+        self.setup_gui()
+
+    def get_writable_db_path(self, db_name="pharmacy.db") -> str:
+        app_data = os.getenv('APPDATA', os.path.expanduser("~"))
+        db_dir = os.path.join(app_data, "ShinanoPOS")
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+        except OSError as e:
+            print(f"Error creating directory {db_dir}: {e}")
+            messagebox.showerror("Error", f"Cannot create database directory: {e}", parent=self.root)
+            raise
+        db_path = os.path.join(db_dir, db_name)
+        return db_path
+
+    def setup_database(self):
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            cursor = self.conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    username TEXT PRIMARY KEY,
+                    password TEXT,
+                    role TEXT,
+                    status TEXT DEFAULT 'Online'
+                )
+            ''')
+            cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
+                          ("yamato", "ycb-0001", "Drug Lord", "Online"))
+            cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
+                          ("kongo", "kcb-0001", "User", "Online"))
+            cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
+                          ("manager", "mcb-0001", "Manager", "Online"))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Failed to set up database: {e}", parent=self.root)
+            self.root.destroy()
+
+    def scale_size(self, size: int) -> int:
+        base_resolution = 1920
+        current_width = self.root.winfo_screenwidth()
+        scaling_factor = current_width / base_resolution
+        return int(size * scaling_factor)
+
+    def setup_gui(self):
+        main_frame = tk.Frame(self.root, bg="#F5F6F5")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(main_frame, text="Shinano POS Login", font=("Helvetica", self.scale_size(18), "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10))
+
+        tk.Label(main_frame, text="Username:", font=("Helvetica", self.scale_size(14)),
+                 bg="#F5F6F5", fg="#2C3E50").pack()
+        self.username_entry = tk.Entry(main_frame, font=("Helvetica", self.scale_size(14)), bg="#F4E1C1")
+        self.username_entry.pack(pady=self.scale_size(5))
+
+        tk.Label(main_frame, text="Password:", font=("Helvetica", self.scale_size(14)),
+                 bg="#F5F6F5", fg="#2C3E50").pack()
+        self.password_entry = tk.Entry(main_frame, show="*", font=("Helvetica", self.scale_size(14)), bg="#F4E1C1")
+        self.password_entry.pack(pady=self.scale_size(5))
+
+        tk.Button(main_frame, text="Login", command=self.validate_login,
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14), "bold"),
+                  activebackground="#2C3E50", activeforeground="#F5F6F5",
+                  padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
+
+        self.password_entry.bind("<Return>", lambda e: self.validate_login())
+
+    def validate_login(self):
+        username = self.username_entry.get().strip()
+        password = self.password_entry.get().strip()
+
+        if not username or not password:
+            messagebox.showerror("Error", "Username and password are required", parent=self.root)
+            return
+
+        try:
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT username, password, role FROM users WHERE username = ? AND password = ?",
+                              (username, password))
+                user = cursor.fetchone()
+                if user:
+                    username, _, role = user
+                    self.redirect_to_module(username, role)
+                else:
+                    messagebox.showerror("Error", "Invalid username or password", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Login failed: {e}", parent=self.root)
+
+    def redirect_to_module(self, username: str, role: str):
+        self.root.destroy()
+        new_root = tk.Tk()
+        if role == "Drug Lord":
+            self.show_account_management(new_root, username, role)
+        elif role == "Manager":
+            self.show_manager_dashboard(new_root, username, role)
+        elif role == "User":
+            Dashboard(new_root, current_user=username, user_role=role)
+        else:
+            messagebox.showerror("Error", "Unknown user role", parent=new_root)
+            new_root.destroy()
+        new_root.mainloop()
+
+    def show_account_management(self, root: tk.Tk, username: str, role: str):
+        root.title("Account Management")
+        root.geometry("800x600")
+        root.configure(bg="#F5F6F5")
+        tk.Label(root, text="Account Management - Drug Lord", font=("Helvetica", 18, "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=20)
+        tk.Button(root, text="Manage Users", command=lambda: self.manage_users(root, username, role),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+        tk.Button(root, text="Logout", command=root.destroy,
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+
+    def manage_users(self, root: tk.Tk, username: str, role: str):
+        manage_window = tk.Toplevel(root)
+        manage_window.title("Manage Users")
+        manage_window.geometry("600x400")
+        manage_window.configure(bg="#F5F6F5")
+
+        tk.Label(manage_window, text="User Management", font=("Helvetica", 16, "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
+
+        columns = ("Username", "Role", "Status")
+        user_table = ttk.Treeview(manage_window, columns=columns, show="headings")
+        for col in columns:
+            user_table.heading(col, text=col)
+            user_table.column(col, width=self.scale_size(150))
+        user_table.pack(fill="both", expand=True, padx=10, pady=10)
+
+        try:
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT username, role, status FROM users")
+                for user in cursor.fetchall():
+                    user_table.insert("", "end", values=user)
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Failed to load users: {e}", parent=manage_window)
+
+        # Frame for buttons
+        button_frame = tk.Frame(manage_window, bg="#F5F6F5")
+        button_frame.pack(pady=5)
+
+        tk.Button(button_frame, text="Add User", command=lambda: self.add_user(manage_window, user_table),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Update User", command=lambda: self.update_user(manage_window, user_table),
+                  bg="#F1C40F", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Delete User", command=lambda: self.delete_user(manage_window, user_table, username),
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Close", command=manage_window.destroy,
+                  bg="#95A5A6", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
+
+    def add_user(self, parent: tk.Tk, user_table: ttk.Treeview):
+        add_window = tk.Toplevel(parent)
+        add_window.title("Add User")
+        add_window.geometry("400x300")
+        add_window.configure(bg="#F5F6F5")
+
+        tk.Label(add_window, text="Username:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        username_entry = tk.Entry(add_window, font=("Helvetica", 14))
+        username_entry.pack(pady=5)
+
+        tk.Label(add_window, text="Password:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        password_entry = tk.Entry(add_window, show="*", font=("Helvetica", 14))
+        password_entry.pack(pady=5)
+
+        tk.Label(add_window, text="Role:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        role_var = tk.StringVar(value="User")
+        ttk.Combobox(add_window, textvariable=role_var, values=["User", "Manager", "Drug Lord"],
+                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
+
+        def save_user():
+            username = username_entry.get().strip()
+            password = password_entry.get().strip()
+            role = role_var.get()
+            if not username or not password:
+                messagebox.showerror("Error", "Username and password are required", parent=add_window)
+                return
+            try:
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    cursor.execute("INSERT INTO users (username, password, role, status) VALUES (?, ?, ?, ?)",
+                                  (username, password, role, "Online"))
+                    self.conn.commit()
+                    user_table.insert("", "end", values=(username, role, "Online"))
+                    messagebox.showinfo("Success", "User added successfully", parent=add_window)
+                    add_window.destroy()
+            except sqlite3.IntegrityError:
+                messagebox.showerror("Error", "Username already exists", parent=add_window)
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to add user: {e}", parent=add_window)
+
+        tk.Button(add_window, text="Save", command=save_user,
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+        tk.Button(add_window, text="Cancel", command=add_window.destroy,
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=5)
+
+    def update_user(self, parent: tk.Tk, user_table: ttk.Treeview):
+        selected_item = user_table.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Please select a user to update", parent=parent)
+            return
+
+        username = user_table.item(selected_item)["values"][0]
+        update_window = tk.Toplevel(parent)
+        update_window.title("Update User")
+        update_window.geometry("400x300")
+        update_window.configure(bg="#F5F6F5")
+
+        tk.Label(update_window, text=f"Updating User: {username}", font=("Helvetica", 14, "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+
+        tk.Label(update_window, text="New Password:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        password_entry = tk.Entry(update_window, show="*", font=("Helvetica", 14))
+        password_entry.pack(pady=5)
+
+        tk.Label(update_window, text="Role:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        role_var = tk.StringVar(value=user_table.item(selected_item)["values"][1])
+        ttk.Combobox(update_window, textvariable=role_var, values=["User", "Manager", "Drug Lord"],
+                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
+
+        def save_update():
+            new_password = password_entry.get().strip()
+            new_role = role_var.get()
+            if not new_password:
+                messagebox.showerror("Error", "Password is required", parent=update_window)
+                return
+            try:
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    cursor.execute("UPDATE users SET password = ?, role = ? WHERE username = ?",
+                                  (new_password, new_role, username))
+                    self.conn.commit()
+                    user_table.item(selected_item, values=(username, new_role, "Online"))
+                    messagebox.showinfo("Success", "User updated successfully", parent=update_window)
+                    update_window.destroy()
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to update user: {e}", parent=update_window)
+
+        tk.Button(update_window, text="Save", command=save_update,
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+        tk.Button(update_window, text="Cancel", command=update_window.destroy,
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=5)
+
+    def delete_user(self, parent: tk.Tk, user_table: ttk.Treeview, current_username: str):
+        selected_item = user_table.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Please select a user to delete", parent=parent)
+            return
+
+        username = user_table.item(selected_item)["values"][0]
+        if username == current_username:
+            messagebox.showerror("Error", "Cannot delete the currently logged-in user", parent=parent)
+            return
+
+        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete user '{username}'?", parent=parent):
+            try:
+                with self.conn:
+                    cursor = self.conn.cursor()
+                    cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+                    self.conn.commit()
+                    user_table.delete(selected_item)
+                    messagebox.showinfo("Success", "User deleted successfully", parent=parent)
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Failed to delete user: {e}", parent=parent)
+
+    def show_manager_dashboard(self, root: tk.Tk, username: str, role: str):
+        root.title("Manager Dashboard")
+        root.geometry("800x600")
+        root.configure(bg="#F5F6F5")
+
+        main_frame = tk.Frame(root, bg="#F5F6F5")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(main_frame, text="Manager Dashboard", font=("Helvetica", 18, "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=20)
+
+        tk.Button(main_frame, text="Inventory Management",
+                  command=lambda: self.open_module(root, InventoryManager, username, role),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+        tk.Button(main_frame, text="Transaction Management",
+                  command=lambda: self.open_module(root, TransactionManager, username, role),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+        tk.Button(main_frame, text="Sales Summary",
+                  command=lambda: self.open_module(root, SalesSummary, username, role, db_path=self.db_path),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+        tk.Button(main_frame, text="Logout", command=root.destroy,
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+
+    def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):
+        new_window = tk.Toplevel(current_root)
+        new_window.transient(current_root)  # Tie the module window to the dashboard
+        new_window.grab_set()  # Make the module window modal (optional, for focus)
+        if module_class == SalesSummary:
+            module_class(new_window, current_user=username, user_role=role, db_path=db_path)
+        else:
+            module_class(new_window, current_user=username, user_role=role)
+
+    def __del__(self):
+        if self.conn:
+            self.conn.close()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = LoginApp(root)
+    root.mainloop()

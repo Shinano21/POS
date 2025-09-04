@@ -1,23 +1,21 @@
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")  # Verify if needed (remove if no warnings occur)
+warnings.filterwarnings("ignore", category=UserWarning, module="pkg_resources")  
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog  # Verify if filedialog is used
+from tkinter import ttk, messagebox, filedialog  
 import sqlite3
-from datetime import datetime, date, timedelta  # Merged datetime imports; verify if date, timedelta are used
+from datetime import datetime, date, timedelta  
 import uuid
 from PIL import Image, ImageTk
 from typing import Optional, List, Dict, Callable
-from reportlab.lib import colors  # Verify if used (PDF generation)
-from reportlab.lib.pagesizes import letter  # Verify if used
+from reportlab.lib import colors 
+from reportlab.lib.pagesizes import letter  
 from reportlab.platypus import (SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak)  # Verify if used
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # Verify if used
-from reportlab.lib.units import inch  # Verify if used
-from reportlab.pdfgen import canvas  # Verify if used
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  
+from reportlab.lib.units import inch 
+from reportlab.pdfgen import canvas  
 import os
-#from pathlib import Path
-import webbrowser  # Verify if used (e.g., opening PDFs/URLs)
-#from tkcalendar import DateEntry  # Verify if used (e.g., date selection in UI)
-import csv  # Verify if used (e.g., exporting reports)
+import webbrowser  
+import csv 
 import logging
 
 class PharmacyPOS:

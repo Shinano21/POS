@@ -615,50 +615,6 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\asyncio\\windows_utils.py',
    'PYMODULE'),
-  ('babel',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\__init__.py',
-   'PYMODULE'),
-  ('babel.core',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\core.py',
-   'PYMODULE'),
-  ('babel.dates',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\dates.py',
-   'PYMODULE'),
-  ('babel.localedata',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localedata.py',
-   'PYMODULE'),
-  ('babel.localtime',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\__init__.py',
-   'PYMODULE'),
-  ('babel.localtime._fallback',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_fallback.py',
-   'PYMODULE'),
-  ('babel.localtime._helpers',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_helpers.py',
-   'PYMODULE'),
-  ('babel.localtime._unix',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_unix.py',
-   'PYMODULE'),
-  ('babel.localtime._win32',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\localtime\\_win32.py',
-   'PYMODULE'),
-  ('babel.numbers',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\numbers.py',
-   'PYMODULE'),
-  ('babel.plural',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\babel\\plural.py',
-   'PYMODULE'),
   ('backports',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\setuptools\\_vendor\\backports\\__init__.py',
@@ -987,6 +943,7 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\curses\\has_key.py',
    'PYMODULE'),
+  ('dashboard', 'E:\\Projects\\POS\\Separate\\dashboard.py', 'PYMODULE'),
   ('dataclasses',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\dataclasses.py',
@@ -1255,6 +1212,7 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\inspect.py',
    'PYMODULE'),
+  ('inventory', 'E:\\Projects\\POS\\Separate\\inventory.py', 'PYMODULE'),
   ('ipaddress',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\ipaddress.py',
@@ -2089,26 +2047,6 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pydoc_data\\topics.py',
    'PYMODULE'),
-  ('pytz',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\__init__.py',
-   'PYMODULE'),
-  ('pytz.exceptions',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\exceptions.py',
-   'PYMODULE'),
-  ('pytz.lazy',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\lazy.py',
-   'PYMODULE'),
-  ('pytz.tzfile',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\tzfile.py',
-   'PYMODULE'),
-  ('pytz.tzinfo',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pytz\\tzinfo.py',
-   'PYMODULE'),
   ('queue',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\queue.py',
@@ -2516,6 +2454,9 @@
   ('runpy',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\runpy.py',
+   'PYMODULE'),
+  ('sales_summary',
+   'E:\\Projects\\POS\\Separate\\sales_summary.py',
    'PYMODULE'),
   ('secrets',
    'C:\\Users\\U S E R '
@@ -3241,22 +3182,6 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\threadpoolctl.py',
    'PYMODULE'),
-  ('tkcalendar',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\__init__.py',
-   'PYMODULE'),
-  ('tkcalendar.calendar_',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\calendar_.py',
-   'PYMODULE'),
-  ('tkcalendar.dateentry',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\dateentry.py',
-   'PYMODULE'),
-  ('tkcalendar.tooltip',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tkcalendar\\tooltip.py',
-   'PYMODULE'),
   ('tkinter',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\__init__.py',
@@ -3276,10 +3201,6 @@
   ('tkinter.filedialog',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\filedialog.py',
-   'PYMODULE'),
-  ('tkinter.font',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tkinter\\font.py',
    'PYMODULE'),
   ('tkinter.messagebox',
    'C:\\Users\\U S E R '
@@ -3321,6 +3242,7 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tracemalloc.py',
    'PYMODULE'),
+  ('transactions', 'E:\\Projects\\POS\\Separate\\transactions.py', 'PYMODULE'),
   ('tty',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\tty.py',
@@ -3332,94 +3254,6 @@
   ('typing_extensions',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\typing_extensions.py',
-   'PYMODULE'),
-  ('tzdata',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Africa',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Africa\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.America',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.America.Argentina',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\Argentina\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.America.Indiana',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\Indiana\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.America.Kentucky',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\Kentucky\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.America.North_Dakota',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\America\\North_Dakota\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Antarctica',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Antarctica\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Arctic',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Arctic\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Asia',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Asia\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Atlantic',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Atlantic\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Australia',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Australia\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Brazil',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Brazil\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Canada',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Canada\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Chile',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Chile\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Etc',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Etc\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Europe',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Europe\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Indian',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Indian\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Mexico',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Mexico\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.Pacific',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\Pacific\\__init__.py',
-   'PYMODULE'),
-  ('tzdata.zoneinfo.US',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\tzdata\\zoneinfo\\US\\__init__.py',
    'PYMODULE'),
   ('unittest',
    'C:\\Users\\U S E R '
@@ -3676,20 +3510,4 @@
   ('zipimport',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zipimport.py',
-   'PYMODULE'),
-  ('zoneinfo',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\__init__.py',
-   'PYMODULE'),
-  ('zoneinfo._common',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\_common.py',
-   'PYMODULE'),
-  ('zoneinfo._tzpath',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\_tzpath.py',
-   'PYMODULE'),
-  ('zoneinfo._zoneinfo',
-   'C:\\Users\\U S E R '
-   '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\zoneinfo\\_zoneinfo.py',
    'PYMODULE')])
