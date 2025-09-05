@@ -14,9 +14,9 @@ class InventoryManager:
     def __init__(self, root, current_user, user_role, back_callback=None):
         self.root = root
         self.root.title("Inventory Management")
-        self.root.geometry("1200x700")
         self.root.configure(bg="#F4E1C1")  # Matches SalesSummary main background
-        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
+        self.root.state('zoomed')  # Set window to maximized (windowed full-screen)
+        self.root.resizable(True, True)  # Ensure window is resizable
         self.current_user = current_user
         self.user_role = user_role
         self.back_callback = back_callback
@@ -32,40 +32,36 @@ class InventoryManager:
         self.main_frame.pack(fill="both", expand=True)
         self.create_database()
         self.show_inventory()
-        # Remove Windows control buttons (minimize, maximize, close) while keeping title bar
-        self.remove_windows_controls()
+        self.remove_windows_controls()  # Disable minimize and maximize, keep close button
+
+        # Bind keys for window management
+        self.root.bind("<F11>", self.toggle_maximize_restore)
+        self.root.bind("<Escape>", lambda e: self.root.state('normal'))
 
     def remove_windows_controls(self):
         # Get the window handle (HWND) for the Tkinter window
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
         # Get the current window style
         style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        # Remove WS_MINIMIZEBOX and WS_MAXIMIZEBOX, keep WS_SYSMENU for close button
         style &= ~0x00020000  # WS_MINIMIZEBOX
         style &= ~0x00010000  # WS_MAXIMIZEBOX
-        style &= ~0x00080000  # WS_SYSMENU
         # Apply the modified style
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
         # Redraw the window to apply changes
         ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
 
     def setup_navigation(self, main_frame):
-        nav_frame = tk.Frame(main_frame, bg="#2C3E50")
+        # Navigation bar is empty as per request
+        nav_frame = tk.Frame(main_frame, bg="#2C3E50")  # Matches SalesSummary and TransactionManager
         nav_frame.pack(fill="x")
-        # Minimize button
-        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
-                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
-        # Toggle full-screen button
-        tk.Button(nav_frame, text="🗖", command=self.toggle_maximize_restore,
-                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
-        # Close button
-        tk.Button(nav_frame, text="✖", command=self.root.destroy,
-                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
 
-    def toggle_maximize_restore(self):
-        # Toggle full-screen mode
-        is_fullscreen = self.root.attributes('-fullscreen')
-        self.root.attributes('-fullscreen', not is_fullscreen)
+    def toggle_maximize_restore(self, event=None):
+        # Toggle between maximized and normal state
+        if self.root.state() == 'zoomed':
+            self.root.state('normal')
+        else:
+            self.root.state('zoomed')
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         """Get a writable path for the database, copying it to APPDATA if needed."""
@@ -141,6 +137,7 @@ class InventoryManager:
         window.title(title)
         window.geometry(f"{self.scale_size(400)}x{self.scale_size(200)}")
         window.configure(bg="#1B263B")  # Matches SalesSummary KPI card background
+        self.remove_windows_controls_toplevel(window)  # Disable minimize and maximize, keep close button
         tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(14)), bg="#1B263B", fg="white").pack(pady=self.scale_size(10))
         password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(14)), bg="#F4E1C1", fg="#2C3E50")
         password_entry.pack(pady=self.scale_size(10))
@@ -178,7 +175,7 @@ class InventoryManager:
         self.clear_frame()
         main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Matches SalesSummary main background
         main_frame.pack(fill="both", expand=True)
-        self.setup_navigation(main_frame)  # Add custom navigation bar
+        self.setup_navigation(main_frame)  # Add empty navigation bar
 
         content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))  # Matches SalesSummary filter frame
         content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
@@ -417,7 +414,7 @@ class InventoryManager:
         window.title("Add New Item to Inventory")
         window.geometry("800x520")
         window.configure(bg="#1B263B")  # Matches SalesSummary KPI card background
-        self.remove_windows_controls_toplevel(window)  # Remove Windows controls from Toplevel window
+        self.remove_windows_controls_toplevel(window)  # Disable minimize and maximize, keep close button
 
         add_box = tk.Frame(window, bg="#1B263B", padx=20, pady=20, bd=1, relief="flat")  # Matches SalesSummary KPI card
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
@@ -550,10 +547,9 @@ class InventoryManager:
         hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
         # Get the current window style
         style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        # Remove WS_MINIMIZEBOX and WS_MAXIMIZEBOX, keep WS_SYSMENU for close button
         style &= ~0x00020000  # WS_MINIMIZEBOX
         style &= ~0x00010000  # WS_MAXIMIZEBOX
-        style &= ~0x00080000  # WS_SYSMENU
         # Apply the modified style
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
         # Redraw the window to apply changes
@@ -662,7 +658,7 @@ class InventoryManager:
                 window.title("Update Item")
                 window.geometry("800x520")
                 window.configure(bg="#1B263B")  # Matches SalesSummary KPI card background
-                self.remove_windows_controls_toplevel(window)  # Remove Windows controls from Toplevel window
+                self.remove_windows_controls_toplevel(window)  # Disable minimize and maximize, keep close button
 
                 update_box = tk.Frame(window, bg="#1B263B", padx=20, pady=20, bd=1, relief="flat")  # Matches SalesSummary KPI card
                 update_box.pack(pady=20, padx=20, fill="both", expand=True)

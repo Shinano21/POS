@@ -16,7 +16,7 @@ class SalesSummary:
         self.root = root
         self.root.title("Sales Summary")
         self.root.configure(bg="#F4E1C1")
-        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
+        self.root.state('zoomed')  # Set window to maximized (windowed full-screen)
         self.root.resizable(True, True)  # Ensure window is resizable
         self.current_user = current_user
         self.user_role = user_role
@@ -28,17 +28,20 @@ class SalesSummary:
         self.display_mode = None
         self.setup_database()
         self.show_sales_summary()
-        self.remove_windows_controls()  # Remove Windows control buttons
+        self.remove_windows_controls()  # Disable minimize and maximize, keep close button
+
+        # Bind keys for window management
+        self.root.bind("<F11>", self.toggle_maximize_restore)
+        self.root.bind("<Escape>", lambda e: self.root.state('normal'))
 
     def remove_windows_controls(self):
         # Get the window handle (HWND) for the Tkinter window
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
         # Get the current window style
         style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        # Remove WS_MINIMIZEBOX and WS_MAXIMIZEBOX, keep WS_SYSMENU for close button
         style &= ~0x00020000  # WS_MINIMIZEBOX
         style &= ~0x00010000  # WS_MAXIMIZEBOX
-        style &= ~0x00080000  # WS_SYSMENU
         # Apply the modified style
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
         # Redraw the window to apply changes
@@ -114,22 +117,15 @@ class SalesSummary:
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
+        # Navigation bar is empty as per request
         nav_frame = tk.Frame(main_frame, bg="#2C3E50")
         nav_frame.pack(fill="x")
-        # Minimize button
-        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
-                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
-        # Toggle full-screen button
-        tk.Button(nav_frame, text="🗖", command=self.toggle_maximize_restore,
-                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
-        # Close button
-        tk.Button(nav_frame, text="✖", command=self.root.destroy,
-                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
 
-    def toggle_maximize_restore(self):
-        # Toggle full-screen mode
-        is_fullscreen = self.root.attributes('-fullscreen')
-        self.root.attributes('-fullscreen', not is_fullscreen)
+    def toggle_maximize_restore(self, event=None):
+        if self.root.state() == 'zoomed':
+            self.root.state('normal')
+        else:
+            self.root.state('zoomed')
 
     def show_sales_summary(self) -> None:
         if not hasattr(self, 'root') or self.root is None:

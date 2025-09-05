@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import sqlite3
 import os
 import shutil
@@ -10,7 +10,6 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from tkinter import simpledialog
 import webbrowser
 import ctypes
 from ctypes import wintypes
@@ -19,13 +18,13 @@ class TransactionManager:
     def __init__(self, root, current_user, user_role):
         self.root = root
         self.root.title("Transaction Management")
-        self.root.geometry("1200x700")
         self.root.configure(bg="#F5F6F5")
-        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
+        self.root.state('zoomed')  # Set window to maximized (windowed full-screen)
+        self.root.resizable(True, True)  # Ensure window is resizable
         self.current_user = current_user
         self.user_role = user_role
         self.db_path = self.get_writable_db_path()
-        self.conn = sqlite3.connect(self.db_path)  # Fixed typo: db path -> db_path
+        self.conn = sqlite3.connect(self.db_path)
         self.transaction_table = None
         self.search_entry = None
         self.print_btn = None
@@ -37,19 +36,22 @@ class TransactionManager:
         self.main_frame.pack(fill="both", expand=True)
         self.create_database()
         self.show_transactions()
-        
-        # Remove Windows control buttons (minimize, maximize, close) while keeping title bar
+
+        # Disable minimize and maximize buttons, keep close button
         self.remove_windows_controls()
+
+        # Bind keys for window management
+        self.root.bind("<F11>", self.toggle_maximize_restore)
+        self.root.bind("<Escape>", lambda e: self.root.state('normal'))
 
     def remove_windows_controls(self):
         # Get the window handle (HWND) for the Tkinter window
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
         # Get the current window style
         style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        # Remove WS_MINIMIZEBOX and WS_MAXIMIZEBOX, keep WS_SYSMENU for close button
         style &= ~0x00020000  # WS_MINIMIZEBOX
         style &= ~0x00010000  # WS_MAXIMIZEBOX
-        style &= ~0x00080000  # WS_SYSMENU
         # Apply the modified style
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
         # Redraw the window to apply changes
@@ -141,22 +143,15 @@ class TransactionManager:
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
+        # Navigation bar is empty as per request
         nav_frame = tk.Frame(main_frame, bg="#2C3E50")
         nav_frame.pack(fill="x")
-        # Minimize button
-        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
-                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
-        # Toggle full-screen button
-        tk.Button(nav_frame, text="🗖", command=self.toggle_maximize_restore,
-                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
-        # Close button
-        tk.Button(nav_frame, text="✖", command=self.root.destroy,
-                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
 
-    def toggle_maximize_restore(self):
-        # Toggle full-screen mode
-        is_fullscreen = self.root.attributes('-fullscreen')
-        self.root.attributes('-fullscreen', not is_fullscreen)
+    def toggle_maximize_restore(self, event=None):
+        if self.root.state() == 'zoomed':
+            self.root.state('normal')
+        else:
+            self.root.state('zoomed')
 
     def treeview_scroll(self, event, canvas):
         if event.delta > 0:
@@ -588,7 +583,7 @@ class TransactionManager:
                             messagebox.showerror("Error", f"Quantity for {item['name']} cannot be negative", parent=self.root)
                             return
                         qty_diff = new_qty - item["original_quantity"]
-                        available_qty = item["inventory_quantity"] - qty_diff
+                        available_qty = item["inventory_quantity"] + item["original_quantity"] - new_qty
                         if available_qty < 0:
                             messagebox.showerror("Error", f"Insufficient stock for {item['name']}. Available: {item['inventory_quantity']}", parent=self.root)
                             return
@@ -707,12 +702,13 @@ class TransactionManager:
         c.drawString(100, y - 80, f"VAT SALE: {(total_amount * 0.12):.2f}")
         c.drawString(100, y - 100, f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
 
+        c.showPage()
         c.save()
         try:
             webbrowser.open(f"file://{pdf_path}")
             messagebox.showinfo("Success", f"Opening receipt: {pdf_path}", parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to print receipt: {e}", parent=self.root)
+            messagebox.showerror("Error", f"Failed to open receipt: {e}", parent=self.root)
 
     def validate_refund_auth(self, password: str, window: tk.Toplevel, **kwargs):
         selected_item = kwargs.get("selected_item")

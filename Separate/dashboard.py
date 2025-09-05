@@ -19,7 +19,7 @@ class Dashboard:
         self.user_role = user_role
         self.root.title("Shinano POS")
         self.root.configure(bg="#F8F9FA")  # Bootstrap light background
-        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
+        self.root.state('zoomed')  # Set window to maximized (windowed full-screen)
         self.root.resizable(True, True)  # Ensure window is resizable
         self.scaling_factor = self.get_scaling_factor()
 
@@ -58,7 +58,7 @@ class Dashboard:
         self.initialize_inventory_with_receipt()
         self.setup_gui()
         self.root.bind("<F11>", self.toggle_fullscreen)
-        self.root.bind("<Escape>", lambda e: self.root.attributes('-fullscreen', False))
+        self.root.bind("<Escape>", lambda e: self.root.state('normal'))  # Exit maximized state
         self.root.bind("<F1>", self.edit_quantity_window)
         self.root.bind("<F2>", self.void_selected_items)
         self.root.bind("<F3>", self.void_order)
@@ -154,7 +154,10 @@ class Dashboard:
         return self.user_role
 
     def toggle_fullscreen(self, event=None):
-        self.root.attributes('-fullscreen', not self.root.attributes('-fullscreen'))
+        if self.root.state() == 'zoomed':
+            self.root.state('normal')
+        else:
+            self.root.state('zoomed')
 
     def void_selected_items(self, event=None):
         if not self.cart or self.selected_item_index is None:
@@ -217,20 +220,9 @@ class Dashboard:
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
+        # Navigation bar is empty as per request to remove control buttons
         nav_frame = tk.Frame(main_frame, bg="#343A40", highlightthickness=0)
         nav_frame.pack(fill="x")
-        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
-                  bg="#4DA8DA", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
-                  activebackground="#3A92C8", activeforeground="#FFFFFF",
-                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="right", padx=self.scale_size(5), pady=self.scale_size(5))
-        tk.Button(nav_frame, text="🗖", command=self.toggle_fullscreen,
-                  bg="#4DA8DA", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
-                  activebackground="#3A92C8", activeforeground="#FFFFFF",
-                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="right", padx=self.scale_size(5), pady=self.scale_size(5))
-        tk.Button(nav_frame, text="✖", command=self.root.destroy,
-                  bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
-                  activebackground="#C82333", activeforeground="#FFFFFF",
-                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="right", padx=self.scale_size(5), pady=self.scale_size(5))
 
     def show_dashboard(self) -> None:
         if not self.current_user:
