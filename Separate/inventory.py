@@ -7,13 +7,16 @@ import os
 import shutil
 from datetime import datetime
 from typing import Optional
+import ctypes
+from ctypes import wintypes
 
 class InventoryManager:
     def __init__(self, root, current_user, user_role, back_callback=None):
         self.root = root
         self.root.title("Inventory Management")
         self.root.geometry("1200x700")
-        self.root.configure(bg="#F5F6F5")  # Soft White
+        self.root.configure(bg="#F4E1C1")  # Matches SalesSummary main background
+        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
         self.current_user = current_user
         self.user_role = user_role
         self.back_callback = back_callback
@@ -25,10 +28,44 @@ class InventoryManager:
         self.inventory_table = None
         self.update_item_btn = None
         self.delete_item_btn = None
-        self.main_frame = tk.Frame(self.root, bg="#F5F6F5")
+        self.main_frame = tk.Frame(self.root, bg="#F4E1C1")  # Matches SalesSummary
         self.main_frame.pack(fill="both", expand=True)
         self.create_database()
         self.show_inventory()
+        # Remove Windows control buttons (minimize, maximize, close) while keeping title bar
+        self.remove_windows_controls()
+
+    def remove_windows_controls(self):
+        # Get the window handle (HWND) for the Tkinter window
+        hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+        # Get the current window style
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
+        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        style &= ~0x00020000  # WS_MINIMIZEBOX
+        style &= ~0x00010000  # WS_MAXIMIZEBOX
+        style &= ~0x00080000  # WS_SYSMENU
+        # Apply the modified style
+        ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
+        # Redraw the window to apply changes
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
+
+    def setup_navigation(self, main_frame):
+        nav_frame = tk.Frame(main_frame, bg="#2C3E50")
+        nav_frame.pack(fill="x")
+        # Minimize button
+        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
+                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+        # Toggle full-screen button
+        tk.Button(nav_frame, text="🗖", command=self.toggle_maximize_restore,
+                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+        # Close button
+        tk.Button(nav_frame, text="✖", command=self.root.destroy,
+                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+
+    def toggle_maximize_restore(self):
+        # Toggle full-screen mode
+        is_fullscreen = self.root.attributes('-fullscreen')
+        self.root.attributes('-fullscreen', not is_fullscreen)
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         """Get a writable path for the database, copying it to APPDATA if needed."""
@@ -103,13 +140,14 @@ class InventoryManager:
         window = tk.Toplevel(self.root)
         window.title(title)
         window.geometry(f"{self.scale_size(400)}x{self.scale_size(200)}")
-        window.configure(bg="#F5F5DC")
-        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(14)), bg="#F5F5DC", fg="#2C1B18").pack(pady=self.scale_size(10))
-        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(14)), bg="#F5F5DC", fg="#2C1B18")
+        window.configure(bg="#1B263B")  # Matches SalesSummary KPI card background
+        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(14)), bg="#1B263B", fg="white").pack(pady=self.scale_size(10))
+        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(14)), bg="#F4E1C1", fg="#2C3E50")
         password_entry.pack(pady=self.scale_size(10))
         tk.Button(window, text="Submit",
                   command=lambda: callback(password_entry.get(), window, **kwargs),
-                  bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14))).pack(pady=self.scale_size(10))
+                  bg="#4DA8DA", fg="white", font=("Helvetica", self.scale_size(14)),  # Matches Apply Filter button
+                  activebackground="#2C3E50", activeforeground="white").pack(pady=self.scale_size(10))
 
     def show_inventory(self):
         if self.user_role == "Drug Lord":
@@ -136,18 +174,19 @@ class InventoryManager:
                 messagebox.showerror("Error", "Invalid admin password", parent=self.root)
 
     def display_inventory(self):
-        """Display the inventory management interface."""
+        """Display the inventory management interface with custom navigation."""
         self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Sandy Beige
+        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Matches SalesSummary main background
         main_frame.pack(fill="both", expand=True)
+        self.setup_navigation(main_frame)  # Add custom navigation bar
 
-        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))  # Soft White
+        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))  # Matches SalesSummary filter frame
         content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
         content_frame.grid_rowconfigure(1, weight=1)
         content_frame.grid_columnconfigure(0, weight=1)
 
         # Search container
-        search_frame = tk.Frame(content_frame, bg="#F5F6F5")
+        search_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Matches SalesSummary filter frame
         search_frame.grid(row=0, column=0, sticky="ew", pady=self.scale_size(10))
 
         tk.Label(search_frame, text="Search:", font=("Helvetica", self.scale_size(18)),
@@ -168,18 +207,18 @@ class InventoryManager:
 
         tk.Button(search_frame, text="Add Item",
                   command=self.show_add_item,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                  activebackground="#2C3E50", activeforeground="#F5F6F5",
+                  bg="#4DA8DA", fg="white", font=("Helvetica", self.scale_size(18)),  # Matches Apply Filter button
+                  activebackground="#2C3E50", activeforeground="white",
                   padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
         tk.Button(search_frame, text="📤 Upload CSV",
                   command=self.upload_inventory_csv,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                  activebackground="#2C3E50", activeforeground="#F5F6F5",
+                  bg="#4DA8DA", fg="white", font=("Helvetica", self.scale_size(18)),  # Matches Apply Filter button
+                  activebackground="#2C3E50", activeforeground="white",
                   padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="right", padx=self.scale_size(5))
 
         # Inventory table frame
-        inventory_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")
+        inventory_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Matches SalesSummary table container
         inventory_frame.grid(row=1, column=0, sticky="nsew", pady=self.scale_size(10))
         inventory_frame.grid_rowconfigure(0, weight=1)
         inventory_frame.grid_columnconfigure(0, weight=1)
@@ -197,37 +236,38 @@ class InventoryManager:
         scrollbar.grid(row=0, column=1, sticky="ns")
         self.inventory_table.configure(yscrollcommand=scrollbar.set)
 
-        button_frame = tk.Frame(content_frame, bg="#F5F6F5")
+        button_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Matches SalesSummary filter frame
         button_frame.grid(row=2, column=0, sticky="ew", pady=self.scale_size(10))
 
         self.update_item_btn = tk.Button(button_frame, text="Update Item",
                                         command=self.show_update_item_from_selection,
-                                        bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                                        activebackground="#2C3E50", activeforeground="#F5F6F5",
+                                        bg="#4DA8DA", fg="white", font=("Helvetica", self.scale_size(18)),  # Matches Apply Filter button
+                                        activebackground="#2C3E50", activeforeground="white",
                                         padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
         self.update_item_btn.grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
 
         self.delete_item_btn = tk.Button(button_frame, text="Delete Item",
                                         command=self.confirm_delete_item,
-                                        bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                                        activebackground="#C0392B", activeforeground="#F5F6F5",
+                                        bg="#E74C3C", fg="white", font=("Helvetica", self.scale_size(18)),  # Matches Close button
+                                        activebackground="#C0392B", activeforeground="white",
                                         padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
         self.delete_item_btn.grid(row=0, column=1, padx=self.scale_size(5), sticky="w")
 
         if self.user_role == "Manager" and self.back_callback:
             tk.Button(button_frame, text="Back to Main Menu",
                       command=self.back_to_manager_dashboard,
-                      bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                      activebackground="#2C3E50", activeforeground="#F5F6F5",
+                      bg="#4DA8DA", fg="white", font=("Helvetica", self.scale_size(18)),
+                      activebackground="#2C3E50", activeforeground="white",
                       padx=self.scale_size(12), pady=self.scale_size(8), bd=0).grid(row=0, column=2, padx=self.scale_size(5), sticky="w")
 
-        self.inventory_table.bind("<Button-3>", self.on_inventory_right_click)
-        self.inventory_table.bind("<Double-1>", lambda e: self.confirm_delete_item())
-        self.inventory_table.bind("<<TreeviewSelect>>", self.on_inventory_select)
-
         style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5")
+        style.configure("Treeview", background="#FDFEFE", foreground="#2C3E50", fieldbackground="#FDFEFE",  # Matches SalesSummary Treeview
+                        rowheight=self.scale_size(26), font=("Helvetica", self.scale_size(12)))
+        style.map("Treeview", background=[("selected", "#4DA8DA")])  # Matches SalesSummary Treeview selection
+        style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
 
+        self.inventory_table.bind("<<TreeviewSelect>>", self.on_inventory_select)
+        self.inventory_table.bind("<Button-3>", self.on_inventory_right_click)  # Right-click for update
         self.update_inventory_table()
         self.root.update_idletasks()
 
@@ -360,29 +400,30 @@ class InventoryManager:
                 markup_label.config(text=f"{markup:.2f}%")
                 profitability_label.config(
                     text="Profitable" if markup > 0 else "Break-even" if markup == 0 else "Not Profitable",
-                    fg="#6F4E37" if markup > 0 else "#D3C7A2" if markup == 0 else "#3C2F2F"
+                    fg="#2ECC71" if markup > 0 else "#F4E1C1" if markup == 0 else "#E74C3C"  # Matches SalesSummary colors
                 )
             else:
                 markup_label.config(text="0.00%")
-                profitability_label.config(text="N/A", fg="#2C1B18")
+                profitability_label.config(text="N/A", fg="#2C3E50")  # Matches SalesSummary text color
             error_label.config(text="")
         except ValueError:
             markup_label.config(text="0.00%")
-            profitability_label.config(text="N/A", fg="#2C1B18")
-            error_label.config(text="Enter valid prices", fg="#3C2F2F")
+            profitability_label.config(text="N/A", fg="#2C3E50")  # Matches SalesSummary text color
+            error_label.config(text="Enter valid prices", fg="#E74C3C")  # Matches SalesSummary Close button
 
     def show_add_item(self):
         """Display window to add a new item to inventory."""
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
         window.geometry("800x520")
-        window.configure(bg="#F5F5DC")
+        window.configure(bg="#1B263B")  # Matches SalesSummary KPI card background
+        self.remove_windows_controls_toplevel(window)  # Remove Windows controls from Toplevel window
 
-        add_box = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20, bd=1, relief="flat")
+        add_box = tk.Frame(window, bg="#1B263B", padx=20, pady=20, bd=1, relief="flat")  # Matches SalesSummary KPI card
         add_box.pack(pady=20, padx=20, fill="both", expand=True)
 
         tk.Label(add_box, text="Add New Item to Inventory", font=("Helvetica", 18, "bold"),
-                bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
+                bg="#1B263B", fg="white").grid(row=0, column=0, columnspan=4, pady=15)  # Matches SalesSummary KPI card text
 
         fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
         entries = {}
@@ -400,11 +441,11 @@ class InventoryManager:
         for i, field in enumerate(fields):
             row = (i // 2) + 1
             col = (i % 2) * 2
-            frame = tk.Frame(add_box, bg="#FFF8E7")
+            frame = tk.Frame(add_box, bg="#1B263B")  # Matches SalesSummary KPI card
             frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
 
-            tk.Label(frame, text=field, font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-            entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18")
+            tk.Label(frame, text=field, font=("Helvetica", 18), bg="#1B263B", fg="white").pack(side="left")
+            entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Matches SalesSummary entry fields
             entry.pack(side="left", fill="x", expand=True, padx=5)
             entries[field] = entry
 
@@ -421,25 +462,25 @@ class InventoryManager:
         next_row = (len(fields) + 1) // 2 + 1
 
         # Markup Frame
-        markup_frame = tk.Frame(add_box, bg="#FFF8E7")
+        markup_frame = tk.Frame(add_box, bg="#1B263B")  # Matches SalesSummary KPI card
         markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
-        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18",
-                                width=10, anchor="w")
+        tk.Label(markup_frame, text="Markup %", font=("Helvetica", 18), bg="#1B263B", fg="white").pack(side="left")
+        markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50",
+                                width=10, anchor="w")  # Matches SalesSummary entry fields
         markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
         # Profitability Frame
-        profitability_frame = tk.Frame(add_box, bg="#FFF8E7")
+        profitability_frame = tk.Frame(add_box, bg="#1B263B")  # Matches SalesSummary KPI card
         profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
-        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18",
-                                    width=15, anchor="w")
+        tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 18), bg="#1B263B", fg="white").pack(side="left")
+        profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50",
+                                    width=15, anchor="w")  # Matches SalesSummary entry fields
         profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
         # Type Frame
-        type_frame = tk.Frame(add_box, bg="#FFF8E7")
+        type_frame = tk.Frame(add_box, bg="#1B263B")  # Matches SalesSummary KPI card
         type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
-        tk.Label(type_frame, text="Type", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack()
+        tk.Label(type_frame, text="Type", font=("Helvetica", 18), bg="#1B263B", fg="white").pack()
 
         categories = self.get_item_types()
         type_var = tk.StringVar(value=categories[0] if categories else "Other")
@@ -449,7 +490,7 @@ class InventoryManager:
         type_combobox.pack(fill="x", pady=5)
 
         custom_type_entry = tk.Entry(type_frame, font=("Helvetica", 18),
-                                    bg="#F5F5DC", fg="#2C1B18")
+                                    bg="#F4E1C1", fg="#2C3E50")  # Matches SalesSummary entry fields
         custom_type_entry.pack(fill="x", pady=5)
         custom_type_entry.pack_forget()
 
@@ -462,7 +503,7 @@ class InventoryManager:
         type_combobox.bind("<<ComboboxSelected>>", on_type_change)
 
         # Price Error Label
-        price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#FFF8E7", fg="#3C2F2F")
+        price_error_label = tk.Label(add_box, text="", font=("Helvetica", 12), bg="#1B263B", fg="#E74C3C")  # Matches SalesSummary Close button for error
         price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
         # Validate prices and update markup
@@ -471,11 +512,11 @@ class InventoryManager:
                 retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
                 unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
                 if retail_price <= unit_price and retail_price != 0.0:
-                    price_error_label.config(text="Retail Price must be greater than Unit Price", fg="#3C2F2F")
+                    price_error_label.config(text="Retail Price must be greater than Unit Price", fg="#E74C3C")
                 else:
                     price_error_label.config(text="")
             except ValueError:
-                price_error_label.config(text="Invalid price format", fg="#3C2F2F")
+                price_error_label.config(text="Invalid price format", fg="#E74C3C")
             self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
         entries["Retail Price"].bind("<KeyRelease>", validate_and_update)
@@ -483,7 +524,7 @@ class InventoryManager:
         self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
         # Add Button
-        button_frame = tk.Frame(add_box, bg="#FFF8E7")
+        button_frame = tk.Frame(add_box, bg="#1B263B")  # Matches SalesSummary KPI card
         button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
 
         tk.Button(button_frame, text="Add Item",
@@ -497,12 +538,26 @@ class InventoryManager:
                     entries["Supplier"].get(),
                     window
                 ),
-                bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 18),
-                activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                bg="#2ECC71", fg="white", font=("Helvetica", 18),  # Matches SalesSummary Print Report button
+                activebackground="#27AE60", activeforeground="white",
                 padx=12, pady=8, bd=0).pack()
 
         add_box.columnconfigure(0, weight=1)
         add_box.columnconfigure(2, weight=1)
+
+    def remove_windows_controls_toplevel(self, window):
+        # Get the window handle (HWND) for the Toplevel window
+        hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
+        # Get the current window style
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
+        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        style &= ~0x00020000  # WS_MINIMIZEBOX
+        style &= ~0x00010000  # WS_MAXIMIZEBOX
+        style &= ~0x00080000  # WS_SYSMENU
+        # Apply the modified style
+        ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
+        # Redraw the window to apply changes
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
 
     def add_item(self, item_id: str, name: str, item_type: str,
                  retail_price: str, unit_price: str, quantity: str,
@@ -606,13 +661,14 @@ class InventoryManager:
                 window = tk.Toplevel(self.root)
                 window.title("Update Item")
                 window.geometry("800x520")
-                window.configure(bg="#F5F5DC")
+                window.configure(bg="#1B263B")  # Matches SalesSummary KPI card background
+                self.remove_windows_controls_toplevel(window)  # Remove Windows controls from Toplevel window
 
-                update_box = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20, bd=1, relief="flat")
+                update_box = tk.Frame(window, bg="#1B263B", padx=20, pady=20, bd=1, relief="flat")  # Matches SalesSummary KPI card
                 update_box.pack(pady=20, padx=20, fill="both", expand=True)
 
                 tk.Label(update_box, text="Update Item in Inventory", font=("Helvetica", 18, "bold"),
-                        bg="#FFF8E7", fg="#2C1B18").grid(row=0, column=0, columnspan=4, pady=15)
+                        bg="#1B263B", fg="white").grid(row=0, column=0, columnspan=4, pady=15)  # Matches SalesSummary KPI card text
 
                 fields = ["Item ID (Barcode)", "Name", "Unit Price", "Retail Price", "Quantity", "Supplier"]
                 entries = {}
@@ -620,10 +676,10 @@ class InventoryManager:
                 for i, field in enumerate(fields):
                     row = (i // 2) + 1
                     col = (i % 2) * 2
-                    frame = tk.Frame(update_box, bg="#FFF8E7")
+                    frame = tk.Frame(update_box, bg="#1B263B")  # Matches SalesSummary KPI card
                     frame.grid(row=row, column=col, columnspan=2, sticky="ew", pady=5)
-                    tk.Label(frame, text=field, font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18")
+                    tk.Label(frame, text=field, font=("Helvetica", 18), bg="#1B263B", fg="white").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Matches SalesSummary entry fields
                     entry.pack(side="left", fill="x", expand=True, padx=5)
                     entries[field] = entry
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
@@ -631,23 +687,23 @@ class InventoryManager:
 
                 next_row = (len(fields) + 1) // 2 + 1
 
-                markup_frame = tk.Frame(update_box, bg="#FFF8E7")
+                markup_frame = tk.Frame(update_box, bg="#1B263B")  # Matches SalesSummary KPI card
                 markup_frame.grid(row=next_row, column=0, columnspan=2, sticky="ew", pady=5)
-                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18", width=10, anchor="w")
+                tk.Label(markup_frame, text="Markup %", font=("Helvetica", 18), bg="#1B263B", fg="white").pack(side="left")
+                markup_label = tk.Label(markup_frame, text="0.00%", font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50", width=10, anchor="w")  # Matches SalesSummary entry fields
                 markup_label.pack(side="left", fill="x", expand=True, padx=5)
 
-                profitability_frame = tk.Frame(update_box, bg="#FFF8E7")
+                profitability_frame = tk.Frame(update_box, bg="#1B263B")  # Matches SalesSummary KPI card
                 profitability_frame.grid(row=next_row, column=2, columnspan=2, sticky="ew", pady=5)
-                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 18), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 18), bg="#F5F5DC", fg="#2C1B18", width=15, anchor="w")
+                tk.Label(profitability_frame, text="Profitability", font=("Helvetica", 18), bg="#1B263B", fg="white").pack(side="left")
+                profitability_label = tk.Label(profitability_frame, text="N/A", font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50", width=15, anchor="w")  # Matches SalesSummary entry fields
                 profitability_label.pack(side="left", fill="x", expand=True, padx=5)
 
                 # Type Frame
-                type_frame = tk.Frame(update_box, bg="#FFF8E7")
+                type_frame = tk.Frame(update_box, bg="#1B263B")  # Matches SalesSummary KPI card
                 type_frame.grid(row=next_row + 1, column=0, columnspan=4, sticky="ew", pady=5)
                 tk.Label(type_frame, text="Type", font=("Helvetica", 18),
-                        bg="#FFF8E7", fg="#2C1B18").pack()
+                        bg="#1B263B", fg="white").pack()  # Matches SalesSummary KPI card text
 
                 categories = self.get_item_types()
                 type_var = tk.StringVar(value=item[2] if item[2] else (categories[0] if categories else "Other"))
@@ -657,7 +713,7 @@ class InventoryManager:
                 type_combobox.pack(fill="x", pady=5)
 
                 custom_type_entry = tk.Entry(type_frame, font=("Helvetica", 18),
-                                            bg="#F5F5DC", fg="#2C1B18")
+                                            bg="#F4E1C1", fg="#2C3E50")  # Matches SalesSummary entry fields
                 custom_type_entry.pack(fill="x", pady=5)
 
                 # Show custom field only if current type == "Other"
@@ -675,7 +731,7 @@ class InventoryManager:
 
                 type_combobox.bind("<<ComboboxSelected>>", on_type_change)
 
-                price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#FFF8E7", fg="#3C2F2F")
+                price_error_label = tk.Label(update_box, text="", font=("Helvetica", 12), bg="#1B263B", fg="#E74C3C")  # Matches SalesSummary Close button for error
                 price_error_label.grid(row=next_row + 2, column=0, columnspan=4, pady=5)
 
                 def validate_and_update(event: Optional[tk.Event] = None):
@@ -683,18 +739,18 @@ class InventoryManager:
                         retail_price = float(entries["Retail Price"].get()) if entries["Retail Price"].get().strip() else 0.0
                         unit_price = float(entries["Unit Price"].get()) if entries["Unit Price"].get().strip() else 0.0
                         if retail_price <= unit_price and retail_price != 0.0:
-                            price_error_label.config(text="Retail Price must be greater than Unit Price", fg="#3C2F2F")
+                            price_error_label.config(text="Retail Price must be greater than Unit Price", fg="#E74C3C")
                         else:
                             price_error_label.config(text="")
                     except ValueError:
-                        price_error_label.config(text="Invalid price format", fg="#3C2F2F")
+                        price_error_label.config(text="Invalid price format", fg="#E74C3C")
                     self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
                 entries["Retail Price"].bind("<KeyRelease>", validate_and_update)
                 entries["Unit Price"].bind("<KeyRelease>", validate_and_update)
                 self.update_markup(entries["Unit Price"], entries["Retail Price"], markup_label, profitability_label, price_error_label)
 
-                button_frame = tk.Frame(update_box, bg="#FFF8E7")
+                button_frame = tk.Frame(update_box, bg="#1B263B")  # Matches SalesSummary KPI card
                 button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=15)
 
                 tk.Button(button_frame, text="Update Item",
@@ -709,8 +765,8 @@ class InventoryManager:
                             item[0],
                             window
                         ),
-                        bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 18),
-                        activebackground="#8B5A2B", activeforeground="#FFF8E7",
+                        bg="#2ECC71", fg="white", font=("Helvetica", 18),  # Matches SalesSummary Print Report button
+                        activebackground="#27AE60", activeforeground="white",
                         padx=12, pady=8, bd=0).pack()
 
                 update_box.columnconfigure(0, weight=1)
@@ -832,7 +888,7 @@ class InventoryManager:
         """Update the inventory table with filtered data."""
         for item in self.inventory_table.get_children():
             self.inventory_table.delete(item)
-        self.inventory_table.tag_configure('low_stock', background='#FF5555', foreground='white')
+        self.inventory_table.tag_configure('low_stock', background='#E74C3C', foreground='white')  # Matches SalesSummary Close button for low stock
         with self.conn:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()

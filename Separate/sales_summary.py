@@ -8,10 +8,16 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 import webbrowser
+import ctypes
+from ctypes import wintypes
 
 class SalesSummary:
     def __init__(self, root, current_user, user_role, db_path):
         self.root = root
+        self.root.title("Sales Summary")
+        self.root.configure(bg="#F4E1C1")
+        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
+        self.root.resizable(True, True)  # Ensure window is resizable
         self.current_user = current_user
         self.user_role = user_role
         self.db_path = db_path
@@ -22,6 +28,21 @@ class SalesSummary:
         self.display_mode = None
         self.setup_database()
         self.show_sales_summary()
+        self.remove_windows_controls()  # Remove Windows control buttons
+
+    def remove_windows_controls(self):
+        # Get the window handle (HWND) for the Tkinter window
+        hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+        # Get the current window style
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
+        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        style &= ~0x00020000  # WS_MINIMIZEBOX
+        style &= ~0x00010000  # WS_MAXIMIZEBOX
+        style &= ~0x00080000  # WS_SYSMENU
+        # Apply the modified style
+        ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
+        # Redraw the window to apply changes
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA', os.path.expanduser("~"))
@@ -53,29 +74,17 @@ class SalesSummary:
                     customer_id TEXT
                 )
             """)
-            cursor.execute("""
+            cursor.execute('''
                 CREATE TABLE IF NOT EXISTS inventory (
                     item_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    quantity INTEGER NOT NULL,
-                    retail_price REAL NOT NULL,
-                    unit_price REAL NOT NULL
+                    name TEXT,
+                    type TEXT,
+                    retail_price REAL DEFAULT 0.0,
+                    unit_price REAL DEFAULT 0.0,
+                    quantity INTEGER DEFAULT 0,
+                    supplier TEXT
                 )
-            """)
-            # Insert sample data if tables are empty
-            cursor.execute("SELECT COUNT(*) FROM daily_sales")
-            if cursor.fetchone()[0] == 0:
-                sample_date = datetime.now().strftime("%Y-%m-%d")
-                cursor.execute("INSERT INTO daily_sales (sale_date, total_sales) VALUES (?, ?)",
-                              (sample_date, 1000.0))
-            cursor.execute("SELECT COUNT(*) FROM inventory")
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO inventory (item_id, name, quantity, retail_price, unit_price) VALUES (?, ?, ?, ?, ?)",
-                              ("item1", "Paracetamol", 100, 10.0, 5.0))
-            cursor.execute("SELECT COUNT(*) FROM transactions")
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO transactions (transaction_id, items, total_amount, cash_paid, change_amount, timestamp, status, payment_method, customer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                              ("txn1", "item1:2", 20.0, 50.0, 30.0, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Completed", "Cash", "cust1"))
+            ''')
             self.conn.commit()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to set up database: {e}", parent=self.root)
@@ -107,8 +116,20 @@ class SalesSummary:
     def setup_navigation(self, main_frame):
         nav_frame = tk.Frame(main_frame, bg="#2C3E50")
         nav_frame.pack(fill="x")
-        tk.Button(nav_frame, text="Close", command=self.root.destroy,
-                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="left", padx=5)
+        # Minimize button
+        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
+                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+        # Toggle full-screen button
+        tk.Button(nav_frame, text="🗖", command=self.toggle_maximize_restore,
+                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+        # Close button
+        tk.Button(nav_frame, text="✖", command=self.root.destroy,
+                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+
+    def toggle_maximize_restore(self):
+        # Toggle full-screen mode
+        is_fullscreen = self.root.attributes('-fullscreen')
+        self.root.attributes('-fullscreen', not is_fullscreen)
 
     def show_sales_summary(self) -> None:
         if not hasattr(self, 'root') or self.root is None:
@@ -235,6 +256,7 @@ class SalesSummary:
         monthly_table.bind("<MouseWheel>", lambda event: _on_mouse_wheel(event, monthly_table))
         daily_table.bind("<MouseWheel>", lambda event: _on_mouse_wheel(event, daily_table))
 
+        self.style_config()
         self.update_tables_and_kpis(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
 
     def update_tables(self, month_var: tk.StringVar, year_var: tk.StringVar, monthly_table: ttk.Treeview, daily_table: ttk.Treeview, monthly_frame: tk.Frame, daily_frame: tk.Frame) -> None:
@@ -529,4 +551,3 @@ class SalesSummary:
     def __del__(self):
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
-

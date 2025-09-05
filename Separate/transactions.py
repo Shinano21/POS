@@ -12,6 +12,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from tkinter import simpledialog
 import webbrowser
+import ctypes
+from ctypes import wintypes
 
 class TransactionManager:
     def __init__(self, root, current_user, user_role):
@@ -19,10 +21,11 @@ class TransactionManager:
         self.root.title("Transaction Management")
         self.root.geometry("1200x700")
         self.root.configure(bg="#F5F6F5")
+        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
         self.current_user = current_user
         self.user_role = user_role
         self.db_path = self.get_writable_db_path()
-        self.conn = sqlite3.connect(self.db_path)
+        self.conn = sqlite3.connect(self.db_path)  # Fixed typo: db path -> db_path
         self.transaction_table = None
         self.search_entry = None
         self.print_btn = None
@@ -34,6 +37,23 @@ class TransactionManager:
         self.main_frame.pack(fill="both", expand=True)
         self.create_database()
         self.show_transactions()
+        
+        # Remove Windows control buttons (minimize, maximize, close) while keeping title bar
+        self.remove_windows_controls()
+
+    def remove_windows_controls(self):
+        # Get the window handle (HWND) for the Tkinter window
+        hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+        # Get the current window style
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
+        # Remove WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU (for close button)
+        style &= ~0x00020000  # WS_MINIMIZEBOX
+        style &= ~0x00010000  # WS_MAXIMIZEBOX
+        style &= ~0x00080000  # WS_SYSMENU
+        # Apply the modified style
+        ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
+        # Redraw the window to apply changes
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA') or os.path.expanduser("~")
@@ -118,12 +138,25 @@ class TransactionManager:
         return self.user_role
 
     def show_account_management(self):
-        # Placeholder: Redirect to account management (not implemented here)
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
-        # Placeholder: Add navigation bar if needed (e.g., back to dashboard)
-        pass
+        nav_frame = tk.Frame(main_frame, bg="#2C3E50")
+        nav_frame.pack(fill="x")
+        # Minimize button
+        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
+                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+        # Toggle full-screen button
+        tk.Button(nav_frame, text="🗖", command=self.toggle_maximize_restore,
+                  bg="#4DA8DA", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+        # Close button
+        tk.Button(nav_frame, text="✖", command=self.root.destroy,
+                  bg="#E74C3C", fg="white", font=("Helvetica", 14), padx=10, pady=5).pack(side="right", padx=5)
+
+    def toggle_maximize_restore(self):
+        # Toggle full-screen mode
+        is_fullscreen = self.root.attributes('-fullscreen')
+        self.root.attributes('-fullscreen', not is_fullscreen)
 
     def treeview_scroll(self, event, canvas):
         if event.delta > 0:
@@ -163,31 +196,31 @@ class TransactionManager:
             self.root.destroy()
             return
         self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")  # Sandy Beige
+        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=20, pady=20)  # Soft White
+        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=20, pady=20)
         content_frame.pack(fill="both", expand=True, padx=(10, 0))
 
-        search_frame = tk.Frame(content_frame, bg="#F5F6F5")  # Soft White
+        search_frame = tk.Frame(content_frame, bg="#F5F6F5")
         search_frame.pack(fill="x", pady=10)
         tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", 18),
-                bg="#F5F6F5", fg="#2C3E50").pack(side="left")  # Soft White, Dark Slate
-        self.search_entry = tk.Entry(search_frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")  # Sandy Beige, Dark Slate
+                bg="#F5F6F5", fg="#2C3E50").pack(side="left")
+        self.search_entry = tk.Entry(search_frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")
         self.search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.search_entry.bind("<KeyRelease>", self.update_transactions_table)
         tk.Button(search_frame, text="Refresh Transactions", command=self.update_transactions_table,
-                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", 18),  # Seafoam Green, Soft White
-                activebackground="#27AE60", activeforeground="#F5F6F5",  # Darker Seafoam Green, Soft White
+                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", 18),
+                activebackground="#27AE60", activeforeground="#F5F6F5",
                 padx=12, pady=8, bd=0).pack(side="left", padx=5)
 
-        transactions_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")  # Soft White
+        transactions_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")
         transactions_frame.pack(fill="both", expand=True, pady=10)
         transactions_frame.grid_rowconfigure(1, weight=1)
         transactions_frame.grid_columnconfigure(0, weight=1)
 
-        canvas = tk.Canvas(transactions_frame, bg="#F5F6F5")  # Soft White
+        canvas = tk.Canvas(transactions_frame, bg="#F5F6F5")
         canvas.grid(row=1, column=0, sticky="nsew")
 
         v_scrollbar = ttk.Scrollbar(transactions_frame, orient="vertical", command=canvas.yview)
@@ -197,7 +230,7 @@ class TransactionManager:
 
         canvas.configure(xscrollcommand=h_scrollbar.set, yscrollcommand=v_scrollbar.set)
 
-        tree_frame = tk.Frame(canvas, bg="#F5F6F5")  # Soft White
+        tree_frame = tk.Frame(canvas, bg="#F5F6F5")
         canvas_window = canvas.create_window((0, 0), window=tree_frame, anchor="nw")
 
         columns = ("TransactionID", "ItemsList", "TotalAmount", "CashPaid", "ChangeAmount", "Timestamp", "Status", "PaymentMethod", "CustomerID")
@@ -210,7 +243,7 @@ class TransactionManager:
         self.transactions_table.pack(fill="both", expand=True)
 
         style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5")  # Soft White, Dark Slate
+        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5")
 
         def configure_canvas(event=None):
             canvas.configure(scrollregion=canvas.bbox("all"))
@@ -251,35 +284,35 @@ class TransactionManager:
         self.update_transactions_table()
         self.transactions_table.bind("<<TreeviewSelect>>", self.on_transaction_select)
 
-        self.transaction_button_frame = tk.Frame(transactions_frame, bg="#F5F6F5")  # Soft White
+        self.transaction_button_frame = tk.Frame(transactions_frame, bg="#F5F6F5")
         self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=10)
         self.print_btn = tk.Button(self.transaction_button_frame, text="Print Receipt", command=self.print_receipt,
-                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
-                                activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),
+                                activebackground="#2C3E50", activeforeground="#F5F6F5",
                                 padx=12, pady=8, bd=0, state="disabled")
         self.print_btn.pack(side="left", padx=5)
         self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="Edit Transaction",
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Edit", "Enter admin password to edit transaction",
                                                 self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),  # Aqua Blue, Soft White
-                                            activebackground="#2C3E50", activeforeground="#F5F6F5",  # Dark Slate, Soft White
+                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),
+                                            activebackground="#2C3E50", activeforeground="#F5F6F5",
                                             padx=12, pady=8, bd=0, state="disabled")
         self.edit_transaction_btn.pack(side="left", padx=5)
         self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="Delete Transaction",
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Deletion", "Enter admin password to delete transaction",
                                                 self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),  # Coral Red, Soft White
-                                            activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
+                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),
+                                            activebackground="#C0392B", activeforeground="#F5F6F5",
                                             padx=12, pady=8, bd=0, state="disabled")
         self.delete_transaction_btn.pack(side="left", padx=5)
         self.refund_btn = tk.Button(self.transaction_button_frame, text="Refund",
                                     command=lambda: self.create_password_auth_window(
                                         "Authenticate Refund", "Enter admin password to process refund",
                                         self.validate_refund_auth, selected_item=self.transactions_table.selection()),
-                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),  # Coral Red, Soft White
-                                    activebackground="#C0392B", activeforeground="#F5F6F5",  # Darker Coral Red, Soft White
+                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),
+                                    activebackground="#C0392B", activeforeground="#F5F6F5",
                                     padx=12, pady=8, bd=0, state="disabled")
         self.refund_btn.pack(side="left", padx=5)
 
@@ -290,7 +323,7 @@ class TransactionManager:
     def show_transactions_old(self):
         if self.user_role == "Drug Lord":
             messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
-            self.root.destroy()
+            self.show_account_management()
             return
         elif self.user_role == "Pharmacist":
             self.display_transactions()
@@ -574,26 +607,25 @@ class TransactionManager:
 
                 items_str = ";".join(new_items)
 
-                # 🔹 Ask for new cash input since total changed
                 new_cash_paid = simpledialog.askfloat(
-                    "Update Cash", 
-                    f"New total is {total_amount:.2f}. Enter new cash paid:", 
+                    "Update Cash",
+                    f"New total is {total_amount:.2f}. Enter new cash paid:",
                     parent=self.root
                 )
 
                 if new_cash_paid is None:
-                    return  # Cancel if user closes the dialog
+                    return
 
                 change_amount = new_cash_paid - total_amount if new_cash_paid >= total_amount else 0.0
 
                 cursor.execute("""
-                    UPDATE transactions SET items = ?, total_amount = ?, cash_paid = ?, change_amount = ? 
+                    UPDATE transactions SET items = ?, total_amount = ?, cash_paid = ?, change_amount = ?
                     WHERE transaction_id = ?
                 """, (items_str, total_amount, new_cash_paid, change_amount, transaction_id))
 
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}", 
-                            "Edit Transaction", f"Edited transaction {transaction_id}", 
+                            (f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}",
+                            "Edit Transaction", f"Edited transaction {transaction_id}",
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
 
                 self.conn.commit()
@@ -603,7 +635,6 @@ class TransactionManager:
                 self.check_low_inventory()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to update transaction: {e}", parent=self.root)
-
 
     def print_receipt(self) -> None:
         selected_item = self.transactions_table.selection()
@@ -738,4 +769,3 @@ class TransactionManager:
     def __del__(self):
         if hasattr(self, 'conn'):
             self.conn.close()
-

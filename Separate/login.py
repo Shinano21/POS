@@ -54,9 +54,9 @@ class LoginApp:
             messagebox.showerror("Database Error", f"Failed to set up database: {e}", parent=self.root)
             self.root.destroy()
 
-    def scale_size(self, size: int) -> int:
+    def scale_size(self, size: int, root: tk.Tk) -> int:
         base_resolution = 1920
-        current_width = self.root.winfo_screenwidth()
+        current_width = root.winfo_screenwidth()
         scaling_factor = current_width / base_resolution
         return int(size * scaling_factor)
 
@@ -64,23 +64,23 @@ class LoginApp:
         main_frame = tk.Frame(self.root, bg="#F5F6F5")
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(main_frame, text="Shinano POS Login", font=("Helvetica", self.scale_size(18), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10))
+        tk.Label(main_frame, text="Shinano POS Login", font=("Helvetica", self.scale_size(18, self.root), "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10, self.root))
 
-        tk.Label(main_frame, text="Username:", font=("Helvetica", self.scale_size(14)),
+        tk.Label(main_frame, text="Username:", font=("Helvetica", self.scale_size(14, self.root)),
                  bg="#F5F6F5", fg="#2C3E50").pack()
-        self.username_entry = tk.Entry(main_frame, font=("Helvetica", self.scale_size(14)), bg="#F4E1C1")
-        self.username_entry.pack(pady=self.scale_size(5))
+        self.username_entry = tk.Entry(main_frame, font=("Helvetica", self.scale_size(14, self.root)), bg="#F4E1C1")
+        self.username_entry.pack(pady=self.scale_size(5, self.root))
 
-        tk.Label(main_frame, text="Password:", font=("Helvetica", self.scale_size(14)),
+        tk.Label(main_frame, text="Password:", font=("Helvetica", self.scale_size(14, self.root)),
                  bg="#F5F6F5", fg="#2C3E50").pack()
-        self.password_entry = tk.Entry(main_frame, show="*", font=("Helvetica", self.scale_size(14)), bg="#F4E1C1")
-        self.password_entry.pack(pady=self.scale_size(5))
+        self.password_entry = tk.Entry(main_frame, show="*", font=("Helvetica", self.scale_size(14, self.root)), bg="#F4E1C1")
+        self.password_entry.pack(pady=self.scale_size(5, self.root))
 
         tk.Button(main_frame, text="Login", command=self.validate_login,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14), "bold"),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, self.root), "bold"),
                   activebackground="#2C3E50", activeforeground="#F5F6F5",
-                  padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
+                  padx=self.scale_size(12, self.root), pady=self.scale_size(6, self.root)).pack(pady=self.scale_size(10, self.root))
 
         self.password_entry.bind("<Return>", lambda e: self.validate_login())
 
@@ -120,16 +120,22 @@ class LoginApp:
             new_root.destroy()
         new_root.mainloop()
 
+    def return_to_login(self, current_root: tk.Tk):
+        current_root.destroy()
+        new_root = tk.Tk()
+        app = LoginApp(new_root)
+        new_root.mainloop()
+
     def show_account_management(self, root: tk.Tk, username: str, role: str):
         root.title("Account Management")
         root.geometry("800x600")
         root.configure(bg="#F5F6F5")
-        tk.Label(root, text="Account Management - Drug Lord", font=("Helvetica", 18, "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=20)
+        tk.Label(root, text="Account Management - Drug Lord", font=("Helvetica", self.scale_size(18, root), "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(20, root))
         tk.Button(root, text="Manage Users", command=lambda: self.manage_users(root, username, role),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
-        tk.Button(root, text="Logout", command=root.destroy,
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
+        tk.Button(root, text="Logout", command=lambda: self.return_to_login(root),
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
 
     def manage_users(self, root: tk.Tk, username: str, role: str):
         manage_window = tk.Toplevel(root)
@@ -137,14 +143,14 @@ class LoginApp:
         manage_window.geometry("600x400")
         manage_window.configure(bg="#F5F6F5")
 
-        tk.Label(manage_window, text="User Management", font=("Helvetica", 16, "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
+        tk.Label(manage_window, text="User Management", font=("Helvetica", self.scale_size(16, root), "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10, root))
 
         columns = ("Username", "Role", "Status")
         user_table = ttk.Treeview(manage_window, columns=columns, show="headings")
         for col in columns:
             user_table.heading(col, text=col)
-            user_table.column(col, width=self.scale_size(150))
+            user_table.column(col, width=self.scale_size(150, root))
         user_table.pack(fill="both", expand=True, padx=10, pady=10)
 
         try:
@@ -160,33 +166,33 @@ class LoginApp:
         button_frame = tk.Frame(manage_window, bg="#F5F6F5")
         button_frame.pack(pady=5)
 
-        tk.Button(button_frame, text="Add User", command=lambda: self.add_user(manage_window, user_table),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Update User", command=lambda: self.update_user(manage_window, user_table),
-                  bg="#F1C40F", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Delete User", command=lambda: self.delete_user(manage_window, user_table, username),
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Add User", command=lambda: self.add_user(manage_window, user_table, root),
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Update User", command=lambda: self.update_user(manage_window, user_table, root),
+                  bg="#F1C40F", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Delete User", command=lambda: self.delete_user(manage_window, user_table, username, root),
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Close", command=manage_window.destroy,
-                  bg="#95A5A6", fg="#F5F6F5", font=("Helvetica", 14)).pack(side=tk.LEFT, padx=5)
+                  bg="#95A5A6", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(side=tk.LEFT, padx=5)
 
-    def add_user(self, parent: tk.Tk, user_table: ttk.Treeview):
+    def add_user(self, parent: tk.Tk, user_table: ttk.Treeview, root: tk.Tk):
         add_window = tk.Toplevel(parent)
         add_window.title("Add User")
         add_window.geometry("400x300")
         add_window.configure(bg="#F5F6F5")
 
-        tk.Label(add_window, text="Username:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
-        username_entry = tk.Entry(add_window, font=("Helvetica", 14))
+        tk.Label(add_window, text="Username:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        username_entry = tk.Entry(add_window, font=("Helvetica", self.scale_size(14, root)))
         username_entry.pack(pady=5)
 
-        tk.Label(add_window, text="Password:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
-        password_entry = tk.Entry(add_window, show="*", font=("Helvetica", 14))
+        tk.Label(add_window, text="Password:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        password_entry = tk.Entry(add_window, show="*", font=("Helvetica", self.scale_size(14, root)))
         password_entry.pack(pady=5)
 
-        tk.Label(add_window, text="Role:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        tk.Label(add_window, text="Role:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
         role_var = tk.StringVar(value="User")
         ttk.Combobox(add_window, textvariable=role_var, values=["User", "Manager", "Drug Lord"],
-                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                     state="readonly", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
 
         def save_user():
             username = username_entry.get().strip()
@@ -210,11 +216,11 @@ class LoginApp:
                 messagebox.showerror("Database Error", f"Failed to add user: {e}", parent=add_window)
 
         tk.Button(add_window, text="Save", command=save_user,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=10)
         tk.Button(add_window, text="Cancel", command=add_window.destroy,
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=5)
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
 
-    def update_user(self, parent: tk.Tk, user_table: ttk.Treeview):
+    def update_user(self, parent: tk.Tk, user_table: ttk.Treeview, root: tk.Tk):
         selected_item = user_table.selection()
         if not selected_item:
             messagebox.showerror("Error", "Please select a user to update", parent=parent)
@@ -226,17 +232,17 @@ class LoginApp:
         update_window.geometry("400x300")
         update_window.configure(bg="#F5F6F5")
 
-        tk.Label(update_window, text=f"Updating User: {username}", font=("Helvetica", 14, "bold"),
+        tk.Label(update_window, text=f"Updating User: {username}", font=("Helvetica", self.scale_size(14, root), "bold"),
                  bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
 
-        tk.Label(update_window, text="New Password:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
-        password_entry = tk.Entry(update_window, show="*", font=("Helvetica", 14))
+        tk.Label(update_window, text="New Password:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        password_entry = tk.Entry(update_window, show="*", font=("Helvetica", self.scale_size(14, root)))
         password_entry.pack(pady=5)
 
-        tk.Label(update_window, text="Role:", font=("Helvetica", 14), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        tk.Label(update_window, text="Role:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
         role_var = tk.StringVar(value=user_table.item(selected_item)["values"][1])
         ttk.Combobox(update_window, textvariable=role_var, values=["User", "Manager", "Drug Lord"],
-                     state="readonly", font=("Helvetica", 14)).pack(pady=5)
+                     state="readonly", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
 
         def save_update():
             new_password = password_entry.get().strip()
@@ -257,11 +263,11 @@ class LoginApp:
                 messagebox.showerror("Database Error", f"Failed to update user: {e}", parent=update_window)
 
         tk.Button(update_window, text="Save", command=save_update,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=10)
         tk.Button(update_window, text="Cancel", command=update_window.destroy,
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=5)
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
 
-    def delete_user(self, parent: tk.Tk, user_table: ttk.Treeview, current_username: str):
+    def delete_user(self, parent: tk.Tk, user_table: ttk.Treeview, current_username: str, root: tk.Tk):
         selected_item = user_table.selection()
         if not selected_item:
             messagebox.showerror("Error", "Please select a user to delete", parent=parent)
@@ -285,26 +291,26 @@ class LoginApp:
 
     def show_manager_dashboard(self, root: tk.Tk, username: str, role: str):
         root.title("Manager Dashboard")
-        root.geometry("800x600")
+        root.geometry("300x400")
         root.configure(bg="#F5F6F5")
 
         main_frame = tk.Frame(root, bg="#F5F6F5")
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(main_frame, text="Manager Dashboard", font=("Helvetica", 18, "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=20)
+        tk.Label(main_frame, text="Manager Dashboard", font=("Helvetica", self.scale_size(18, root), "bold"),
+                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(20, root))
 
         tk.Button(main_frame, text="Inventory Management",
                   command=lambda: self.open_module(root, InventoryManager, username, role),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
         tk.Button(main_frame, text="Transaction Management",
                   command=lambda: self.open_module(root, TransactionManager, username, role),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
         tk.Button(main_frame, text="Sales Summary",
                   command=lambda: self.open_module(root, SalesSummary, username, role, db_path=self.db_path),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
-        tk.Button(main_frame, text="Logout", command=root.destroy,
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 14)).pack(pady=10)
+                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
+        tk.Button(main_frame, text="Logout", command=lambda: self.return_to_login(root),
+                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
 
     def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):
         new_window = tk.Toplevel(current_root)

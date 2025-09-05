@@ -18,13 +18,10 @@ class Dashboard:
         self.current_user = current_user
         self.user_role = user_role
         self.root.title("Shinano POS")
-        self.scaling_factor = self.get_scaling_factor()
-        base_width = 1280
-        base_height = 720
-        scaled_width = int(base_width * self.scaling_factor)
-        scaled_height = int(base_height * self.scaling_factor)
-        self.root.geometry(f"{scaled_width}x{scaled_height}")
         self.root.configure(bg="#F8F9FA")  # Bootstrap light background
+        self.root.attributes('-fullscreen', True)  # Set window to full-screen mode
+        self.root.resizable(True, True)  # Ensure window is resizable
+        self.scaling_factor = self.get_scaling_factor()
 
         try:
             icon_image = Image.open("images/shinano.png")
@@ -115,6 +112,28 @@ class Dashboard:
                     role TEXT NOT NULL
                 )
             """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS transactions (
+                    transaction_id TEXT PRIMARY KEY,
+                    items TEXT NOT NULL,
+                    total_amount REAL NOT NULL,
+                    cash_paid REAL,
+                    change_amount REAL,
+                    timestamp TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    payment_method TEXT,
+                    customer_id TEXT
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS transaction_log (
+                    log_id TEXT PRIMARY KEY,
+                    action TEXT NOT NULL,
+                    details TEXT,
+                    timestamp TEXT NOT NULL,
+                    user TEXT
+                )
+            """)
             cursor.execute("SELECT COUNT(*) FROM inventory")
             if cursor.fetchone()[0] == 0:
                 cursor.execute("INSERT INTO inventory (item_id, name, quantity, retail_price, unit_price, supplier) VALUES (?, ?, ?, ?, ?, ?)",
@@ -182,11 +201,9 @@ class Dashboard:
         if not text:
             return True
         try:
-            # Allow empty string or valid float (digits, one decimal point)
             if value_if_allowed == "":
                 return True
             float(value_if_allowed)
-            # Ensure only digits, one decimal point, no other characters
             return bool(value_if_allowed.replace(".", "").isdigit() and value_if_allowed.count(".") <= 1)
         except ValueError:
             return False
@@ -196,26 +213,28 @@ class Dashboard:
             for widget in self.main_frame.winfo_children():
                 widget.destroy()
 
-    def get_user_role(self):
-        return "Pharmacist" if self.current_user else "Drug Lord"
-
-    def show_login(self):
-        self.root.destroy()
-
     def show_account_management(self):
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
         nav_frame = tk.Frame(main_frame, bg="#343A40", highlightthickness=0)
         nav_frame.pack(fill="x")
-        tk.Button(nav_frame, text="Close", command=self.root.destroy,
+        tk.Button(nav_frame, text="🗕", command=self.root.iconify,
+                  bg="#4DA8DA", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
+                  activebackground="#3A92C8", activeforeground="#FFFFFF",
+                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="right", padx=self.scale_size(5), pady=self.scale_size(5))
+        tk.Button(nav_frame, text="🗖", command=self.toggle_fullscreen,
+                  bg="#4DA8DA", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
+                  activebackground="#3A92C8", activeforeground="#FFFFFF",
+                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="right", padx=self.scale_size(5), pady=self.scale_size(5))
+        tk.Button(nav_frame, text="✖", command=self.root.destroy,
                   bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
                   activebackground="#C82333", activeforeground="#FFFFFF",
-                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="left", padx=self.scale_size(10), pady=self.scale_size(5))
+                  padx=self.scale_size(12), pady=self.scale_size(6), bd=0, relief="flat").pack(side="right", padx=self.scale_size(5), pady=self.scale_size(5))
 
     def show_dashboard(self) -> None:
         if not self.current_user:
-            self.show_login()
+            self.root.destroy()
             return
         if self.get_user_role() == "Drug Lord":
             self.show_account_management()
@@ -651,7 +670,6 @@ class Dashboard:
     def process_checkout(self, event=None) -> None:
         logging.debug("Starting process_checkout")
         try:
-            # Check if summary_entries is initialized and contains required fields
             if not hasattr(self, 'summary_entries') or not all(
                 key in self.summary_entries for key in ["Cash Paid ", "Final Total ", "Change "]
             ):
@@ -659,7 +677,6 @@ class Dashboard:
                 messagebox.showerror("Error", "Checkout fields not initialized. Please restart the application.", parent=self.root)
                 return
 
-            # Get and validate input values
             cash_paid_str = self.summary_entries["Cash Paid "].get().strip()
             final_total_str = self.summary_entries["Final Total "].get().strip()
             logging.debug(f"Cash Paid: '{cash_paid_str}', Final Total: '{final_total_str}'")
@@ -682,7 +699,6 @@ class Dashboard:
                 messagebox.showerror("Error", "Insufficient cash paid.", parent=self.root)
                 return
 
-            # Prompt for customer ID if not set
             if not hasattr(self, 'current_customer_id') or not self.current_customer_id:
                 if not messagebox.askyesno(
                     "No Customer Information",
@@ -692,13 +708,11 @@ class Dashboard:
                     self.select_customer()
                     return
 
-            # Confirm checkout
             if not messagebox.askyesno("Confirm Checkout", "Proceed with checkout?", parent=self.root):
                 return
 
-            # Generate custom transaction ID
             now = datetime.datetime.now()
-            prefix = now.strftime("%m-%Y")  # e.g., 09-2025
+            prefix = now.strftime("%m-%Y")
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute(
@@ -709,20 +723,17 @@ class Dashboard:
                 sequence = str(count + 1).zfill(5)
             transaction_id = f"{prefix}-{sequence}"
 
-            # Prepare transaction details
             items = ";".join([f"{item['id']}:{item['quantity']}" for item in self.cart])
-            change = float(cash_paid or 0) - float(final_total or 0)
+            change = cash_paid - final_total
             timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
             sale_date = now.strftime("%Y-%m-%d")
             payment_method = getattr(self, 'current_payment_method', 'Cash')
             customer_id = getattr(self, 'current_customer_id', None)
 
-            # Calculate unit sales and net profit
             unit_sales = sum(item["quantity"] for item in self.cart)
             net_profit = 0.0
             with self.conn:
                 cursor = self.conn.cursor()
-                # Validate stock and calculate net profit
                 for item in self.cart:
                     cursor.execute("SELECT retail_price, unit_price, quantity FROM inventory WHERE item_id = ?", (item["id"],))
                     result = cursor.fetchone()
@@ -732,16 +743,13 @@ class Dashboard:
                     if current_quantity < item["quantity"]:
                         raise ValueError(f"Insufficient stock for item {item['id']}: {current_quantity} available")
                     net_profit += (retail_price - unit_price) * item["quantity"]
-                    # Decrease inventory quantity
                     cursor.execute("UPDATE inventory SET quantity = quantity - ? WHERE item_id = ?", (item["quantity"], item["id"]))
 
-                # Insert transaction
                 cursor.execute('''
                     INSERT INTO transactions (transaction_id, items, total_amount, cash_paid, change_amount, timestamp, status, payment_method, customer_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (transaction_id, items, final_total, cash_paid, change, timestamp, "Completed", payment_method, customer_id))
 
-                # Update daily_sales
                 cursor.execute("SELECT total_sales, unit_sales, net_profit FROM daily_sales WHERE sale_date = ?", (sale_date,))
                 existing_sale = cursor.fetchone()
                 if existing_sale:
@@ -758,7 +766,6 @@ class Dashboard:
                         (sale_date, final_total, unit_sales, net_profit, self.current_user)
                     )
 
-                # Insert transaction log
                 cursor.execute('''
                     INSERT INTO transaction_log (log_id, action, details, timestamp, user)
                     VALUES (?, ?, ?, ?, ?)
@@ -766,7 +773,6 @@ class Dashboard:
 
                 self.conn.commit()
 
-            # Clear UI elements
             self.cart.clear()
             self.selected_item_index = None
             self.update_cart_table()
@@ -798,7 +804,6 @@ class Dashboard:
         except Exception as e:
             logging.error(f"Unexpected error in process_checkout: {e}")
             messagebox.showerror("Error", f"An unexpected error occurred: {e}", parent=self.root)
-
 
     def generate_receipt(self, transaction_id: str, timestamp: str, items: str, total_amount: float, cash_paid: float, change: float) -> None:
         try:
@@ -846,7 +851,7 @@ class Dashboard:
 
     def check_low_inventory(self) -> None:
         try:
-            threshold = 10  # Define low stock threshold (adjustable)
+            threshold = 10
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute("SELECT item_id, name, quantity FROM inventory WHERE quantity <= ?", (threshold,))
@@ -858,7 +863,6 @@ class Dashboard:
                         message += f"{name} (ID: {item_id}) - Quantity: {quantity}\n"
                     messagebox.showwarning("Low Inventory Alert", message, parent=self.root)
 
-                # Log the inventory check
                 cursor.execute(
                     "INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
                     (
@@ -877,9 +881,6 @@ class Dashboard:
             print(f"Unexpected error in check_low_inventory: {e}")
             messagebox.showerror("Error", f"Unexpected error checking inventory: {e}", parent=self.root)
 
-
-
     def __del__(self):
         if self.conn:
             self.conn.close()
-
