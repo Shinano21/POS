@@ -54,7 +54,7 @@ class Dashboard:
         self.main_frame = tk.Frame(self.root, bg="#FFFFFF", highlightthickness=1, highlightbackground="#DEE2E6")
 
         self.style_config()
-        self.create_database()
+        
         self.initialize_inventory_with_receipt()
         self.setup_gui()
         self.root.bind("<F11>", self.toggle_fullscreen)

@@ -18,13 +18,13 @@ class TransactionManager:
     def __init__(self, root, current_user, user_role):
         self.root = root
         self.root.title("Transaction Management")
-        self.root.configure(bg="#F5F6F5")
-        self.root.state('zoomed')  # Set window to maximized (windowed full-screen)
-        self.root.resizable(True, True)  # Ensure window is resizable
+        self.root.configure(bg="#F8F9FA")  # Bootstrap light background
+        self.root.state('zoomed')  # Maximized window
+        self.root.resizable(True, True)
         self.current_user = current_user
         self.user_role = user_role
         self.db_path = self.get_writable_db_path()
-        self.conn = sqlite3.connect(self.db_path)
+        self.conn = None  # Initialize connection lazily
         self.transaction_table = None
         self.search_entry = None
         self.print_btn = None
@@ -32,12 +32,9 @@ class TransactionManager:
         self.delete_transaction_btn = None
         self.refund_btn = None
         self.transaction_button_frame = None
-        self.main_frame = tk.Frame(self.root, bg="#F5F6F5")
+        self.main_frame = tk.Frame(self.root, bg="#F8F9FA")
         self.main_frame.pack(fill="both", expand=True)
-        self.create_database()
         self.show_transactions()
-
-        # Ensure Windows control bar (minimize, maximize, close) is enabled
         self.enable_windows_controls()
 
         # Bind keys for window management
@@ -45,21 +42,31 @@ class TransactionManager:
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
 
     def enable_windows_controls(self):
-        # Get the window handle (HWND) for the Tkinter window
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
-        # Get the current window style
-        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Ensure WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU are enabled
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)
         style |= 0x00020000  # WS_MINIMIZEBOX
         style |= 0x00010000  # WS_MAXIMIZEBOX
         style |= 0x00080000  # WS_SYSMENU
-        # Apply the modified style
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
-        # Redraw the window to apply changes
-        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)
+
+    def get_display_scaling(self) -> float:
+        try:
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            dpi = ctypes.windll.user32.GetDpiForWindow(hwnd)
+            scaling_factor = dpi / 96.0
+            supported_scales = [1.25, 1.5, 1.75, 2.0]
+            scaling_factor = min(supported_scales, key=lambda x: abs(x - scaling_factor))
+            return scaling_factor
+        except:
+            return 1.75  # Fallback to 175%
+
+    def scale_size(self, size: int) -> int:
+        scaling_factor = self.get_display_scaling()
+        return int(size * scaling_factor)
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
-        app_data = os.getenv('APPDATA') or os.path.expanduser("~")
+        app_data = os.getenv('APPDATA', os.path.expanduser("~"))
         db_dir = os.path.join(app_data, "ShinanoPOS")
         try:
             os.makedirs(db_dir, exist_ok=True)
@@ -92,23 +99,19 @@ class TransactionManager:
         print(f"Database path: {db_path}")
         return db_path
 
-   
-    def scale_size(self, size: int) -> int:
-        # Updated scaling factor for 175-200% display
-        scaling_factor = 1.75  # Use 1.75 as a balanced scaling factor within 175-200%
-        return int(size * scaling_factor)
-
     def create_password_auth_window(self, title: str, prompt: str, callback, **kwargs):
         window = tk.Toplevel(self.root)
         window.title(title)
         window.geometry(f"{self.scale_size(400)}x{self.scale_size(200)}")
-        window.configure(bg="#F5F5DC")
-        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F5F5DC", fg="#2C1B18").pack(pady=self.scale_size(10))
-        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#F5F5DC", fg="#2C1B18")
+        window.configure(bg="#F8F9FA")
+        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(10))
+        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
         password_entry.pack(pady=self.scale_size(10))
         tk.Button(window, text="Submit",
                   command=lambda: callback(password_entry.get(), window, **kwargs),
-                  bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(18))).pack(pady=self.scale_size(10))
+                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18)),
+                  activebackground="#0056B3", activeforeground="#FFFFFF",
+                  relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
 
     def get_user_role(self):
         return self.user_role
@@ -117,8 +120,7 @@ class TransactionManager:
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
-        # Navigation bar is empty as per request
-        nav_frame = tk.Frame(main_frame, bg="#2C3E50")
+        nav_frame = tk.Frame(main_frame, bg="#343A40")  # Bootstrap dark navbar
         nav_frame.pack(fill="x")
 
     def toggle_maximize_restore(self, event=None):
@@ -136,6 +138,7 @@ class TransactionManager:
 
     def check_low_inventory(self):
         try:
+            self.conn = sqlite3.connect(self.db_path)
             threshold = 10
             with self.conn:
                 cursor = self.conn.cursor()
@@ -154,6 +157,18 @@ class TransactionManager:
                 self.conn.commit()
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to check inventory: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
+
+    def style_config(self):
+        style = ttk.Style()
+        style.configure("Treeview", background="#FFFFFF", foreground="#212529",
+                        rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(16)))
+        style.map("Treeview", background=[("selected", "#007BFF")], foreground=[("selected", "#FFFFFF")])
+        style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
+        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(16), "bold"), background="#E9ECEF", foreground="#212529")
 
     def show_transactions(self, event: Optional[tk.Event] = None) -> None:
         if self.user_role == "Drug Lord":
@@ -161,35 +176,38 @@ class TransactionManager:
             self.show_account_management()
             return
         elif self.user_role != "Manager":
-            messagebox.showerror("Access Denied", "Only Managers can access Transaction Management.", parent=self.root)
-            self.root.destroy()
+            self.create_password_auth_window(
+                "Authenticate Transaction Access",
+                "Enter admin password to access transactions",
+                self.validate_transaction_access_auth
+            )
             return
         self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")
+        main_frame = tk.Frame(self.main_frame, bg="#F8F9FA")
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))
+        content_frame = tk.Frame(main_frame, bg="#F8F9FA", padx=self.scale_size(20), pady=self.scale_size(20))
         content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
 
-        search_frame = tk.Frame(content_frame, bg="#F5F6F5")
+        search_frame = tk.Frame(content_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
         search_frame.pack(fill="x", pady=self.scale_size(10))
         tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", self.scale_size(18)),
-                bg="#F5F6F5", fg="#2C3E50").pack(side="left")
-        self.search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(18)), bg="#F4E1C1", fg="#2C3E50")
+                 bg="#FFFFFF", fg="#212529").pack(side="left", padx=self.scale_size(10))
+        self.search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
         self.search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_transactions_table)
-        tk.Button(search_frame, text="Refresh Transactions", command=self.update_transactions_table,
-                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                activebackground="#27AE60", activeforeground="#F5F6F5",
-                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
+        tk.Button(search_frame, text="🔄 Refresh Transactions", command=self.update_transactions_table,
+                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                  activebackground="#0056B3", activeforeground="#FFFFFF",
+                  relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(side="left", padx=self.scale_size(5))
 
-        transactions_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")
+        transactions_frame = tk.Frame(content_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
         transactions_frame.pack(fill="both", expand=True, pady=self.scale_size(10))
         transactions_frame.grid_rowconfigure(1, weight=1)
         transactions_frame.grid_columnconfigure(0, weight=1)
 
-        canvas = tk.Canvas(transactions_frame, bg="#F5F6F5")
+        canvas = tk.Canvas(transactions_frame, bg="#FFFFFF")
         canvas.grid(row=1, column=0, sticky="nsew")
 
         v_scrollbar = ttk.Scrollbar(transactions_frame, orient="vertical", command=canvas.yview)
@@ -199,20 +217,17 @@ class TransactionManager:
 
         canvas.configure(xscrollcommand=h_scrollbar.set, yscrollcommand=v_scrollbar.set)
 
-        tree_frame = tk.Frame(canvas, bg="#F5F6F5")
+        tree_frame = tk.Frame(canvas, bg="#FFFFFF")
         canvas_window = canvas.create_window((0, 0), window=tree_frame, anchor="nw")
 
         columns = ("TransactionID", "ItemsList", "TotalAmount", "CashPaid", "ChangeAmount", "Timestamp", "Status", "PaymentMethod", "CustomerID")
-        headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT ", "CASH PAID ", "CHANGE ", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER ID")
+        headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT", "CASH PAID", "CHANGE", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER ID")
         self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20, style="Treeview")
         for col, head in zip(columns, headers):
             self.transactions_table.heading(col, text=head)
             width = self.scale_size(300) if col == "ItemsList" else self.scale_size(150)
             self.transactions_table.column(col, width=width, anchor="center" if col != "ItemsList" else "w")
         self.transactions_table.pack(fill="both", expand=True)
-
-        style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5", font=("Helvetica", self.scale_size(16)))
 
         def configure_canvas(event=None):
             canvas.configure(scrollregion=canvas.bbox("all"))
@@ -253,111 +268,86 @@ class TransactionManager:
         self.update_transactions_table()
         self.transactions_table.bind("<<TreeviewSelect>>", self.on_transaction_select)
 
-        self.transaction_button_frame = tk.Frame(transactions_frame, bg="#F5F6F5")
+        self.transaction_button_frame = tk.Frame(transactions_frame, bg="#FFFFFF")
         self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=self.scale_size(10))
-        self.print_btn = tk.Button(self.transaction_button_frame, text="Print Receipt", command=self.print_receipt,
-                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                                activebackground="#2C3E50", activeforeground="#F5F6F5",
-                                padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.print_btn = tk.Button(self.transaction_button_frame, text="🖨 Print Receipt", command=self.print_receipt,
+                                   bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                                   activebackground="#218838", activeforeground="#FFFFFF",
+                                   relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.print_btn.pack(side="left", padx=self.scale_size(5))
-        self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="Edit Transaction",
-                                            command=lambda: self.create_password_auth_window(
-                                                "Authenticate Edit", "Enter admin password to edit transaction",
-                                                self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                                            activebackground="#2C3E50", activeforeground="#F5F6F5",
-                                            padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="✏ Edit Transaction",
+                                             command=lambda: self.create_password_auth_window(
+                                                 "Authenticate Edit", "Enter admin password to edit transaction",
+                                                 self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
+                                             bg="#FFC107", fg="#212529", font=("Helvetica", self.scale_size(18), "bold"),
+                                             activebackground="#E0A800", activeforeground="#212529",
+                                             relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.edit_transaction_btn.pack(side="left", padx=self.scale_size(5))
-        self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="Delete Transaction",
-                                            command=lambda: self.create_password_auth_window(
-                                                "Authenticate Deletion", "Enter admin password to delete transaction",
-                                                self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                                            activebackground="#C0392B", activeforeground="#F5F6F5",
-                                            padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="🗑 Delete Transaction",
+                                               command=lambda: self.create_password_auth_window(
+                                                   "Authenticate Deletion", "Enter admin password to delete transaction",
+                                                   self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
+                                               bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                                               activebackground="#C82333", activeforeground="#FFFFFF",
+                                               relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.delete_transaction_btn.pack(side="left", padx=self.scale_size(5))
-        self.refund_btn = tk.Button(self.transaction_button_frame, text="Refund",
+        self.refund_btn = tk.Button(self.transaction_button_frame, text="🔄 Refund",
                                     command=lambda: self.create_password_auth_window(
                                         "Authenticate Refund", "Enter admin password to process refund",
                                         self.validate_refund_auth, selected_item=self.transactions_table.selection()),
-                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
-                                    activebackground="#C0392B", activeforeground="#F5F6F5",
-                                    padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+                                    bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                                    activebackground="#C82333", activeforeground="#FFFFFF",
+                                    relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.refund_btn.pack(side="left", padx=self.scale_size(5))
+
+        self.style_config()
 
     def clear_frame(self):
         for widget in self.main_frame.winfo_children():
             widget.destroy()
 
-    def show_transactions_old(self):
-        if self.user_role == "Drug Lord":
-            messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
-            self.show_account_management()
-            return
-        elif self.user_role == "Pharmacist":
-            self.display_transactions()
-        else:
-            self.create_password_auth_window(
-                "Authenticate Transaction Access",
-                "Enter admin password to access transactions",
-                self.validate_transaction_access_auth
-            )
-
     def validate_transaction_access_auth(self, password: str, window: tk.Toplevel, **kwargs):
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
-            admin_passwords = [row[0] for row in cursor.fetchall()]
-            if password in admin_passwords:
-                window.destroy()
-                self.display_transactions()
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
-
-    def display_transactions(self):
-        self.clear_frame()
-        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")
-        main_frame.pack(fill="both", expand=True)
-
-        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))
-        content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
-        content_frame.grid_rowconfigure(1, weight=1)
-        content_frame.grid_columnconfigure(0, weight=1)
-
-        tk.Label(content_frame, text="Transaction History", font=("Helvetica", self.scale_size(18), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=0, sticky="w", pady=self.scale_size(10))
-
-        columns = ("ID", "Action", "Details", "Timestamp", "User")
-        headers = ("ID", "ACTION", "DETAILS", "TIMESTAMP", "USER")
-        self.transaction_table = ttk.Treeview(content_frame, columns=columns, show="headings", style="Treeview")
-        for col, head in zip(columns, headers):
-            self.transaction_table.heading(col, text=head)
-            self.transaction_table.column(col, width=self.scale_size(200), anchor="center")
-        self.transaction_table.grid(row=1, column=0, sticky="nsew")
-
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=self.transaction_table.yview)
-        scrollbar.grid(row=1, column=1, sticky="ns")
-        self.transaction_table.configure(yscrollcommand=scrollbar.set)
-
-        style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5", font=("Helvetica", self.scale_size(16)))
-
-        self.update_transaction_table()
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+                admin_passwords = [row[0] for row in cursor.fetchall()]
+                if password in admin_passwords:
+                    window.destroy()
+                    self.show_transactions()
+                else:
+                    window.destroy()
+                    messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def update_transaction_table(self, event: Optional[tk.Event] = None):
+        if not hasattr(self, 'transaction_table') or self.transaction_table is None:
+            return
         for item in self.transaction_table.get_children():
             self.transaction_table.delete(item)
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT log_id, action, details, timestamp, user FROM transaction_log")
-            for log_id, action, details, timestamp, user in cursor.fetchall():
-                self.transaction_table.insert("", "end", iid=log_id, values=(log_id, action, details, timestamp, user or "System"))
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT log_id, action, details, timestamp, user FROM transaction_log")
+                for log_id, action, details, timestamp, user in cursor.fetchall():
+                    self.transaction_table.insert("", "end", iid=log_id, values=(log_id, action, details, timestamp, user or "System"))
+        except sqlite3.Error as e:
+            messagebox.showerror("Database Error", f"Failed to fetch transaction logs: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def update_transactions_table(self, event=None) -> None:
         for item in self.transactions_table.get_children():
             self.transactions_table.delete(item)
-        
         search_term = ""
         try:
             if hasattr(self, 'search_entry') and self.search_entry.winfo_exists():
@@ -368,9 +358,10 @@ class TransactionManager:
         except tk.TclError as e:
             print(f"TclError accessing search_entry: {e}")
         
-        with self.conn:
-            cursor = self.conn.cursor()
-            try:
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
                 if search_term:
                     cursor.execute("SELECT * FROM transactions WHERE UPPER(transaction_id) LIKE UPPER(?)", (f"%{search_term}%",))
                 else:
@@ -398,9 +389,13 @@ class TransactionManager:
                         transaction[5], transaction[6], transaction[7] or "Cash",
                         transaction[8] or "None"
                     ))
-            except Exception as e:
-                print(f"Database error: {e}")
-                messagebox.showerror("Database Error", f"Failed to fetch transactions: {e}", parent=self.root)
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            messagebox.showerror("Database Error", f"Failed to fetch transactions: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def on_transaction_select(self, event: tk.Event) -> None:
         selected_item = self.transactions_table.selection()
@@ -416,14 +411,14 @@ class TransactionManager:
             window.destroy()
             messagebox.showerror("Error", "No transaction selected", parent=self.root)
             return
-
         transaction_id = self.transactions_table.item(selected_item)["values"][0]
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
-            admin_passwords = [row[0] for row in cursor.fetchall()]
-            if password in admin_passwords:
-                try:
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+                admin_passwords = [row[0] for row in cursor.fetchall()]
+                if password in admin_passwords:
                     cursor.execute("SELECT status FROM transactions WHERE transaction_id = ?", (transaction_id,))
                     status = cursor.fetchone()
                     if not status:
@@ -437,17 +432,21 @@ class TransactionManager:
                     cursor.execute("DELETE FROM transactions WHERE transaction_id = ?", (transaction_id,))
                     log_id = f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}"
                     cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                                (log_id, "Delete Main Transaction", f"Deleted main transaction {transaction_id}",
-                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                                  (log_id, "Delete Main Transaction", f"Deleted main transaction {transaction_id}",
+                                   datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
                     self.conn.commit()
                     self.update_transactions_table()
                     window.destroy()
                     messagebox.showinfo("Success", f"Transaction {transaction_id} deleted successfully", parent=self.root)
-                except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to delete transaction: {e}", parent=self.root)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+                else:
+                    window.destroy()
+                    messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to delete transaction: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def validate_edit_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         selected_item = kwargs.get("selected_item")
@@ -456,95 +455,109 @@ class TransactionManager:
             messagebox.showerror("Error", "No transaction selected", parent=self.root)
             return
         transaction_id = self.transactions_table.item(selected_item)["values"][0]
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
-            admin_passwords = [row[0] for row in cursor.fetchall()]
-            if password in admin_passwords:
-                window.destroy()
-                self.show_edit_transaction(transaction_id)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+                admin_passwords = [row[0] for row in cursor.fetchall()]
+                if password in admin_passwords:
+                    window.destroy()
+                    self.show_edit_transaction(transaction_id)
+                else:
+                    window.destroy()
+                    messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def show_edit_transaction(self, transaction_id: str) -> None:
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT items, total_amount, cash_paid, change_amount, status, payment_method, customer_id FROM transactions WHERE transaction_id = ?", (transaction_id,))
-            transaction = cursor.fetchone()
-            if not transaction:
-                messagebox.showerror("Error", "Transaction not found", parent=self.root)
-                return
-            if transaction[4] == "Returned":
-                messagebox.showerror("Error", "Cannot edit a returned transaction", parent=self.root)
-                return
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT items, total_amount, cash_paid, change_amount, status, payment_method, customer_id FROM transactions WHERE transaction_id = ?", (transaction_id,))
+                transaction = cursor.fetchone()
+                if not transaction:
+                    messagebox.showerror("Error", "Transaction not found", parent=self.root)
+                    return
+                if transaction[4] == "Returned":
+                    messagebox.showerror("Error", "Cannot edit a returned transaction", parent=self.root)
+                    return
 
-            items = transaction[0].split(";")
-            edit_items = []
-            for item_data in items:
-                if item_data:
-                    try:
-                        item_id, qty = item_data.split(":")
-                        cursor.execute("SELECT name, retail_price, quantity FROM inventory WHERE item_id = ?", (item_id,))
-                        item = cursor.fetchone()
-                        if item:
-                            edit_items.append({"id": item_id, "name": item[0], "price": float(item[1]), "original_quantity": int(qty), "current_quantity": int(qty), "inventory_quantity": int(item[2])})
-                    except ValueError:
-                        continue
+                items = transaction[0].split(";")
+                edit_items = []
+                for item_data in items:
+                    if item_data:
+                        try:
+                            item_id, qty = item_data.split(":")
+                            cursor.execute("SELECT name, retail_price, quantity FROM inventory WHERE item_id = ?", (item_id,))
+                            item = cursor.fetchone()
+                            if item:
+                                edit_items.append({"id": item_id, "name": item[0], "price": float(item[1]), "original_quantity": int(qty), "current_quantity": int(qty), "inventory_quantity": int(item[2])})
+                        except ValueError:
+                            continue
 
-            if not edit_items:
-                messagebox.showerror("Error", "No valid items to edit", parent=self.root)
-                return
+                if not edit_items:
+                    messagebox.showerror("Error", "No valid items to edit", parent=self.root)
+                    return
 
-            window = tk.Toplevel(self.root)
-            window.title(f"Edit Transaction {transaction_id}")
-            window.geometry(f"{self.scale_size(600)}x{self.scale_size(400)}")
-            window.configure(bg="#F5F5DC")
+                window = tk.Toplevel(self.root)
+                window.title(f"Edit Transaction {transaction_id}")
+                window.geometry(f"{self.scale_size(600)}x{self.scale_size(400)}")
+                window.configure(bg="#F8F9FA")
 
-            content_frame = tk.Frame(window, bg="#FFF8E7", padx=self.scale_size(20), pady=self.scale_size(20))
-            content_frame.pack(fill="both", expand=True)
+                content_frame = tk.Frame(window, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
+                content_frame.pack(fill="both", expand=True, padx=self.scale_size(20), pady=self.scale_size(20))
 
-            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", self.scale_size(18), "bold"),
-                    bg="#FFF8E7", fg="#2C1B18").pack(pady=self.scale_size(10))
+                tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", self.scale_size(18), "bold"),
+                         bg="#FFFFFF", fg="#212529").pack(pady=self.scale_size(10))
 
-            columns = ("Item", "OriginalQuantity", "NewQuantity")
-            headers = ("ITEM", "ORIGINAL QTY", "NEW QTY")
-            edit_table = ttk.Treeview(content_frame, columns=columns, show="headings")
-            for col, head in zip(columns, headers):
-                edit_table.heading(col, text=head)
-                edit_table.column(col, width=self.scale_size(150) if col != "Item" else self.scale_size(200), anchor="center" if col != "Item" else "w")
-            edit_table.pack(fill="both", expand=True)
+                columns = ("Item", "OriginalQuantity", "NewQuantity")
+                headers = ("ITEM", "ORIGINAL QTY", "NEW QTY")
+                edit_table = ttk.Treeview(content_frame, columns=columns, show="headings", style="Treeview")
+                for col, head in zip(columns, headers):
+                    edit_table.heading(col, text=head)
+                    edit_table.column(col, width=self.scale_size(150) if col != "Item" else self.scale_size(200), anchor="center" if col != "Item" else "w")
+                edit_table.pack(fill="both", expand=True)
 
-            style = ttk.Style()
-            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7", font=("Helvetica", self.scale_size(16)))
+                quantity_entries = {}
+                for item in edit_items:
+                    item_iid = edit_table.insert("", "end", values=(item["name"], item["original_quantity"], item["current_quantity"]))
+                    quantity_entries[item_iid] = {"item": item, "entry": None}
 
-            quantity_entries = {}
-            for item in edit_items:
-                item_iid = edit_table.insert("", "end", values=(item["name"], item["original_quantity"], item["current_quantity"]))
-                quantity_entries[item_iid] = {"item": item, "entry": None}
+                def update_quantity_fields():
+                    for item_iid in edit_table.get_children():
+                        item_data = quantity_entries[item_iid]["item"]
+                        frame = tk.Frame(content_frame, bg="#FFFFFF")
+                        frame.pack(fill="x", pady=self.scale_size(2))
+                        tk.Label(frame, text=item_data["name"], font=("Helvetica", self.scale_size(12)), bg="#FFFFFF", fg="#212529").pack(side="left")
+                        entry = tk.Entry(frame, font=("Helvetica", self.scale_size(12)), bg="#FFFFFF", fg="#212529", width=10)
+                        entry.insert(0, str(item_data["current_quantity"]))
+                        entry.pack(side="left", padx=self.scale_size(5))
+                        quantity_entries[item_iid]["entry"] = entry
+                        edit_table.item(item_iid, values=(item_data["name"], item_data["original_quantity"], item_data["current_quantity"]))
 
-            def update_quantity_fields():
-                for item_iid in edit_table.get_children():
-                    item_data = quantity_entries[item_iid]["item"]
-                    frame = tk.Frame(content_frame, bg="#FFF8E7")
-                    frame.pack(fill="x", pady=self.scale_size(2))
-                    tk.Label(frame, text=item_data["name"], font=("Helvetica", self.scale_size(12)), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", self.scale_size(12)), bg="#F5F5DC", fg="#2C1B18", width=10)
-                    entry.insert(0, str(item_data["current_quantity"]))
-                    entry.pack(side="left", padx=self.scale_size(5))
-                    quantity_entries[item_iid]["entry"] = entry
-                    edit_table.item(item_iid, values=(item_data["name"], item_data["original_quantity"], item_data["current_quantity"]))
+                update_quantity_fields()
 
-            update_quantity_fields()
-
-            tk.Button(content_frame, text="Confirm Changes",
-                    command=lambda: self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
-                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(18)),
-                    activebackground="#8B5A2B", activeforeground="#FFF8E7",
-                    padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(pady=self.scale_size(10))
+                tk.Button(content_frame, text="Confirm Changes",
+                          command=lambda: self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
+                          bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                          activebackground="#0056B3", activeforeground="#FFFFFF",
+                          relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def process_edit_transaction(self, transaction_id: str, edit_items: List[Dict], quantity_entries: Dict, cash_paid: float, payment_method: str, customer_id: str, window: tk.Toplevel) -> None:
         try:
+            self.conn = sqlite3.connect(self.db_path)
             with self.conn:
                 cursor = self.conn.cursor()
                 new_items = []
@@ -593,9 +606,9 @@ class TransactionManager:
                 """, (items_str, total_amount, new_cash_paid, change_amount, transaction_id))
 
                 cursor.execute("INSERT INTO transaction_log (log_id, action, details, timestamp, user) VALUES (?, ?, ?, ?, ?)",
-                            (f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}",
-                            "Edit Transaction", f"Edited transaction {transaction_id}",
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
+                              (f"{datetime.now().strftime('%m-%Y')}-{str(uuid.uuid4())[:6]}",
+                               "Edit Transaction", f"Edited transaction {transaction_id}",
+                               datetime.now().strftime("%Y-%m-%d %H:%M:%S"), self.current_user))
 
                 self.conn.commit()
                 self.update_transactions_table()
@@ -604,6 +617,10 @@ class TransactionManager:
                 self.check_low_inventory()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to update transaction: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def print_receipt(self) -> None:
         selected_item = self.transactions_table.selection()
@@ -620,69 +637,78 @@ class TransactionManager:
         downloads_path = os.path.expanduser("~/Downloads")
         pdf_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.pdf")
 
-        c = canvas.Canvas(pdf_path, pagesize=letter)
-        c.setFont("Helvetica", self.scale_size(12))
-
-        c.drawString(self.scale_size(100), self.scale_size(750), "Shinano POS")
-        c.drawString(self.scale_size(100), self.scale_size(732), "Gem's Pharmacy.")
-        c.drawString(self.scale_size(100), self.scale_size(678), "123 Pharmacy Drive, Health City Tel #555-0123")
-        c.drawString(self.scale_size(100), self.scale_size(650), f"Date: {timestamp}")
-        c.drawString(self.scale_size(100), self.scale_size(632), f"TRANSACTION CODE: {transaction_id}")
-
-        data = [["Name", "Qty", "Price"]]
-        total_qty = 0
-        missing_items = []
-        for item in items:
-            if item:
-                name, qty = item.rsplit(" (x", 1) if " (x" in item else (item, "0")
-                qty = int(qty.strip(")")) if qty != "0" else 0
-                item_name = name.strip()
-                retail_price = 0.0
-                with self.conn:
-                    cursor = self.conn.cursor()
-                    cursor.execute("SELECT retail_price FROM inventory WHERE name = ?", (item_name,))
-                    result = cursor.fetchone()
-                    if result:
-                        retail_price = float(result[0])
-                    else:
-                        missing_items.append(item_name)
-                data.append([item_name, str(qty), f"{retail_price:.2f}"])
-                total_qty += qty
-
-        if missing_items:
-            messagebox.showwarning("Warning", f"Items not found in inventory: {', '.join(missing_items)}", parent=self.root)
-
-        data.append(["Total", str(total_qty), f"{total_amount:.2f}"])
-
-        table = Table(data)
-        table.setStyle(TableStyle([
-            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', self.scale_size(12)),
-            ('FONT', (0, -1), (-1, -1), 'Helvetica-Bold', self.scale_size(12)),
-            ('FONT', (0, 1), (-1, -2), 'Helvetica', self.scale_size(12)),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('PADDING', (0, 0), (-1, -1), self.scale_size(6)),
-        ]))
-
-        table_width = self.scale_size(400)
-        table_x = (letter[0] - table_width) / 2
-        table_y = self.scale_size(600)
-        table.wrapOn(c, table_width, self.scale_size(400))
-        table.drawOn(c, table_x, table_y - len(data) * self.scale_size(20))
-
-        y = table_y - len(data) * self.scale_size(20) - self.scale_size(20)
-        c.drawString(self.scale_size(100), y - self.scale_size(40), f"CASH: {cash_paid:.2f}")
-        c.drawString(self.scale_size(100), y - self.scale_size(60), f"CHANGE: {change:.2f}")
-        c.drawString(self.scale_size(100), y - self.scale_size(80), f"VAT SALE: {(total_amount * 0.12):.2f}")
-        c.drawString(self.scale_size(100), y - self.scale_size(100), f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
-
-        c.showPage()
-        c.save()
         try:
-            webbrowser.open(f"file://{pdf_path}")
-            messagebox.showinfo("Success", f"Opening receipt: {pdf_path}", parent=self.root)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to open receipt: {e}", parent=self.root)
+            self.conn = sqlite3.connect(self.db_path)
+            c = canvas.Canvas(pdf_path, pagesize=letter)
+            c.setFont("Helvetica", self.scale_size(12))
+
+            c.drawString(self.scale_size(100), self.scale_size(750), "Shinano POS")
+            c.drawString(self.scale_size(100), self.scale_size(732), "Gem's Pharmacy")
+            c.drawString(self.scale_size(100), self.scale_size(678), "123 Pharmacy Drive, Health City Tel #555-0123")
+            c.drawString(self.scale_size(100), self.scale_size(650), f"Date: {timestamp}")
+            c.drawString(self.scale_size(100), self.scale_size(632), f"TRANSACTION CODE: {transaction_id}")
+
+            data = [["Name", "Qty", "Price"]]
+            total_qty = 0
+            missing_items = []
+            with self.conn:
+                cursor = self.conn.cursor()
+                for item in items:
+                    if item:
+                        name, qty = item.rsplit(" (x", 1) if " (x" in item else (item, "0")
+                        qty = int(qty.strip(")")) if qty != "0" else 0
+                        item_name = name.strip()
+                        retail_price = 0.0
+                        cursor.execute("SELECT retail_price FROM inventory WHERE name = ?", (item_name,))
+                        result = cursor.fetchone()
+                        if result:
+                            retail_price = float(result[0])
+                        else:
+                            missing_items.append(item_name)
+                        data.append([item_name, str(qty), f"{retail_price:.2f}"])
+                        total_qty += qty
+
+            if missing_items:
+                messagebox.showwarning("Warning", f"Items not found in inventory: {', '.join(missing_items)}", parent=self.root)
+
+            data.append(["Total", str(total_qty), f"{total_amount:.2f}"])
+
+            table = Table(data, colWidths=[self.scale_size(200), self.scale_size(100), self.scale_size(100)])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#007BFF")),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), self.scale_size(12)),
+                ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor("#F8F9FA"), colors.HexColor("#E9ECEF")])
+            ]))
+
+            table_width = self.scale_size(400)
+            table_x = (letter[0] - table_width) / 2
+            table_y = self.scale_size(600)
+            table.wrapOn(c, table_width, self.scale_size(400))
+            table.drawOn(c, table_x, table_y - len(data) * self.scale_size(20))
+
+            y = table_y - len(data) * self.scale_size(20) - self.scale_size(20)
+            c.drawString(self.scale_size(100), y - self.scale_size(40), f"CASH: {cash_paid:.2f}")
+            c.drawString(self.scale_size(100), y - self.scale_size(60), f"CHANGE: {change:.2f}")
+            c.drawString(self.scale_size(100), y - self.scale_size(80), f"VAT SALE: {(total_amount * 0.12):.2f}")
+            c.drawString(self.scale_size(100), y - self.scale_size(100), f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
+
+            c.showPage()
+            c.save()
+            try:
+                webbrowser.open(f"file://{pdf_path}")
+                messagebox.showinfo("Success", f"Opening receipt: {pdf_path}", parent=self.root)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to open receipt: {e}", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def validate_refund_auth(self, password: str, window: tk.Toplevel, **kwargs):
         selected_item = kwargs.get("selected_item")
@@ -691,19 +717,28 @@ class TransactionManager:
             messagebox.showerror("Error", "No transaction selected", parent=self.root)
             return
         transaction_id = self.transactions_table.item(selected_item)["values"][0]
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
-            admin_passwords = [row[0] for row in cursor.fetchall()]
-            if password in admin_passwords:
-                window.destroy()
-                self.process_refund(transaction_id)
-            else:
-                window.destroy()
-                messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+                admin_passwords = [row[0] for row in cursor.fetchall()]
+                if password in admin_passwords:
+                    window.destroy()
+                    self.process_refund(transaction_id)
+                else:
+                    window.destroy()
+                    messagebox.showerror("Error", "Invalid admin password", parent=self.root)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def process_refund(self, transaction_id: str):
         try:
+            self.conn = sqlite3.connect(self.db_path)
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute("SELECT items, status FROM transactions WHERE transaction_id = ?", (transaction_id,))
@@ -735,7 +770,11 @@ class TransactionManager:
                 messagebox.showinfo("Success", f"Transaction {transaction_id} refunded successfully", parent=self.root)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to process refund: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def __del__(self):
-        if hasattr(self, 'conn'):
+        if hasattr(self, 'conn') and self.conn:
             self.conn.close()

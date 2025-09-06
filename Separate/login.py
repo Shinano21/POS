@@ -16,7 +16,7 @@ class LoginApp:
         self.root.configure(bg="#F5F6F5")
         self.db_path = self.get_writable_db_path()
         self.conn = None
-        self.setup_database()
+        self.create_database()  # Changed from setup_database to create_database
         self.setup_gui()
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
@@ -33,6 +33,7 @@ class LoginApp:
 
     def create_database(self) -> None:
         try:
+            self.conn = sqlite3.connect(self.db_path)  # Initialize connection here
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute('''
@@ -133,13 +134,13 @@ class LoginApp:
                         user TEXT
                     )
                 ''')
-            cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
-                          ("yamato", "ycb-0001", "Drug Lord", "Online"))
-            cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
-                          ("kongo", "kcb-0001", "User", "Online"))
-            cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
-                          ("manager", "mcb-0001", "Manager", "Online"))
-            self.conn.commit()
+                cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
+                              ("yamato", "ycb-0001", "Drug Lord", "Online"))
+                cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
+                              ("kongo", "kcb-0001", "User", "Online"))
+                cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
+                              ("manager", "mcb-0001", "Manager", "Online"))
+                self.conn.commit()
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to set up database: {e}", parent=self.root)
             self.root.destroy()
@@ -404,10 +405,6 @@ class LoginApp:
 
     def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):
         new_window = tk.Toplevel(current_root)
-        # REMOVE these two lines:
-        # new_window.transient(current_root)
-        # new_window.grab_set()
-        
         if module_class == SalesSummary:
             module_class(new_window, current_user=username, user_role=role, db_path=db_path)
         else:

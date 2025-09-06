@@ -26,7 +26,6 @@ class SalesSummary:
         self.main_frame.pack(fill="both", expand=True)
         self.kpi_labels = {}
         self.display_mode = None
-        self.setup_database()
         self.show_sales_summary()
         self.enable_windows_controls()  # Enable Windows control bar
 
@@ -43,18 +42,29 @@ class SalesSummary:
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
         ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)
 
+    def get_display_scaling(self) -> float:
+        try:
+            # Get DPI for the window (96 is standard DPI for 100% scaling)
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            dpi = ctypes.windll.user32.GetDpiForWindow(hwnd)
+            scaling_factor = dpi / 96.0  # Convert DPI to scaling factor
+            # Round to nearest supported scaling factor (125%, 150%, 175%, 200%)
+            supported_scales = [1.25, 1.5, 1.75, 2.0]
+            scaling_factor = min(supported_scales, key=lambda x: abs(x - scaling_factor))
+            return scaling_factor
+        except:
+            return 1.75  # Fallback to 175% if detection fails
+
+    def scale_size(self, size: int) -> int:
+        scaling_factor = self.get_display_scaling()
+        return int(size * scaling_factor)
+
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA', os.path.expanduser("~"))
         db_dir = os.path.join(app_data, "ShinanoPOS")
         os.makedirs(db_dir, exist_ok=True)
         db_path = os.path.join(db_dir, db_name)
         return db_path
-
-    
-
-    def scale_size(self, size: int) -> int:
-        scaling_factor = 1.75  # 175% scaling for poor eyesight
-        return int(size * scaling_factor)
 
     def style_config(self):
         style = ttk.Style()
@@ -334,10 +344,15 @@ class SalesSummary:
 
     def update_tables_and_kpis(self, month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame):
         try:
+            self.conn = sqlite3.connect(self.db_path)  # Ensure connection is established
             self.update_tables(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame)
             self.update_kpis(month_var, year_var)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update tables and KPIs: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def toggle_sales_view(self, btn, monthly_frame, daily_frame, table_container):
         if self.display_mode.get() == "Daily":
@@ -369,6 +384,7 @@ class SalesSummary:
         end_date = f"{next_year}-{next_month:02d}-01"
 
         try:
+            self.conn = sqlite3.connect(self.db_path)  # Ensure connection is established
             monthly_sales = {}
             daily_sales = {}
             with self.conn:
@@ -508,6 +524,10 @@ class SalesSummary:
             messagebox.showerror("Error", f"Database query error: {e}", parent=self.root)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
 
     def __del__(self):
         if hasattr(self, 'conn') and self.conn:
