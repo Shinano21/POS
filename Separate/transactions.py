@@ -37,21 +37,22 @@ class TransactionManager:
         self.create_database()
         self.show_transactions()
 
-        # Disable minimize and maximize buttons, keep close button
-        self.remove_windows_controls()
+        # Ensure Windows control bar (minimize, maximize, close) is enabled
+        self.enable_windows_controls()
 
         # Bind keys for window management
         self.root.bind("<F11>", self.toggle_maximize_restore)
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
 
-    def remove_windows_controls(self):
+    def enable_windows_controls(self):
         # Get the window handle (HWND) for the Tkinter window
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
         # Get the current window style
         style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Remove WS_MINIMIZEBOX and WS_MAXIMIZEBOX, keep WS_SYSMENU for close button
-        style &= ~0x00020000  # WS_MINIMIZEBOX
-        style &= ~0x00010000  # WS_MAXIMIZEBOX
+        # Ensure WS_MINIMIZEBOX, WS_MAXIMIZEBOX, and WS_SYSMENU are enabled
+        style |= 0x00020000  # WS_MINIMIZEBOX
+        style |= 0x00010000  # WS_MAXIMIZEBOX
+        style |= 0x00080000  # WS_SYSMENU
         # Apply the modified style
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
         # Redraw the window to apply changes
@@ -91,37 +92,10 @@ class TransactionManager:
         print(f"Database path: {db_path}")
         return db_path
 
-    def create_database(self):
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transactions (
-                    transaction_id TEXT PRIMARY KEY,
-                    items TEXT NOT NULL,
-                    total_amount REAL NOT NULL,
-                    cash_paid REAL,
-                    change_amount REAL,
-                    timestamp TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    payment_method TEXT,
-                    customer_id TEXT
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transaction_log (
-                    log_id TEXT PRIMARY KEY,
-                    action TEXT NOT NULL,
-                    details TEXT,
-                    timestamp TEXT NOT NULL,
-                    user TEXT
-                )
-            """)
-            self.conn.commit()
-
+   
     def scale_size(self, size: int) -> int:
-        base_resolution = 1920
-        current_width = self.root.winfo_screenwidth()
-        scaling_factor = current_width / base_resolution
+        # Updated scaling factor for 175-200% display
+        scaling_factor = 1.75  # Use 1.75 as a balanced scaling factor within 175-200%
         return int(size * scaling_factor)
 
     def create_password_auth_window(self, title: str, prompt: str, callback, **kwargs):
@@ -129,12 +103,12 @@ class TransactionManager:
         window.title(title)
         window.geometry(f"{self.scale_size(400)}x{self.scale_size(200)}")
         window.configure(bg="#F5F5DC")
-        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(14)), bg="#F5F5DC", fg="#2C1B18").pack(pady=self.scale_size(10))
-        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(14)), bg="#F5F5DC", fg="#2C1B18")
+        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F5F5DC", fg="#2C1B18").pack(pady=self.scale_size(10))
+        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#F5F5DC", fg="#2C1B18")
         password_entry.pack(pady=self.scale_size(10))
         tk.Button(window, text="Submit",
                   command=lambda: callback(password_entry.get(), window, **kwargs),
-                  bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(14))).pack(pady=self.scale_size(10))
+                  bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(18))).pack(pady=self.scale_size(10))
 
     def get_user_role(self):
         return self.user_role
@@ -195,23 +169,23 @@ class TransactionManager:
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True, padx=(10, 0))
+        content_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=self.scale_size(20), pady=self.scale_size(20))
+        content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
 
         search_frame = tk.Frame(content_frame, bg="#F5F6F5")
-        search_frame.pack(fill="x", pady=10)
-        tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", 18),
+        search_frame.pack(fill="x", pady=self.scale_size(10))
+        tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", self.scale_size(18)),
                 bg="#F5F6F5", fg="#2C3E50").pack(side="left")
-        self.search_entry = tk.Entry(search_frame, font=("Helvetica", 18), bg="#F4E1C1", fg="#2C3E50")
-        self.search_entry.pack(side="left", fill="x", expand=True, padx=5)
+        self.search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(18)), bg="#F4E1C1", fg="#2C3E50")
+        self.search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_transactions_table)
         tk.Button(search_frame, text="Refresh Transactions", command=self.update_transactions_table,
-                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", 18),
+                bg="#2ECC71", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
                 activebackground="#27AE60", activeforeground="#F5F6F5",
-                padx=12, pady=8, bd=0).pack(side="left", padx=5)
+                padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(side="left", padx=self.scale_size(5))
 
         transactions_frame = tk.Frame(content_frame, bg="#F5F6F5", bd=1, relief="flat")
-        transactions_frame.pack(fill="both", expand=True, pady=10)
+        transactions_frame.pack(fill="both", expand=True, pady=self.scale_size(10))
         transactions_frame.grid_rowconfigure(1, weight=1)
         transactions_frame.grid_columnconfigure(0, weight=1)
 
@@ -233,12 +207,12 @@ class TransactionManager:
         self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20, style="Treeview")
         for col, head in zip(columns, headers):
             self.transactions_table.heading(col, text=head)
-            width = 300 if col == "ItemsList" else 150
+            width = self.scale_size(300) if col == "ItemsList" else self.scale_size(150)
             self.transactions_table.column(col, width=width, anchor="center" if col != "ItemsList" else "w")
         self.transactions_table.pack(fill="both", expand=True)
 
         style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5")
+        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5", font=("Helvetica", self.scale_size(16)))
 
         def configure_canvas(event=None):
             canvas.configure(scrollregion=canvas.bbox("all"))
@@ -280,36 +254,36 @@ class TransactionManager:
         self.transactions_table.bind("<<TreeviewSelect>>", self.on_transaction_select)
 
         self.transaction_button_frame = tk.Frame(transactions_frame, bg="#F5F6F5")
-        self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=10)
+        self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=self.scale_size(10))
         self.print_btn = tk.Button(self.transaction_button_frame, text="Print Receipt", command=self.print_receipt,
-                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),
+                                bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
                                 activebackground="#2C3E50", activeforeground="#F5F6F5",
-                                padx=12, pady=8, bd=0, state="disabled")
-        self.print_btn.pack(side="left", padx=5)
+                                padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.print_btn.pack(side="left", padx=self.scale_size(5))
         self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="Edit Transaction",
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Edit", "Enter admin password to edit transaction",
                                                 self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", 18),
+                                            bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
                                             activebackground="#2C3E50", activeforeground="#F5F6F5",
-                                            padx=12, pady=8, bd=0, state="disabled")
-        self.edit_transaction_btn.pack(side="left", padx=5)
+                                            padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.edit_transaction_btn.pack(side="left", padx=self.scale_size(5))
         self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="Delete Transaction",
                                             command=lambda: self.create_password_auth_window(
                                                 "Authenticate Deletion", "Enter admin password to delete transaction",
                                                 self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
-                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),
+                                            bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
                                             activebackground="#C0392B", activeforeground="#F5F6F5",
-                                            padx=12, pady=8, bd=0, state="disabled")
-        self.delete_transaction_btn.pack(side="left", padx=5)
+                                            padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.delete_transaction_btn.pack(side="left", padx=self.scale_size(5))
         self.refund_btn = tk.Button(self.transaction_button_frame, text="Refund",
                                     command=lambda: self.create_password_auth_window(
                                         "Authenticate Refund", "Enter admin password to process refund",
                                         self.validate_refund_auth, selected_item=self.transactions_table.selection()),
-                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", 18),
+                                    bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(18)),
                                     activebackground="#C0392B", activeforeground="#F5F6F5",
-                                    padx=12, pady=8, bd=0, state="disabled")
-        self.refund_btn.pack(side="left", padx=5)
+                                    padx=self.scale_size(12), pady=self.scale_size(8), bd=0, state="disabled")
+        self.refund_btn.pack(side="left", padx=self.scale_size(5))
 
     def clear_frame(self):
         for widget in self.main_frame.winfo_children():
@@ -351,7 +325,7 @@ class TransactionManager:
         content_frame.grid_rowconfigure(1, weight=1)
         content_frame.grid_columnconfigure(0, weight=1)
 
-        tk.Label(content_frame, text="Transaction History", font=("Helvetica", 18, "bold"),
+        tk.Label(content_frame, text="Transaction History", font=("Helvetica", self.scale_size(18), "bold"),
                  bg="#F5F6F5", fg="#2C3E50").grid(row=0, column=0, sticky="w", pady=self.scale_size(10))
 
         columns = ("ID", "Action", "Details", "Timestamp", "User")
@@ -367,7 +341,7 @@ class TransactionManager:
         self.transaction_table.configure(yscrollcommand=scrollbar.set)
 
         style = ttk.Style()
-        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5")
+        style.configure("Treeview", background="#F5F6F5", foreground="#2C3E50", fieldbackground="#F5F6F5", font=("Helvetica", self.scale_size(16)))
 
         self.update_transaction_table()
 
@@ -524,25 +498,25 @@ class TransactionManager:
 
             window = tk.Toplevel(self.root)
             window.title(f"Edit Transaction {transaction_id}")
-            window.geometry("600x400")
+            window.geometry(f"{self.scale_size(600)}x{self.scale_size(400)}")
             window.configure(bg="#F5F5DC")
 
-            content_frame = tk.Frame(window, bg="#FFF8E7", padx=20, pady=20)
+            content_frame = tk.Frame(window, bg="#FFF8E7", padx=self.scale_size(20), pady=self.scale_size(20))
             content_frame.pack(fill="both", expand=True)
 
-            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", 18, "bold"),
-                    bg="#FFF8E7", fg="#2C1B18").pack(pady=10)
+            tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", self.scale_size(18), "bold"),
+                    bg="#FFF8E7", fg="#2C1B18").pack(pady=self.scale_size(10))
 
             columns = ("Item", "OriginalQuantity", "NewQuantity")
             headers = ("ITEM", "ORIGINAL QTY", "NEW QTY")
             edit_table = ttk.Treeview(content_frame, columns=columns, show="headings")
             for col, head in zip(columns, headers):
                 edit_table.heading(col, text=head)
-                edit_table.column(col, width=150 if col != "Item" else 200, anchor="center" if col != "Item" else "w")
+                edit_table.column(col, width=self.scale_size(150) if col != "Item" else self.scale_size(200), anchor="center" if col != "Item" else "w")
             edit_table.pack(fill="both", expand=True)
 
             style = ttk.Style()
-            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7")
+            style.configure("Treeview", background="#FFF8E7", foreground="#2C1B18", fieldbackground="#FFF8E7", font=("Helvetica", self.scale_size(16)))
 
             quantity_entries = {}
             for item in edit_items:
@@ -553,11 +527,11 @@ class TransactionManager:
                 for item_iid in edit_table.get_children():
                     item_data = quantity_entries[item_iid]["item"]
                     frame = tk.Frame(content_frame, bg="#FFF8E7")
-                    frame.pack(fill="x", pady=2)
-                    tk.Label(frame, text=item_data["name"], font=("Helvetica", 12), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
-                    entry = tk.Entry(frame, font=("Helvetica", 12), bg="#F5F5DC", fg="#2C1B18", width=10)
+                    frame.pack(fill="x", pady=self.scale_size(2))
+                    tk.Label(frame, text=item_data["name"], font=("Helvetica", self.scale_size(12)), bg="#FFF8E7", fg="#2C1B18").pack(side="left")
+                    entry = tk.Entry(frame, font=("Helvetica", self.scale_size(12)), bg="#F5F5DC", fg="#2C1B18", width=10)
                     entry.insert(0, str(item_data["current_quantity"]))
-                    entry.pack(side="left", padx=5)
+                    entry.pack(side="left", padx=self.scale_size(5))
                     quantity_entries[item_iid]["entry"] = entry
                     edit_table.item(item_iid, values=(item_data["name"], item_data["original_quantity"], item_data["current_quantity"]))
 
@@ -565,9 +539,9 @@ class TransactionManager:
 
             tk.Button(content_frame, text="Confirm Changes",
                     command=lambda: self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
-                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", 18),
+                    bg="#6F4E37", fg="#FFF8E7", font=("Helvetica", self.scale_size(18)),
                     activebackground="#8B5A2B", activeforeground="#FFF8E7",
-                    padx=12, pady=8, bd=0).pack(pady=10)
+                    padx=self.scale_size(12), pady=self.scale_size(8), bd=0).pack(pady=self.scale_size(10))
 
     def process_edit_transaction(self, transaction_id: str, edit_items: List[Dict], quantity_entries: Dict, cash_paid: float, payment_method: str, customer_id: str, window: tk.Toplevel) -> None:
         try:
@@ -647,13 +621,13 @@ class TransactionManager:
         pdf_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.pdf")
 
         c = canvas.Canvas(pdf_path, pagesize=letter)
-        c.setFont("Helvetica", 12)
+        c.setFont("Helvetica", self.scale_size(12))
 
-        c.drawString(100, 750, "Shinano POS")
-        c.drawString(100, 732, "Gem's Pharmacy.")
-        c.drawString(100, 678, "123 Pharmacy Drive, Health City Tel #555-0123")
-        c.drawString(100, 650, f"Date: {timestamp}")
-        c.drawString(100, 632, f"TRANSACTION CODE: {transaction_id}")
+        c.drawString(self.scale_size(100), self.scale_size(750), "Shinano POS")
+        c.drawString(self.scale_size(100), self.scale_size(732), "Gem's Pharmacy.")
+        c.drawString(self.scale_size(100), self.scale_size(678), "123 Pharmacy Drive, Health City Tel #555-0123")
+        c.drawString(self.scale_size(100), self.scale_size(650), f"Date: {timestamp}")
+        c.drawString(self.scale_size(100), self.scale_size(632), f"TRANSACTION CODE: {transaction_id}")
 
         data = [["Name", "Qty", "Price"]]
         total_qty = 0
@@ -682,25 +656,25 @@ class TransactionManager:
 
         table = Table(data)
         table.setStyle(TableStyle([
-            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 12),
-            ('FONT', (0, -1), (-1, -1), 'Helvetica-Bold', 12),
-            ('FONT', (0, 1), (-1, -2), 'Helvetica', 12),
+            ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', self.scale_size(12)),
+            ('FONT', (0, -1), (-1, -1), 'Helvetica-Bold', self.scale_size(12)),
+            ('FONT', (0, 1), (-1, -2), 'Helvetica', self.scale_size(12)),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('PADDING', (0, 0), (-1, -1), 6),
+            ('PADDING', (0, 0), (-1, -1), self.scale_size(6)),
         ]))
 
-        table_width = 400
+        table_width = self.scale_size(400)
         table_x = (letter[0] - table_width) / 2
-        table_y = 600
-        table.wrapOn(c, table_width, 400)
-        table.drawOn(c, table_x, table_y - len(data) * 20)
+        table_y = self.scale_size(600)
+        table.wrapOn(c, table_width, self.scale_size(400))
+        table.drawOn(c, table_x, table_y - len(data) * self.scale_size(20))
 
-        y = table_y - len(data) * 20 - 20
-        c.drawString(100, y - 40, f"CASH: {cash_paid:.2f}")
-        c.drawString(100, y - 60, f"CHANGE: {change:.2f}")
-        c.drawString(100, y - 80, f"VAT SALE: {(total_amount * 0.12):.2f}")
-        c.drawString(100, y - 100, f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
+        y = table_y - len(data) * self.scale_size(20) - self.scale_size(20)
+        c.drawString(self.scale_size(100), y - self.scale_size(40), f"CASH: {cash_paid:.2f}")
+        c.drawString(self.scale_size(100), y - self.scale_size(60), f"CHANGE: {change:.2f}")
+        c.drawString(self.scale_size(100), y - self.scale_size(80), f"VAT SALE: {(total_amount * 0.12):.2f}")
+        c.drawString(self.scale_size(100), y - self.scale_size(100), f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
 
         c.showPage()
         c.save()

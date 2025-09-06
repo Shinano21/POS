@@ -15,37 +15,33 @@ class SalesSummary:
     def __init__(self, root, current_user, user_role, db_path):
         self.root = root
         self.root.title("Sales Summary")
-        self.root.configure(bg="#F4E1C1")
-        self.root.state('zoomed')  # Set window to maximized (windowed full-screen)
-        self.root.resizable(True, True)  # Ensure window is resizable
+        self.root.configure(bg="#F8F9FA")  # Bootstrap light background
+        self.root.state('zoomed')  # Maximized window
+        self.root.resizable(True, True)
         self.current_user = current_user
         self.user_role = user_role
         self.db_path = db_path
         self.conn = None
-        self.main_frame = tk.Frame(self.root, bg="#F4E1C1")
+        self.main_frame = tk.Frame(self.root, bg="#F8F9FA")
         self.main_frame.pack(fill="both", expand=True)
         self.kpi_labels = {}
         self.display_mode = None
         self.setup_database()
         self.show_sales_summary()
-        self.remove_windows_controls()  # Disable minimize and maximize, keep close button
+        self.enable_windows_controls()  # Enable Windows control bar
 
         # Bind keys for window management
         self.root.bind("<F11>", self.toggle_maximize_restore)
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
 
-    def remove_windows_controls(self):
-        # Get the window handle (HWND) for the Tkinter window
+    def enable_windows_controls(self):
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
-        # Get the current window style
-        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)  # GWL_STYLE = -16
-        # Remove WS_MINIMIZEBOX and WS_MAXIMIZEBOX, keep WS_SYSMENU for close button
-        style &= ~0x00020000  # WS_MINIMIZEBOX
-        style &= ~0x00010000  # WS_MAXIMIZEBOX
-        # Apply the modified style
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)
+        style |= 0x00020000  # WS_MINIMIZEBOX
+        style |= 0x00010000  # WS_MAXIMIZEBOX
+        style |= 0x00080000  # WS_SYSMENU
         ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
-        # Redraw the window to apply changes
-        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)  # SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA', os.path.expanduser("~"))
@@ -54,57 +50,19 @@ class SalesSummary:
         db_path = os.path.join(db_dir, db_name)
         return db_path
 
-    def setup_database(self):
-        try:
-            self.conn = sqlite3.connect(self.db_path)
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS daily_sales (
-                    sale_date TEXT PRIMARY KEY,
-                    total_sales REAL NOT NULL
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transactions (
-                    transaction_id TEXT PRIMARY KEY,
-                    items TEXT NOT NULL,
-                    total_amount REAL NOT NULL,
-                    cash_paid REAL,
-                    change_amount REAL,
-                    timestamp TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    payment_method TEXT,
-                    customer_id TEXT
-                )
-            """)
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS inventory (
-                    item_id TEXT PRIMARY KEY,
-                    name TEXT,
-                    type TEXT,
-                    retail_price REAL DEFAULT 0.0,
-                    unit_price REAL DEFAULT 0.0,
-                    quantity INTEGER DEFAULT 0,
-                    supplier TEXT
-                )
-            ''')
-            self.conn.commit()
-        except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to set up database: {e}", parent=self.root)
-            self.root.destroy()
+    
 
     def scale_size(self, size: int) -> int:
-        base_resolution = 1920
-        current_width = self.root.winfo_screenwidth()
-        scaling_factor = current_width / base_resolution
+        scaling_factor = 1.75  # 175% scaling for poor eyesight
         return int(size * scaling_factor)
 
     def style_config(self):
         style = ttk.Style()
-        style.configure("Treeview", background="#FDFEFE", foreground="#2C3E50",
-                        rowheight=self.scale_size(26), font=("Helvetica", self.scale_size(12)))
-        style.map("Treeview", background=[("selected", "#4DA8DA")])
+        style.configure("Treeview", background="#FFFFFF", foreground="#212529",
+                        rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(14)))
+        style.map("Treeview", background=[("selected", "#007BFF")], foreground=[("selected", "#FFFFFF")])
         style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
+        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(14), "bold"), background="#E9ECEF", foreground="#212529")
 
     def clear_frame(self):
         for widget in self.main_frame.winfo_children():
@@ -117,8 +75,7 @@ class SalesSummary:
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
-        # Navigation bar is empty as per request
-        nav_frame = tk.Frame(main_frame, bg="#2C3E50")
+        nav_frame = tk.Frame(main_frame, bg="#343A40")  # Bootstrap dark navbar
         nav_frame.pack(fill="x")
 
     def toggle_maximize_restore(self, event=None):
@@ -141,7 +98,7 @@ class SalesSummary:
             return
         self.clear_frame()
 
-        main_frame = tk.Frame(self.main_frame, bg="#F4E1C1")
+        main_frame = tk.Frame(self.main_frame, bg="#F8F9FA")
         main_frame.pack(fill="both", expand=True)
 
         try:
@@ -151,72 +108,75 @@ class SalesSummary:
 
         header = tk.Label(main_frame, text="📊 Sales Summary Dashboard",
                           font=("Helvetica", self.scale_size(26), "bold"),
-                          bg="#F4E1C1", fg="#2C3E50")
-        header.pack(pady=15)
+                          bg="#F8F9FA", fg="#212529")
+        header.pack(pady=self.scale_size(20))
 
-        kpi_frame = tk.Frame(main_frame, bg="#F4E1C1")
-        kpi_frame.pack(fill="x", padx=20, pady=10)
+        kpi_frame = tk.Frame(main_frame, bg="#F8F9FA")
+        kpi_frame.pack(fill="x", padx=self.scale_size(20), pady=self.scale_size(10))
 
         self.kpi_labels = {}
         for title in ["Today", "This Week", "This Month"]:
-            card = tk.Frame(kpi_frame, bg="#1B263B", padx=20, pady=20)
-            card.pack(side="left", expand=True, fill="both", padx=10)
-            tk.Label(card, text=title, font=("Helvetica", 16, "bold"),
-                     bg="#1B263B", fg="white").pack()
-            val = tk.Label(card, text="₱ 0.00", font=("Helvetica", 20, "bold"),
-                           bg="#1B263B", fg="#4DA8DA")
-            val.pack()
+            card = tk.Frame(kpi_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
+            card.pack(side="left", expand=True, fill="both", padx=self.scale_size(10), pady=self.scale_size(5))
+            tk.Label(card, text=title, font=("Helvetica", self.scale_size(16), "bold"),
+                     bg="#FFFFFF", fg="#212529").pack(pady=(self.scale_size(10), 0))
+            val = tk.Label(card, text="₱ 0.00", font=("Helvetica", self.scale_size(20), "bold"),
+                           bg="#FFFFFF", fg="#007BFF")
+            val.pack(pady=self.scale_size(10))
             self.kpi_labels[title] = val
 
-        filter_frame = tk.Frame(main_frame, bg="#F5F6F5", padx=10, pady=10)
-        filter_frame.pack(fill="x", padx=20, pady=10)
+        filter_frame = tk.Frame(main_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
+        filter_frame.pack(fill="x", padx=self.scale_size(20), pady=self.scale_size(10))
 
         tk.Label(filter_frame, text="Month:", font=("Helvetica", self.scale_size(16)),
-                 bg="#F5F6F5", fg="#2C3E50").pack(side="left", padx=5)
+                 bg="#FFFFFF", fg="#212529").pack(side="left", padx=self.scale_size(10))
         month_var = tk.StringVar(value=str(datetime.now().month))
         month_combobox = ttk.Combobox(filter_frame, textvariable=month_var,
                                       values=[str(i) for i in range(1, 13)],
                                       font=("Helvetica", self.scale_size(14)),
                                       width=5, state="readonly")
-        month_combobox.pack(side="left", padx=5)
+        month_combobox.pack(side="left", padx=self.scale_size(5))
 
         tk.Label(filter_frame, text="Year:", font=("Helvetica", self.scale_size(16)),
-                 bg="#F5F6F5", fg="#2C3E50").pack(side="left", padx=5)
+                 bg="#FFFFFF", fg="#212529").pack(side="left", padx=self.scale_size(10))
         year_var = tk.StringVar(value=str(datetime.now().year))
         year_combobox = ttk.Combobox(filter_frame, textvariable=year_var,
                                      values=[str(i) for i in range(2020, datetime.now().year + 1)],
                                      font=("Helvetica", self.scale_size(14)),
                                      width=7, state="readonly")
-        year_combobox.pack(side="left", padx=5)
+        year_combobox.pack(side="left", padx=self.scale_size(5))
 
         apply_filter_btn = tk.Button(filter_frame, text="🔄 Apply Filter",
                                     command=lambda: self.update_tables_and_kpis(month_var, year_var, monthly_table, daily_table, monthly_frame, daily_frame),
-                                    bg="#4DA8DA", fg="white", font=("Helvetica", 14, "bold"),
-                                    padx=12, pady=6, bd=0)
-        apply_filter_btn.pack(side="left", padx=10)
+                                    bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
+                                    activebackground="#0056B3", activeforeground="#FFFFFF",
+                                    relief="flat", padx=self.scale_size(12), pady=self.scale_size(6))
+        apply_filter_btn.pack(side="left", padx=self.scale_size(10))
 
         print_report_btn = tk.Button(filter_frame, text="🖨 Print Report",
                                     command=lambda: self.print_sales_report(month_var.get(), year_var.get()),
-                                    bg="#2ECC71", fg="white", font=("Helvetica", 14, "bold"),
-                                    padx=12, pady=6, bd=0)
-        print_report_btn.pack(side="left", padx=10)
+                                    bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
+                                    activebackground="#218838", activeforeground="#FFFFFF",
+                                    relief="flat", padx=self.scale_size(12), pady=self.scale_size(6))
+        print_report_btn.pack(side="left", padx=self.scale_size(10))
 
         self.display_mode = tk.StringVar(value="Daily")
         toggle_btn = tk.Button(filter_frame, text="Show Monthly Sales",
                               command=lambda: self.toggle_sales_view(toggle_btn, monthly_frame, daily_frame, table_container),
-                              bg="#E67E22", fg="white", font=("Helvetica", 14, "bold"),
-                              padx=12, pady=6, bd=0)
-        toggle_btn.pack(side="left", padx=10)
+                              bg="#FFC107", fg="#212529", font=("Helvetica", self.scale_size(14), "bold"),
+                              activebackground="#E0A800", activeforeground="#212529",
+                              relief="flat", padx=self.scale_size(12), pady=self.scale_size(6))
+        toggle_btn.pack(side="left", padx=self.scale_size(10))
 
-        table_container = tk.Frame(main_frame, bg="#F5F6F5", padx=20, pady=20)
-        table_container.pack(fill="both", expand=True)
+        table_container = tk.Frame(main_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
+        table_container.pack(fill="both", expand=True, padx=self.scale_size(20), pady=self.scale_size(20))
 
         monthly_label = tk.Label(table_container, text="Monthly Sales Summary",
                                 font=("Helvetica", self.scale_size(18), "bold"),
-                                bg="#F5F6F5", fg="#2C3E50", name="monthly_label")
+                                bg="#FFFFFF", fg="#212529", name="monthly_label")
         monthly_label.pack_forget()
 
-        monthly_frame = tk.Frame(table_container, bg="#F5F6F5", name="monthly_frame")
+        monthly_frame = tk.Frame(table_container, bg="#FFFFFF", name="monthly_frame")
         monthly_frame.pack_forget()
 
         columns = ("Month", "TotalSales", "UnitCost", "NetProfit")
@@ -229,11 +189,11 @@ class SalesSummary:
 
         daily_label = tk.Label(table_container, text="Daily Sales Summary",
                               font=("Helvetica", self.scale_size(18), "bold"),
-                              bg="#F5F6F5", fg="#2C3E50", name="daily_label")
-        daily_label.pack(anchor="w", pady=(15, 5))
+                              bg="#FFFFFF", fg="#212529", name="daily_label")
+        daily_label.pack(anchor="w", pady=(self.scale_size(15), self.scale_size(5)))
 
-        daily_frame = tk.Frame(table_container, bg="#F5F6F5", name="daily_frame")
-        daily_frame.pack(fill="both", expand=True, pady=5)
+        daily_frame = tk.Frame(table_container, bg="#FFFFFF", name="daily_frame")
+        daily_frame.pack(fill="both", expand=True, pady=self.scale_size(5))
 
         daily_columns = ("Date", "TotalSales", "UnitCost", "NetProfit")
         daily_headers = ("DATE", "TOTAL SALES", "UNIT COST", "NET PROFIT")
@@ -382,18 +342,18 @@ class SalesSummary:
     def toggle_sales_view(self, btn, monthly_frame, daily_frame, table_container):
         if self.display_mode.get() == "Daily":
             self.display_mode.set("Monthly")
-            btn.config(text="Show Daily Sales")
+            btn.config(text="Show Daily Sales", font=("Helvetica", self.scale_size(14), "bold"))
             table_container.children['daily_label'].pack_forget()
             daily_frame.pack_forget()
-            table_container.children['monthly_label'].pack(anchor="w", pady=(0, 5))
-            monthly_frame.pack(fill="both", expand=True, pady=5)
+            table_container.children['monthly_label'].pack(anchor="w", pady=(self.scale_size(15), self.scale_size(5)))
+            monthly_frame.pack(fill="both", expand=True, pady=self.scale_size(5))
         else:
             self.display_mode.set("Daily")
-            btn.config(text="Show Monthly Sales")
+            btn.config(text="Show Monthly Sales", font=("Helvetica", self.scale_size(14), "bold"))
             table_container.children['monthly_label'].pack_forget()
             monthly_frame.pack_forget()
-            table_container.children['daily_label'].pack(anchor="w", pady=(15, 5))
-            daily_frame.pack(fill="both", expand=True, pady=5)
+            table_container.children['daily_label'].pack(anchor="w", pady=(self.scale_size(15), self.scale_size(5)))
+            daily_frame.pack(fill="both", expand=True, pady=self.scale_size(5))
 
     def print_sales_report(self, month: str, year: str) -> None:
         try:
@@ -471,6 +431,9 @@ class SalesSummary:
 
             doc = SimpleDocTemplate(report_path, pagesize=letter)
             styles = getSampleStyleSheet()
+            styles['Title'].fontSize = self.scale_size(16)
+            styles['Normal'].fontSize = self.scale_size(12)
+            styles['Heading2'].fontSize = self.scale_size(14)
             elements = []
 
             title = Paragraph("<b>Shinano Pharmacy Sales Report</b>", styles['Title'])
@@ -478,7 +441,7 @@ class SalesSummary:
             period = Paragraph(f"Period: {month_name} {year}", styles['Normal'])
             generated = Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal'])
 
-            elements.extend([title, period, generated, Spacer(1, 12)])
+            elements.extend([title, period, generated, Spacer(1, self.scale_size(12))])
 
             elements.append(Paragraph("<b>Monthly Sales Summary</b>", styles['Heading2']))
             monthly_data = [["Month", "Total Sales (₱)", "Unit Cost (₱)", "Net Profit (₱)"]]
@@ -493,17 +456,18 @@ class SalesSummary:
             else:
                 monthly_data.append(["No data available", "-", "-", "-"])
 
-            monthly_table = Table(monthly_data, hAlign="LEFT")
+            monthly_table = Table(monthly_data, colWidths=[self.scale_size(150), self.scale_size(100), self.scale_size(100), self.scale_size(100)])
             monthly_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#003366")),
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#007BFF")),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
                 ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), self.scale_size(10)),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey])
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor("#F8F9FA"), colors.HexColor("#E9ECEF")])
             ]))
             elements.append(monthly_table)
-            elements.append(Spacer(1, 24))
+            elements.append(Spacer(1, self.scale_size(24)))
 
             elements.append(Paragraph("<b>Daily Sales Summary</b>", styles['Heading2']))
             daily_data = [["Date", "Total Sales (₱)", "Unit Cost (₱)", "Net Profit (₱)"]]
@@ -520,14 +484,15 @@ class SalesSummary:
             else:
                 daily_data.append(["No data available", "-", "-", "-"])
 
-            daily_table = Table(daily_data, hAlign="LEFT")
+            daily_table = Table(daily_data, colWidths=[self.scale_size(150), self.scale_size(100), self.scale_size(100), self.scale_size(100)])
             daily_table.setStyle(TableStyle([
-                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#660000")),
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#28A745")),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
                 ('ALIGN', (1,1), (-1,-1), 'RIGHT'),
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,0), (-1,-1), self.scale_size(10)),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey])
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor("#F8F9FA"), colors.HexColor("#E9ECEF")])
             ]))
             elements.append(daily_table)
 

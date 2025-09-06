@@ -31,18 +31,108 @@ class LoginApp:
         db_path = os.path.join(db_dir, db_name)
         return db_path
 
-    def setup_database(self):
+    def create_database(self) -> None:
         try:
-            self.conn = sqlite3.connect(self.db_path)
-            cursor = self.conn.cursor()
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    username TEXT PRIMARY KEY,
-                    password TEXT,
-                    role TEXT,
-                    status TEXT DEFAULT 'Online'
-                )
-            ''')
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        username TEXT PRIMARY KEY,
+                        password TEXT,
+                        role TEXT,
+                        status TEXT DEFAULT 'Online'
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS inventory (
+                        item_id TEXT PRIMARY KEY,
+                        name TEXT,
+                        type TEXT,
+                        retail_price REAL DEFAULT 0.0,
+                        unit_price REAL DEFAULT 0.0,
+                        quantity INTEGER DEFAULT 0,
+                        supplier TEXT
+                    )
+                ''')
+                # Check if columns exist and add/rename if missing
+                cursor.execute("PRAGMA table_info(inventory)")
+                columns = [col[1] for col in cursor.fetchall()]
+                if 'retail_price' not in columns and 'price' in columns:
+                    cursor.execute("ALTER TABLE inventory RENAME COLUMN price TO retail_price")
+                    print("Renamed price to retail_price in inventory table.")
+                if 'unit_price' not in columns:
+                    cursor.execute("ALTER TABLE inventory ADD COLUMN unit_price REAL DEFAULT 0.0")
+                    print("Added unit_price column to inventory table.")
+                if 'supplier' not in columns:
+                    cursor.execute("ALTER TABLE inventory ADD COLUMN supplier TEXT")
+                    print("Added supplier column to inventory table.")
+                
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        transaction_id TEXT PRIMARY KEY,
+                        items TEXT,
+                        total_amount REAL DEFAULT 0.0,
+                        cash_paid REAL DEFAULT 0.0,
+                        change_amount REAL DEFAULT 0.0,
+                        timestamp TEXT,
+                        status TEXT,
+                        payment_method TEXT,
+                        customer_id TEXT
+                    )
+                ''')
+                cursor.execute("PRAGMA table_info(transactions)")
+                columns = [col[1] for col in cursor.fetchall()]
+                if 'payment_method' not in columns:
+                    cursor.execute("ALTER TABLE transactions ADD COLUMN payment_method TEXT")
+                if 'customer_id' not in columns:
+                    cursor.execute("ALTER TABLE transactions ADD COLUMN customer_id TEXT")
+                
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS funds (
+                        fund_id TEXT PRIMARY KEY,
+                        type TEXT,
+                        amount REAL DEFAULT 0.0,
+                        timestamp TEXT,
+                        user TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS customers (
+                        customer_id TEXT PRIMARY KEY,
+                        name TEXT,
+                        contact TEXT,
+                        address TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS likes (
+                        like_id TEXT PRIMARY KEY,
+                        transaction_id TEXT,
+                        customer_id TEXT,
+                        timestamp TEXT,
+                        user TEXT,
+                        FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id),
+                        FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS transaction_log (
+                        log_id TEXT PRIMARY KEY,
+                        action TEXT,
+                        details TEXT,
+                        timestamp TEXT,
+                        user TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS daily_sales (
+                        sale_date TEXT PRIMARY KEY,
+                        total_sales REAL DEFAULT 0.0,
+                        unit_sales INTEGER DEFAULT 0,
+                        net_profit REAL DEFAULT 0.0,
+                        user TEXT
+                    )
+                ''')
             cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
                           ("yamato", "ycb-0001", "Drug Lord", "Online"))
             cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
@@ -314,8 +404,10 @@ class LoginApp:
 
     def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):
         new_window = tk.Toplevel(current_root)
-        new_window.transient(current_root)  # Tie the module window to the dashboard
-        new_window.grab_set()  # Make the module window modal (optional, for focus)
+        # REMOVE these two lines:
+        # new_window.transient(current_root)
+        # new_window.grab_set()
+        
         if module_class == SalesSummary:
             module_class(new_window, current_user=username, user_role=role, db_path=db_path)
         else:

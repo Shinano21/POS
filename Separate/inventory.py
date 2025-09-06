@@ -98,32 +98,6 @@ class InventoryManager:
         print(f"Database path: {db_path}")
         return db_path
 
-    def create_database(self):
-        """Create inventory and transaction_log tables if they don't exist."""
-        with self.conn:
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS inventory (
-                    item_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    type TEXT NOT NULL,
-                    retail_price REAL NOT NULL,
-                    unit_price REAL,
-                    quantity INTEGER NOT NULL,
-                    supplier TEXT
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transaction_log (
-                    log_id TEXT PRIMARY KEY,
-                    action TEXT NOT NULL,
-                    details TEXT,
-                    timestamp TEXT NOT NULL,
-                    user TEXT
-                )
-            """)
-            self.conn.commit()
-
     def scale_size(self, size: int) -> int:
         """Scale widget sizes based on screen resolution."""
         base_resolution = 1920

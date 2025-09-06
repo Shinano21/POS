@@ -92,60 +92,7 @@ class Dashboard:
         style.layout("Cart.Treeview", [('Cart.Treeview.treearea', {'sticky': 'nswe'})])
         style.configure("Cart.Treeview.Heading", font=("Helvetica", self.scale_size(16), "bold"), background="#E9ECEF", foreground="#343A40")
 
-    def create_database(self):
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS inventory (
-                    item_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    quantity INTEGER NOT NULL,
-                    retail_price REAL NOT NULL,
-                    unit_price REAL NOT NULL,
-                    supplier TEXT
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    username TEXT PRIMARY KEY,
-                    password TEXT NOT NULL,
-                    role TEXT NOT NULL
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transactions (
-                    transaction_id TEXT PRIMARY KEY,
-                    items TEXT NOT NULL,
-                    total_amount REAL NOT NULL,
-                    cash_paid REAL,
-                    change_amount REAL,
-                    timestamp TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    payment_method TEXT,
-                    customer_id TEXT
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS transaction_log (
-                    log_id TEXT PRIMARY KEY,
-                    action TEXT NOT NULL,
-                    details TEXT,
-                    timestamp TEXT NOT NULL,
-                    user TEXT
-                )
-            """)
-            cursor.execute("SELECT COUNT(*) FROM inventory")
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO inventory (item_id, name, quantity, retail_price, unit_price, supplier) VALUES (?, ?, ?, ?, ?, ?)",
-                              ("item1", "Paracetamol", 100, 10.0, 5.0, "SupplierA"))
-            cursor.execute("SELECT COUNT(*) FROM users")
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-                              ("admin", "admin123", "Drug Lord"))
-            self.conn.commit()
-        except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to set up database: {e}", parent=self.root)
-            self.root.destroy()
+    
 
     def initialize_inventory_with_receipt(self):
         pass
