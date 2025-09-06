@@ -2,22 +2,71 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
 import os
+import platform
 from typing import Optional
 from dashboard import Dashboard
 from inventory import InventoryManager
 from transactions import TransactionManager
 from sales_summary import SalesSummary
 
+try:
+    from PIL import Image
+    pillow_available = True
+except ImportError:
+    pillow_available = False
+
 class LoginApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Shinano POS - Login")
-        self.root.geometry("400x300")
+        self.root.geometry("300x250")
         self.root.configure(bg="#F5F6F5")
+        self.set_window_icon(self.root)
         self.db_path = self.get_writable_db_path()
         self.conn = None
-        self.create_database()  # Changed from setup_database to create_database
+        self.create_database()
         self.setup_gui()
+
+    def set_window_icon(self, window: tk.Tk):
+        """Set the window and taskbar icon for the given window."""
+        try:
+            # Determine the path to the icon files
+            base_path = os.path.dirname(__file__)
+            ico_path = os.path.join(base_path, "shinano.ico")
+            png_path = os.path.join(base_path, "shinano.png")
+
+            # Check if ICO file exists for Windows taskbar
+            if platform.system() == "Windows":
+                if os.path.exists(ico_path):
+                    window.iconbitmap(ico_path)
+                elif os.path.exists(png_path) and pillow_available:
+                    # Convert PNG to ICO if Pillow is available
+                    try:
+                        img = Image.open(png_path)
+                        img.save(ico_path, format="ICO")
+                        window.iconbitmap(ico_path)
+                    except Exception as e:
+                        print(f"Error converting PNG to ICO: {e}")
+                        messagebox.showwarning("Warning", "Failed to convert icon for taskbar", parent=window)
+                else:
+                    # Fallback to iconphoto for PNG
+                    try:
+                        icon = tk.PhotoImage(file=png_path)
+                        window.iconphoto(True, icon)
+                    except tk.TclError as e:
+                        print(f"Error loading PNG icon: {e}")
+                        messagebox.showwarning("Warning", "Failed to load application icon", parent=window)
+            else:
+                # For non-Windows platforms, use iconphoto with PNG
+                if os.path.exists(png_path):
+                    icon = tk.PhotoImage(file=png_path)
+                    window.iconphoto(True, icon)
+                else:
+                    print("Icon file (shinano.png) not found")
+                    messagebox.showwarning("Warning", "Application icon not found", parent=window)
+        except tk.TclError as e:
+            print(f"Error setting icon: {e}")
+            messagebox.showwarning("Warning", "Failed to set application icon", parent=window)
 
     def get_writable_db_path(self, db_name="pharmacy.db") -> str:
         app_data = os.getenv('APPDATA', os.path.expanduser("~"))
@@ -33,7 +82,7 @@ class LoginApp:
 
     def create_database(self) -> None:
         try:
-            self.conn = sqlite3.connect(self.db_path)  # Initialize connection here
+            self.conn = sqlite3.connect(self.db_path)
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute('''
@@ -55,7 +104,6 @@ class LoginApp:
                         supplier TEXT
                     )
                 ''')
-                # Check if columns exist and add/rename if missing
                 cursor.execute("PRAGMA table_info(inventory)")
                 columns = [col[1] for col in cursor.fetchall()]
                 if 'retail_price' not in columns and 'price' in columns:
@@ -200,6 +248,7 @@ class LoginApp:
     def redirect_to_module(self, username: str, role: str):
         self.root.destroy()
         new_root = tk.Tk()
+        self.set_window_icon(new_root)
         if role == "Drug Lord":
             self.show_account_management(new_root, username, role)
         elif role == "Manager":
@@ -219,8 +268,9 @@ class LoginApp:
 
     def show_account_management(self, root: tk.Tk, username: str, role: str):
         root.title("Account Management")
-        root.geometry("800x600")
+        root.geometry("300x500")
         root.configure(bg="#F5F6F5")
+        self.set_window_icon(root)
         tk.Label(root, text="Account Management - Drug Lord", font=("Helvetica", self.scale_size(18, root), "bold"),
                  bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(20, root))
         tk.Button(root, text="Manage Users", command=lambda: self.manage_users(root, username, role),
@@ -233,6 +283,7 @@ class LoginApp:
         manage_window.title("Manage Users")
         manage_window.geometry("600x400")
         manage_window.configure(bg="#F5F6F5")
+        self.set_window_icon(manage_window)
 
         tk.Label(manage_window, text="User Management", font=("Helvetica", self.scale_size(16, root), "bold"),
                  bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10, root))
@@ -253,7 +304,6 @@ class LoginApp:
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to load users: {e}", parent=manage_window)
 
-        # Frame for buttons
         button_frame = tk.Frame(manage_window, bg="#F5F6F5")
         button_frame.pack(pady=5)
 
@@ -271,6 +321,7 @@ class LoginApp:
         add_window.title("Add User")
         add_window.geometry("400x300")
         add_window.configure(bg="#F5F6F5")
+        self.set_window_icon(add_window)
 
         tk.Label(add_window, text="Username:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
         username_entry = tk.Entry(add_window, font=("Helvetica", self.scale_size(14, root)))
@@ -322,6 +373,7 @@ class LoginApp:
         update_window.title("Update User")
         update_window.geometry("400x300")
         update_window.configure(bg="#F5F6F5")
+        self.set_window_icon(update_window)
 
         tk.Label(update_window, text=f"Updating User: {username}", font=("Helvetica", self.scale_size(14, root), "bold"),
                  bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
@@ -340,7 +392,6 @@ class LoginApp:
             new_role = role_var.get()
             if not new_password:
                 messagebox.showerror("Error", "Password is required", parent=update_window)
-                return
             try:
                 with self.conn:
                     cursor = self.conn.cursor()
@@ -384,6 +435,7 @@ class LoginApp:
         root.title("Manager Dashboard")
         root.geometry("300x400")
         root.configure(bg="#F5F6F5")
+        self.set_window_icon(root)
 
         main_frame = tk.Frame(root, bg="#F5F6F5")
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
@@ -405,6 +457,7 @@ class LoginApp:
 
     def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):
         new_window = tk.Toplevel(current_root)
+        self.set_window_icon(new_window)
         if module_class == SalesSummary:
             module_class(new_window, current_user=username, user_role=role, db_path=db_path)
         else:

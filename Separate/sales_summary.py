@@ -73,6 +73,7 @@ class SalesSummary:
         style.map("Treeview", background=[("selected", "#007BFF")], foreground=[("selected", "#FFFFFF")])
         style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
         style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(14), "bold"), background="#E9ECEF", foreground="#212529")
+        style.configure("grand_total.Treeview", font=("Helvetica", self.scale_size(14), "bold"), background="#E9ECEF")
 
     def clear_frame(self):
         for widget in self.main_frame.winfo_children():
@@ -242,6 +243,12 @@ class SalesSummary:
                 transactions_count = cursor.fetchone()[0]
                 print(f"Debug: daily_sales rows: {daily_sales_count}, transactions rows: {transactions_count}")
 
+                # Initialize grand totals for monthly table
+                grand_total_sales = 0.0
+                grand_total_unit_cost = 0.0
+                grand_total_net_profit = 0.0
+
+                # Fetch monthly data for the selected month and year
                 cursor.execute('''
                     SELECT strftime('%m', sale_date) AS month,
                            SUM(total_sales) AS total_sales,
@@ -252,25 +259,42 @@ class SalesSummary:
                                WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
                            )) AS total_unit_cost
                     FROM daily_sales d
-                    WHERE strftime('%Y', sale_date) = ?
+                    WHERE strftime('%Y', sale_date) = ? AND strftime('%m', sale_date) = ?
                     GROUP BY strftime('%m', sale_date)
-                    ORDER BY month
-                ''', (year,))
+                ''', (year, month.zfill(2)))
                 monthly_data = cursor.fetchall()
-                print(f"Debug: Monthly data for {year}: {monthly_data}")
+                print(f"Debug: Monthly data for {year}-{month.zfill(2)}: {monthly_data}")
                 month_names = {str(i).zfill(2): name for i, name in enumerate(
                     ["January", "February", "March", "April", "May", "June",
                      "July", "August", "September", "October", "November", "December"], 1)}
                 for row in monthly_data:
                     month_num, total_sales, total_unit_cost = row
-                    net_profit = (total_sales if total_sales is not None else 0) - (total_unit_cost if total_unit_cost is not None else 0)
+                    total_sales = total_sales if total_sales is not None else 0
+                    total_unit_cost = total_unit_cost if total_unit_cost is not None else 0
+                    net_profit = total_sales - total_unit_cost
+                    # Accumulate grand totals
+                    grand_total_sales += total_sales
+                    grand_total_unit_cost += total_unit_cost
+                    grand_total_net_profit += net_profit
                     monthly_table.insert("", "end", values=(
                         month_names.get(month_num, month_num),
-                        f"₱ {total_sales if total_sales is not None else 0:.2f}",
-                        f"₱ {total_unit_cost if total_unit_cost is not None else 0:.2f}",
+                        f"₱ {total_sales:.2f}",
+                        f"₱ {total_unit_cost:.2f}",
                         f"₱ {net_profit:.2f}"
                     ))
 
+                # Insert grand totals row for monthly table
+                if monthly_data:
+                    monthly_table.insert("", "end", values=(
+                        "GRAND TOTAL",
+                        f"₱ {grand_total_sales:.2f}",
+                        f"₱ {grand_total_unit_cost:.2f}",
+                        f"₱ {grand_total_net_profit:.2f}"
+                    ), tags=("grand_total",))
+                else:
+                    monthly_table.insert("", "end", values=("No data", "₱ 0.00", "₱ 0.00", "₱ 0.00"))
+
+                # Fetch daily data (unchanged)
                 cursor.execute('''
                     SELECT sale_date,
                            total_sales,
@@ -288,16 +312,16 @@ class SalesSummary:
                 print(f"Debug: Daily data for {year}-{month.zfill(2)}: {daily_data}")
                 for row in daily_data:
                     sale_date, total_sales, total_unit_cost = row
-                    net_profit = (total_sales if total_sales is not None else 0) - (total_unit_cost if total_unit_cost is not None else 0)
+                    total_sales = total_sales if total_sales is not None else 0
+                    total_unit_cost = total_unit_cost if total_unit_cost is not None else 0
+                    net_profit = total_sales - total_unit_cost
                     daily_table.insert("", "end", values=(
                         sale_date,
-                        f"₱ {total_sales if total_sales is not None else 0:.2f}",
-                        f"₱ {total_unit_cost if total_unit_cost is not None else 0:.2f}",
+                        f"₱ {total_sales:.2f}",
+                        f"₱ {total_unit_cost:.2f}",
                         f"₱ {net_profit:.2f}"
                     ))
 
-                if not monthly_data:
-                    monthly_table.insert("", "end", values=("No data", "₱ 0.00", "₱ 0.00", "₱ 0.00"))
                 if not daily_data:
                     daily_table.insert("", "end", values=("No data", "₱ 0.00", "₱ 0.00", "₱ 0.00"))
 
@@ -389,30 +413,37 @@ class SalesSummary:
             daily_sales = {}
             with self.conn:
                 cursor = self.conn.cursor()
+                # Fetch monthly data for the selected month and year
                 cursor.execute("""
-                    SELECT strftime('%Y-%m', timestamp) AS month, items, total_amount
-                    FROM transactions
-                    WHERE status = 'Completed' AND timestamp >= ? AND timestamp < ?
-                """, (start_date, end_date))
-                for month_str, items, total_amount in cursor.fetchall():
-                    if month_str not in monthly_sales:
-                        monthly_sales[month_str] = {"unit_sales": 0.0, "grand_sales": 0.0}
-                    unit_sales = 0.0
-                    for item_data in items.split(";"):
-                        if item_data:
-                            try:
-                                item_id, qty = item_data.split(":")
-                                qty = int(qty)
-                                cursor.execute("SELECT unit_price FROM inventory WHERE item_id = ?",
-                                              (item_id,))
-                                item = cursor.fetchone()
-                                if item:
-                                    unit_sales += item[0] * qty
-                            except (ValueError, IndexError):
-                                continue
-                    monthly_sales[month_str]["unit_sales"] += unit_sales
-                    monthly_sales[month_str]["grand_sales"] += total_amount
+                    SELECT strftime('%Y-%m', sale_date) AS month,
+                           SUM(total_sales) AS total_sales,
+                           SUM((
+                               SELECT SUM(CAST(SUBSTR(t2.items, instr(t2.items, ':') + 1) AS INTEGER) * i.unit_price)
+                               FROM transactions t2
+                               JOIN inventory i ON instr(t2.items, i.item_id) > 0
+                               WHERE strftime('%Y-%m-%d', t2.timestamp) = d.sale_date
+                           )) AS total_unit_cost
+                    FROM daily_sales d
+                    WHERE strftime('%Y', sale_date) = ? AND strftime('%m', sale_date) = ?
+                    GROUP BY strftime('%m', sale_date)
+                """, (year, str(month).zfill(2)))
+                monthly_data = cursor.fetchall()
+                # Initialize grand totals for monthly table
+                grand_total_sales = 0.0
+                grand_total_unit_cost = 0.0
+                grand_total_net_profit = 0.0
+                for month_str, total_sales, total_unit_cost in monthly_data:
+                    total_sales = total_sales if total_sales is not None else 0.0
+                    total_unit_cost = total_unit_cost if total_unit_cost is not None else 0.0
+                    monthly_sales[month_str] = {
+                        "grand_sales": total_sales,
+                        "unit_sales": total_unit_cost
+                    }
+                    grand_total_sales += total_sales
+                    grand_total_unit_cost += total_unit_cost
+                    grand_total_net_profit += (total_sales - total_unit_cost)
 
+                # Fetch daily data
                 cursor.execute("""
                     SELECT strftime('%Y-%m-%d', timestamp) AS date, items, total_amount
                     FROM transactions
@@ -469,6 +500,8 @@ class SalesSummary:
                     net_profit = grand_sales - unit_sales
                     month_display = datetime.strptime(month_str, "%Y-%m").strftime("%B %Y")
                     monthly_data.append([month_display, f"{grand_sales:,.2f}", f"{unit_sales:,.2f}", f"{net_profit:,.2f}"])
+                # Add grand totals row
+                monthly_data.append(["GRAND TOTAL", f"{grand_total_sales:,.2f}", f"{grand_total_unit_cost:,.2f}", f"{grand_total_net_profit:,.2f}"])
             else:
                 monthly_data.append(["No data available", "-", "-", "-"])
 
@@ -480,7 +513,9 @@ class SalesSummary:
                 ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
                 ('FONTSIZE', (0,0), (-1,-1), self.scale_size(10)),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor("#F8F9FA"), colors.HexColor("#E9ECEF")])
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor("#F8F9FA"), colors.HexColor("#E9ECEF")]),
+                ('FONTNAME', (0,-1), (-1,-1), 'Helvetica-Bold'),  # Bold font for grand totals
+                ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor("#E9ECEF"))  # Distinct background for grand totals
             ]))
             elements.append(monthly_table)
             elements.append(Spacer(1, self.scale_size(24)))
