@@ -105,9 +105,17 @@ class InventoryManager:
         tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(10))
         password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
         password_entry.pack(pady=self.scale_size(10))
-        password_entry.bind("<Return>", lambda event: callback(password_entry.get(), window, **kwargs))
+        
+        def validate_and_submit(event=None):
+            password = password_entry.get().strip()
+            if not password:
+                messagebox.showerror("Error", "Password is required", parent=window)
+                return
+            callback(password, window, **kwargs)
+
+        password_entry.bind("<Return>", validate_and_submit)
         tk.Button(window, text="✓ Submit",
-                 command=lambda: callback(password_entry.get(), window, **kwargs),
+                 command=validate_and_submit,
                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                  activebackground="#0056B3", activeforeground="#FFFFFF",
                  relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
@@ -115,9 +123,11 @@ class InventoryManager:
 
     def show_inventory(self):
         if self.user_role == "Drug Lord":
-            messagebox.showerror("Access Denied", "Admins can only access Account Management.", parent=self.root)
-            self.root.destroy()
-            return
+            self.create_password_auth_window(
+                "Authenticate Inventory Access",
+                "Enter admin password to access inventory",
+                self.validate_inventory_access_auth
+            )
         elif self.user_role == "Manager":
             self.display_inventory()
         else:

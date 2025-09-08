@@ -107,11 +107,21 @@ class TransactionManager:
         tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(10))
         password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
         password_entry.pack(pady=self.scale_size(10))
-        tk.Button(window, text="Submit",
-                  command=lambda: callback(password_entry.get(), window, **kwargs),
-                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18)),
+        
+        def validate_and_submit(event=None):
+            password = password_entry.get().strip()
+            if not password:
+                messagebox.showerror("Error", "Password is required", parent=window)
+                return
+            callback(password, window, **kwargs)
+
+        password_entry.bind("<Return>", validate_and_submit)
+        tk.Button(window, text="✓ Submit",
+                  command=validate_and_submit,
+                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                   activebackground="#0056B3", activeforeground="#FFFFFF",
                   relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
+        password_entry.focus_set()
 
     def get_user_role(self):
         return self.user_role
@@ -474,6 +484,27 @@ class TransactionManager:
                 self.conn.close()
                 self.conn = None
 
+    def validate_edit_transaction_fields(self, quantity_entries: Dict, parent: tk.Toplevel) -> bool:
+        """Validate that quantity fields are non-negative integers and at least one item has quantity > 0."""
+        has_non_zero_quantity = False
+        for item_iid in quantity_entries:
+            item = quantity_entries[item_iid]["item"]
+            entry = quantity_entries[item_iid]["entry"]
+            try:
+                qty = int(entry.get().strip())
+                if qty < 0:
+                    messagebox.showerror("Error", f"Quantity for {item['name']} cannot be negative", parent=parent)
+                    return False
+                if qty > 0:
+                    has_non_zero_quantity = True
+            except ValueError:
+                messagebox.showerror("Error", f"Invalid quantity for {item['name']}. Please enter a valid number", parent=parent)
+                return False
+        if not has_non_zero_quantity:
+            messagebox.showerror("Error", "Transaction must have at least one item with quantity greater than zero", parent=parent)
+            return False
+        return True
+
     def show_edit_transaction(self, transaction_id: str) -> None:
         try:
             self.conn = sqlite3.connect(self.db_path)
@@ -525,26 +556,29 @@ class TransactionManager:
                 edit_table.pack(fill="both", expand=True)
 
                 quantity_entries = {}
-                for item in edit_items:
-                    item_iid = edit_table.insert("", "end", values=(item["name"], item["original_quantity"], item["current_quantity"]))
-                    quantity_entries[item_iid] = {"item": item, "entry": None}
+                vcmd_int = (self.root.register(lambda P: P.isdigit() or P == ""), "%P")
 
                 def update_quantity_fields():
                     for item_iid in edit_table.get_children():
-                        item_data = quantity_entries[item_iid]["item"]
+                        edit_table.delete(item_iid)
+                    quantity_entries.clear()
+                    for item in edit_items:
+                        item_iid = edit_table.insert("", "end", values=(item["name"], item["original_quantity"], item["current_quantity"]))
                         frame = tk.Frame(content_frame, bg="#FFFFFF")
                         frame.pack(fill="x", pady=self.scale_size(2))
-                        tk.Label(frame, text=item_data["name"], font=("Helvetica", self.scale_size(12)), bg="#FFFFFF", fg="#212529").pack(side="left")
-                        entry = tk.Entry(frame, font=("Helvetica", self.scale_size(12)), bg="#FFFFFF", fg="#212529", width=10)
-                        entry.insert(0, str(item_data["current_quantity"]))
+                        tk.Label(frame, text=item["name"], font=("Helvetica", self.scale_size(12)), bg="#FFFFFF", fg="#212529").pack(side="left")
+                        entry = tk.Entry(frame, font=("Helvetica", self.scale_size(12)), bg="#FFFFFF", fg="#212529", width=10, validate="key", validatecommand=vcmd_int)
+                        entry.insert(0, str(item["current_quantity"]))
                         entry.pack(side="left", padx=self.scale_size(5))
-                        quantity_entries[item_iid]["entry"] = entry
-                        edit_table.item(item_iid, values=(item_data["name"], item_data["original_quantity"], item_data["current_quantity"]))
+                        entry.bind("<Return>", lambda event: self.validate_edit_transaction_fields(quantity_entries, window) and self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window))
+                        quantity_entries[item_iid] = {"item": item, "entry": entry}
+                        edit_table.item(item_iid, values=(item["name"], item["original_quantity"], item["current_quantity"]))
+                        entry.focus_set()  # Set focus to the first entry
 
                 update_quantity_fields()
 
-                tk.Button(content_frame, text="Confirm Changes",
-                          command=lambda: self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
+                tk.Button(content_frame, text="✓ Confirm Changes",
+                          command=lambda: self.validate_edit_transaction_fields(quantity_entries, window) and self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
                           bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                           activebackground="#0056B3", activeforeground="#FFFFFF",
                           relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
