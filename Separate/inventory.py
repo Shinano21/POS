@@ -56,11 +56,9 @@ class InventoryManager:
 
     def get_display_scaling(self) -> float:
         try:
-            # Get DPI for the window (96 is standard DPI for 100% scaling)
             hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
             dpi = ctypes.windll.user32.GetDpiForWindow(hwnd)
-            scaling_factor = dpi / 96.0  # Convert DPI to scaling factor
-            # Round to nearest supported scaling factor (125%, 150%, 175%, 200%)
+            scaling_factor = dpi / 96.0
             supported_scales = [1.25, 1.5, 1.75, 2.0]
             scaling_factor = min(supported_scales, key=lambda x: abs(x - scaling_factor))
             return scaling_factor
@@ -98,25 +96,21 @@ class InventoryManager:
             os.chmod(db_path, 0o666)
         return db_path
 
-   
-
     def create_password_auth_window(self, title: str, prompt: str, callback, **kwargs):
         window = tk.Toplevel(self.root)
         window.title(title)
         window.geometry(f"{self.scale_size(400)}x{self.scale_size(200)}")
-        window.configure(bg="#FFFFFF")
+        window.configure(bg="#F8F9FA")
         self.enable_windows_controls_toplevel(window)
-        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(14)), bg="#FFFFFF", fg="#212529").pack(pady=self.scale_size(10))
-        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA", fg="#212529")
+        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(10))
+        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
         password_entry.pack(pady=self.scale_size(10))
-        # Bind Enter key to the callback
         password_entry.bind("<Return>", lambda event: callback(password_entry.get(), window, **kwargs))
-        tk.Button(window, text="Submit",
-                command=lambda: callback(password_entry.get(), window, **kwargs),
-                bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(14), "bold"),
-                activebackground="#0056B3", activeforeground="#FFFFFF",
-                relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
-        # Focus on the password entry for immediate typing
+        tk.Button(window, text="✓ Submit",
+                 command=lambda: callback(password_entry.get(), window, **kwargs),
+                 bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                 activebackground="#0056B3", activeforeground="#FFFFFF",
+                 relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
         password_entry.focus_set()
 
     def show_inventory(self):
@@ -165,24 +159,24 @@ class InventoryManager:
         tk.Label(search_frame, text="Filter:", font=("Helvetica", self.scale_size(18)),
                 bg="#FFFFFF", fg="#212529").pack(side="left", padx=(self.scale_size(6), self.scale_size(5)))
         self.type_filter_var = tk.StringVar()
-        categories = self.get_item_types() + ["Other", "All"]  # Include "Other" and "All" for filtering
+        categories = self.get_item_types() + ["Other", "All"]
         self.type_filter_combobox = ttk.Combobox(search_frame, textvariable=self.type_filter_var,
                                                 values=categories, state="readonly", font=("Helvetica", self.scale_size(18)))
         self.type_filter_combobox.pack(side="left", padx=self.scale_size(5))
         self.type_filter_combobox.set("All")
         self.type_filter_combobox.bind("<<ComboboxSelected>>", self.update_inventory_table)
 
-        tk.Button(search_frame, text="Add Item",
-                command=self.show_add_item,
-                bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
-                activebackground="#0056B3", activeforeground="#FFFFFF",
-                relief="flat", padx=self.scale_size(12), pady=self.scale_size(8)).pack(side="right", padx=self.scale_size(5))
+        tk.Button(search_frame, text="✚",
+                 command=self.show_add_item,
+                 bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                 activebackground="#0056B3", activeforeground="#FFFFFF",
+                 relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(side="right", padx=self.scale_size(5))
 
-        tk.Button(search_frame, text="📤 Upload CSV",
-                command=self.upload_inventory_csv,
-                bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
-                activebackground="#0056B3", activeforeground="#FFFFFF",
-                relief="flat", padx=self.scale_size(12), pady=self.scale_size(8)).pack(side="right", padx=self.scale_size(5))
+        tk.Button(search_frame, text="📤",
+                 command=self.upload_inventory_csv,
+                 bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                 activebackground="#0056B3", activeforeground="#FFFFFF",
+                 relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(side="right", padx=self.scale_size(5))
 
         inventory_frame = tk.Frame(content_frame, bg="#FFFFFF")
         inventory_frame.grid(row=1, column=0, sticky="nsew", pady=self.scale_size(10))
@@ -205,26 +199,26 @@ class InventoryManager:
         button_frame = tk.Frame(content_frame, bg="#FFFFFF")
         button_frame.grid(row=2, column=0, sticky="ew", pady=self.scale_size(10))
 
-        self.update_item_btn = tk.Button(button_frame, text="Update Item",
+        self.update_item_btn = tk.Button(button_frame, text="📝",
                                         command=self.show_update_item_from_selection,
                                         bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                                         activebackground="#0056B3", activeforeground="#FFFFFF",
-                                        relief="flat", padx=self.scale_size(12), pady=self.scale_size(8), state="disabled")
+                                        relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.update_item_btn.grid(row=0, column=0, padx=self.scale_size(5), sticky="w")
 
-        self.delete_item_btn = tk.Button(button_frame, text="Delete Item",
+        self.delete_item_btn = tk.Button(button_frame, text="🗑️",
                                         command=self.confirm_delete_item,
                                         bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                                         activebackground="#C82333", activeforeground="#FFFFFF",
-                                        relief="flat", padx=self.scale_size(12), pady=self.scale_size(8), state="disabled")
+                                        relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.delete_item_btn.grid(row=0, column=1, padx=self.scale_size(5), sticky="w")
 
         if self.user_role == "Manager" and self.back_callback:
-            tk.Button(button_frame, text="Back to Main Menu",
-                    command=self.back_to_manager_dashboard,
-                    bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
-                    activebackground="#0056B3", activeforeground="#FFFFFF",
-                    relief="flat", padx=self.scale_size(12), pady=self.scale_size(8)).grid(row=0, column=2, padx=self.scale_size(5), sticky="w")
+            tk.Button(button_frame, text="← Back",
+                     command=self.back_to_manager_dashboard,
+                     bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                     activebackground="#0056B3", activeforeground="#FFFFFF",
+                     relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).grid(row=0, column=2, padx=self.scale_size(5), sticky="w")
 
         style = ttk.Style()
         style.configure("Treeview", background="#FFFFFF", foreground="#212529", fieldbackground="#FFFFFF",
@@ -282,10 +276,7 @@ class InventoryManager:
                                 messagebox.showwarning("Warning", f"Invalid data for item {name}: Negative values not allowed", parent=self.root)
                                 continue
 
-                            # Capitalize name for consistency with add_item and update_item
                             name = name.capitalize()
-
-                            # Check for duplicate based on name (case-insensitive), type, and supplier
                             cursor.execute("SELECT COUNT(*) FROM inventory WHERE LOWER(name) = LOWER(?) AND type = ? AND supplier = ?", (name, item_type, supplier))
                             if cursor.fetchone()[0]:
                                 items_skipped += 1
@@ -310,7 +301,7 @@ class InventoryManager:
                     self.conn.commit()
 
             self.update_inventory_table()
-            self.refresh_type_comboboxes()  # Update type comboboxes to include new types from CSV
+            self.refresh_type_comboboxes()
             messagebox.showinfo("Success", f"Inventory updated: {items_added} items added, {items_skipped} duplicates skipped", parent=self.root)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to process CSV file: {e}", parent=self.root)
@@ -328,7 +319,7 @@ class InventoryManager:
                 "Authenticate Deletion",
                 "Enter admin password to delete item",
                 self.validate_delete_item_auth,
-                selected_item=selected_item[0]  # Pass the item_id directly
+                selected_item=selected_item[0]
             )
 
     def validate_delete_item_auth(self, password: str, window: tk.Toplevel, **kwargs):
@@ -383,11 +374,23 @@ class InventoryManager:
             profitability_label.config(text="N/A", fg="#212529")
             error_label.config(text="Enter valid prices", fg="#DC3545")
 
+    def validate_required_fields(self, entries: dict, type_var: tk.StringVar, custom_type_entry: tk.Entry, parent: tk.Toplevel) -> bool:
+        """Validate that required fields are filled and Type is valid."""
+        required_fields = ["Name", "Retail Price"]
+        for field in required_fields:
+            if not entries[field].get().strip():
+                messagebox.showerror("Error", f"{field} is required", parent=parent)
+                return False
+        if type_var.get() == "Other" and not custom_type_entry.get().strip():
+            messagebox.showerror("Error", "Please enter a custom type when 'Other' is selected", parent=parent)
+            return False
+        return True
+
     def show_add_item(self):
         window = tk.Toplevel(self.root)
         window.title("Add New Item to Inventory")
         window.geometry(f"{self.scale_size(800)}x{self.scale_size(520)}")
-        window.configure(bg="#FFFFFF")
+        window.configure(bg="#F8F9FA")
         self.enable_windows_controls_toplevel(window)
 
         add_box = tk.Frame(window, bg="#FFFFFF", padx=self.scale_size(20), pady=self.scale_size(20), relief="raised", highlightbackground="#DEE2E6", highlightthickness=1)
@@ -418,33 +421,45 @@ class InventoryManager:
             if field == "Item ID (Barcode)":
                 entry.insert(0, f"ITEM-{str(uuid.uuid4())[:8]}")
                 entry.config(state="readonly")
+            else:
+                # Bind Enter key to validate and submit
+                entry.bind("<Return>", lambda event: self.validate_required_fields(entries, type_var, custom_type_entry, window) and self.add_item(
+                    entries["Item ID (Barcode)"].get(), entries["Name"].get(),
+                    custom_type_entry.get().strip().capitalize() if type_var.get() == "Other" else type_var.get(),
+                    entries["Retail Price"].get(), entries["Unit Price"].get(),
+                    entries["Quantity"].get(), entries["Supplier"].get(), window
+                ))
 
         next_row = (len(fields) + 1) // 2 + 1
 
-        # Type selection
         type_frame = tk.Frame(add_box, bg="#FFFFFF")
         type_frame.grid(row=next_row, column=0, columnspan=4, sticky="ew", pady=self.scale_size(5))
         tk.Label(type_frame, text="Type", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529").pack(side="left")
-        
-        categories = self.get_item_types() + ["Other"]  # Add "Other" only for combobox
+        categories = self.get_item_types() + ["Other"]
         type_var = tk.StringVar(value=categories[0] if categories else "Other")
         type_combobox = ttk.Combobox(type_frame, textvariable=type_var, values=categories, state="readonly", font=("Helvetica", self.scale_size(18)))
         type_combobox.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
 
         custom_type_entry = tk.Entry(type_frame, font=("Helvetica", self.scale_size(18)), bg="#F8F9FA", fg="#212529")
         custom_type_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
-        custom_type_entry.pack_forget()  # Hide by default
+        custom_type_entry.pack_forget()
+        # Bind Enter key to validate and submit
+        custom_type_entry.bind("<Return>", lambda event: self.validate_required_fields(entries, type_var, custom_type_entry, window) and self.add_item(
+            entries["Item ID (Barcode)"].get(), entries["Name"].get(),
+            custom_type_entry.get().strip().capitalize() if type_var.get() == "Other" else type_var.get(),
+            entries["Retail Price"].get(), entries["Unit Price"].get(),
+            entries["Quantity"].get(), entries["Supplier"].get(), window
+        ))
 
         def on_type_change(event):
             if type_var.get() == "Other":
                 custom_type_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
-                custom_type_entry.delete(0, tk.END)  # Clear previous entry
+                custom_type_entry.delete(0, tk.END)
             else:
                 custom_type_entry.pack_forget()
 
         type_combobox.bind("<<ComboboxSelected>>", on_type_change)
 
-        # Markup and profitability
         markup_frame = tk.Frame(add_box, bg="#FFFFFF")
         markup_frame.grid(row=next_row + 1, column=0, columnspan=2, sticky="ew", pady=self.scale_size(5))
         tk.Label(markup_frame, text="Markup %", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529").pack(side="left")
@@ -479,16 +494,16 @@ class InventoryManager:
         button_frame = tk.Frame(add_box, bg="#FFFFFF")
         button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=self.scale_size(15))
 
-        tk.Button(button_frame, text="Add Item",
-                command=lambda: self.add_item(
+        tk.Button(button_frame, text="✓ Submit",
+                 command=lambda: self.validate_required_fields(entries, type_var, custom_type_entry, window) and self.add_item(
                     entries["Item ID (Barcode)"].get(), entries["Name"].get(),
                     custom_type_entry.get().strip().capitalize() if type_var.get() == "Other" else type_var.get(),
                     entries["Retail Price"].get(), entries["Unit Price"].get(),
                     entries["Quantity"].get(), entries["Supplier"].get(), window
-                ),
-                bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
-                activebackground="#218838", activeforeground="#FFFFFF",
-                relief="flat", padx=self.scale_size(12), pady=self.scale_size(8)).pack()
+                 ),
+                 bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                 activebackground="#218838", activeforeground="#FFFFFF",
+                 relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack()
 
         add_box.columnconfigure(0, weight=1)
         add_box.columnconfigure(2, weight=1)
@@ -496,7 +511,7 @@ class InventoryManager:
     def add_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, window: tk.Toplevel):
         try:
             retail_price = float(retail_price) if retail_price.strip() else 0.0
-            unit_price = float(unit_price) if unit_price.strip() else 0.0
+            unit_price = float(unit_price) if retail_price.strip() else 0.0
             quantity = int(quantity) if quantity.strip() else 0
 
             if not name or retail_price <= 0:
@@ -510,7 +525,7 @@ class InventoryManager:
                 return
 
             name = name.capitalize()
-            item_type = item_type.capitalize()  # Ensure type is capitalized
+            item_type = item_type.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else str(uuid.uuid4())
 
@@ -572,7 +587,7 @@ class InventoryManager:
                 window = tk.Toplevel(self.root)
                 window.title("Update Item")
                 window.geometry(f"{self.scale_size(800)}x{self.scale_size(520)}")
-                window.configure(bg="#FFFFFF")
+                window.configure(bg="#F8F9FA")
                 self.enable_windows_controls_toplevel(window)
 
                 update_box = tk.Frame(window, bg="#FFFFFF", padx=self.scale_size(20), pady=self.scale_size(20), relief="raised", highlightbackground="#DEE2E6", highlightthickness=1)
@@ -595,14 +610,21 @@ class InventoryManager:
                     entries[field] = entry
                     value = item[field_indices[field]] if field_indices[field] < len(item) and item[field_indices[field]] is not None else ""
                     entry.insert(0, str(value))
+                    if field != "Item ID (Barcode)":  # Skip readonly field
+                        # Bind Enter key to validate and submit
+                        entry.bind("<Return>", lambda event: self.validate_required_fields(entries, type_var, custom_type_entry, window) and self.update_item(
+                            entries["Item ID (Barcode)"].get(), entries["Name"].get(),
+                            custom_type_entry.get().strip().capitalize() if type_var.get() == "Other" else type_var.get(),
+                            entries["Retail Price"].get(), entries["Unit Price"].get(),
+                            entries["Quantity"].get(), entries["Supplier"].get(), item[0], window
+                        ))
 
                 next_row = (len(fields) + 1) // 2 + 1
 
-                # Type selection
                 type_frame = tk.Frame(update_box, bg="#FFFFFF")
                 type_frame.grid(row=next_row, column=0, columnspan=4, sticky="ew", pady=self.scale_size(5))
                 tk.Label(type_frame, text="Type", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529").pack(side="left")
-                categories = self.get_item_types() + ["Other"]  # Add "Other" for combobox
+                categories = self.get_item_types() + ["Other"]
                 type_var = tk.StringVar(value=item[2] if item[2] in self.get_item_types() else "Other")
                 type_combobox = ttk.Combobox(type_frame, textvariable=type_var, values=categories, state="readonly", font=("Helvetica", self.scale_size(18)))
                 type_combobox.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
@@ -614,6 +636,13 @@ class InventoryManager:
                 else:
                     custom_type_entry.delete(0, tk.END)
                     custom_type_entry.insert(0, item[2] if item[2] else "")
+                # Bind Enter key to validate and submit
+                custom_type_entry.bind("<Return>", lambda event: self.validate_required_fields(entries, type_var, custom_type_entry, window) and self.update_item(
+                    entries["Item ID (Barcode)"].get(), entries["Name"].get(),
+                    custom_type_entry.get().strip().capitalize() if type_var.get() == "Other" else type_var.get(),
+                    entries["Retail Price"].get(), entries["Unit Price"].get(),
+                    entries["Quantity"].get(), entries["Supplier"].get(), item[0], window
+                ))
 
                 def on_type_change(event):
                     if type_var.get() == "Other":
@@ -626,7 +655,6 @@ class InventoryManager:
 
                 type_combobox.bind("<<ComboboxSelected>>", on_type_change)
 
-                # Markup and profitability
                 markup_frame = tk.Frame(update_box, bg="#FFFFFF")
                 markup_frame.grid(row=next_row + 1, column=0, columnspan=2, sticky="ew", pady=self.scale_size(5))
                 tk.Label(markup_frame, text="Markup %", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529").pack(side="left")
@@ -661,16 +689,16 @@ class InventoryManager:
                 button_frame = tk.Frame(update_box, bg="#FFFFFF")
                 button_frame.grid(row=next_row + 3, column=0, columnspan=4, pady=self.scale_size(15))
 
-                tk.Button(button_frame, text="Update Item",
-                        command=lambda: self.update_item(
+                tk.Button(button_frame, text="✏ Update Item",
+                         command=lambda: self.validate_required_fields(entries, type_var, custom_type_entry, window) and self.update_item(
                             entries["Item ID (Barcode)"].get(), entries["Name"].get(),
                             custom_type_entry.get().strip().capitalize() if type_var.get() == "Other" else type_var.get(),
                             entries["Retail Price"].get(), entries["Unit Price"].get(),
                             entries["Quantity"].get(), entries["Supplier"].get(), item[0], window
-                        ),
-                        bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
-                        activebackground="#218838", activeforeground="#FFFFFF",
-                        relief="flat", padx=self.scale_size(12), pady=self.scale_size(8)).pack()
+                         ),
+                         bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                         activebackground="#218838", activeforeground="#FFFFFF",
+                         relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack()
 
                 update_box.columnconfigure(0, weight=1)
                 update_box.columnconfigure(2, weight=1)
@@ -694,7 +722,7 @@ class InventoryManager:
                 return
 
             name = name.capitalize()
-            item_type = item_type.capitalize()  # Ensure type is capitalized
+            item_type = item_type.capitalize()
             supplier = supplier.strip() if supplier.strip() else "Unknown"
             item_id = item_id.strip() if item_id.strip() else original_item_id
 
@@ -736,15 +764,16 @@ class InventoryManager:
                 self.refresh_type_comboboxes()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid retail price, unit price, or quantity", parent=self.root)
+            messagebox.showerror("Error", "Invalid retail price, unit_price, or quantity", parent=self.root)
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
 
     def on_inventory_select(self, event: Optional[tk.Event] = None):
         selected = self.inventory_table.selection()
         state = "normal" if selected else "disabled"
-        self.update_item_btn.config(state=state)
-        self.delete_item_btn.config(state=state)
+        if self.update_item_btn and self.delete_item_btn:  # Ensure buttons exist
+            self.update_item_btn.config(state=state)
+            self.delete_item_btn.config(state=state)
 
     def check_low_inventory(self):
         try:
@@ -781,7 +810,7 @@ class InventoryManager:
             if query:
                 conditions.append("(name LIKE ?)")
                 params.append(f"%{query}%")
-            if type_filter not in ["All", "Other"]:  # Treat "Other" like "All"
+            if type_filter not in ["All", "Other"]:
                 conditions.append("type = ?")
                 params.append(type_filter)
             if conditions:
@@ -799,7 +828,7 @@ class InventoryManager:
         with self.conn:
             cursor = self.conn.cursor()
             cursor.execute("SELECT DISTINCT type FROM inventory WHERE type IS NOT NULL")
-            types = sorted([row[0] for row in cursor.fetchall() if row[0]])  # Sort and filter out None
+            types = sorted([row[0] for row in cursor.fetchall() if row[0]])
         return types
 
     def refresh_type_comboboxes(self):

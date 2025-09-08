@@ -197,7 +197,7 @@ class TransactionManager:
         self.search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
         self.search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_transactions_table)
-        tk.Button(search_frame, text="🔄 Refresh Transactions", command=self.update_transactions_table,
+        tk.Button(search_frame, text="🔄", command=self.update_transactions_table,
                   bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                   activebackground="#0056B3", activeforeground="#FFFFFF",
                   relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(side="left", padx=self.scale_size(5))
@@ -270,12 +270,12 @@ class TransactionManager:
 
         self.transaction_button_frame = tk.Frame(transactions_frame, bg="#FFFFFF")
         self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=self.scale_size(10))
-        self.print_btn = tk.Button(self.transaction_button_frame, text="🖨 Print Receipt", command=self.print_receipt,
+        self.print_btn = tk.Button(self.transaction_button_frame, text="🖨", command=self.print_receipt,
                                    bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
                                    activebackground="#218838", activeforeground="#FFFFFF",
                                    relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.print_btn.pack(side="left", padx=self.scale_size(5))
-        self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="✏ Edit Transaction",
+        self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="✏",
                                              command=lambda: self.create_password_auth_window(
                                                  "Authenticate Edit", "Enter admin password to edit transaction",
                                                  self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
@@ -283,7 +283,7 @@ class TransactionManager:
                                              activebackground="#E0A800", activeforeground="#212529",
                                              relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.edit_transaction_btn.pack(side="left", padx=self.scale_size(5))
-        self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="🗑 Delete Transaction",
+        self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="🗑",
                                                command=lambda: self.create_password_auth_window(
                                                    "Authenticate Deletion", "Enter admin password to delete transaction",
                                                    self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
@@ -291,7 +291,7 @@ class TransactionManager:
                                                activebackground="#C82333", activeforeground="#FFFFFF",
                                                relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.delete_transaction_btn.pack(side="left", padx=self.scale_size(5))
-        self.refund_btn = tk.Button(self.transaction_button_frame, text="🔄 Refund",
+        self.refund_btn = tk.Button(self.transaction_button_frame, text="🔄",
                                     command=lambda: self.create_password_auth_window(
                                         "Authenticate Refund", "Enter admin password to process refund",
                                         self.validate_refund_auth, selected_item=self.transactions_table.selection()),

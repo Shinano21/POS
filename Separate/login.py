@@ -433,7 +433,7 @@ class LoginApp:
 
     def show_manager_dashboard(self, root: tk.Tk, username: str, role: str):
         root.title("Manager Dashboard")
-        root.geometry("300x400")
+        root.geometry("300x300")
         root.configure(bg="#F5F6F5")
         self.set_window_icon(root)
 
