@@ -8,12 +8,65 @@ from dashboard import Dashboard
 from inventory import InventoryManager
 from transactions import TransactionManager
 from sales_summary import SalesSummary
+import sys, traceback
+import shutil, datetime
+
+
 
 try:
     from PIL import Image
     pillow_available = True
 except ImportError:
     pillow_available = False
+# --- Backup & Crash Handling ---
+
+def backup_database(db_path: str, backup_dir: str = "db_backups"):
+    """Creates a timestamped backup of the database."""
+    try:
+        os.makedirs(backup_dir, exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = os.path.join(backup_dir, f"pharmacy_backup_{timestamp}.db")
+        shutil.copy2(db_path, backup_path)
+        print(f"[Backup] Database copied to {backup_path}")
+        return backup_path
+    except Exception as e:
+        print(f"[Backup Error] {e}")
+        return None
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    """Global exception hook for crash handling, backup, and auto-restart."""
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    # Save crash details
+    with open("crash_log.txt", "a", encoding="utf-8") as f:
+        f.write("".join(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+        f.write("\n" + "="*80 + "\n")
+
+    print("[Crash] Application crashed. See crash_log.txt")
+
+    # Backup DB on crash
+    try:
+        backup_database("pharmacy.db")
+    except Exception as e:
+        print(f"[Crash Handler Error] Backup failed: {e}")
+
+    # Show error (if tkinter still alive)
+    try:
+        messagebox.showerror("Crash Detected", "The application crashed.\nRestarting...")
+    except:
+        pass
+
+    # Restart the app immediately
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
+
+
+# Register crash handler globally
+sys.excepthook = handle_exception
+
 
 class LoginApp:
     def __init__(self, root: tk.Tk):
@@ -25,7 +78,30 @@ class LoginApp:
         self.db_path = self.get_writable_db_path()
         self.conn = None
         self.create_database()
+        if os.path.exists("crash_log.txt"):
+            try:
+                # Find the latest backup
+                backup_dir = "db_backups"
+                if os.path.exists(backup_dir):
+                    backups = sorted(
+                        [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.endswith(".db")],
+                        key=os.path.getmtime,
+                        reverse=True
+                    )
+                    if backups:
+                        latest_backup = backups[0]
+                        shutil.copy2(latest_backup, self.db_path)
+                        print(f"[Recovery] Restored database from {latest_backup}")
+                        messagebox.showwarning(
+                            "Recovery",
+                            f"The app crashed last time.\nDatabase was restored from backup:\n{os.path.basename(latest_backup)}"
+                        )
+            except Exception as e:
+                print(f"[Recovery Error] {e}")
+
+        # Always load login screen
         self.setup_gui()
+
 
     def set_window_icon(self, window: tk.Tk):
         """Set the window and taskbar icon for the given window."""
@@ -83,6 +159,7 @@ class LoginApp:
     def create_database(self) -> None:
         try:
             self.conn = sqlite3.connect(self.db_path)
+            backup_database(self.db_path)
             with self.conn:
                 cursor = self.conn.cursor()
                 cursor.execute('''
@@ -189,6 +266,7 @@ class LoginApp:
                 cursor.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?)", 
                               ("manager", "mcb-0001", "Manager", "Online"))
                 self.conn.commit()
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to set up database: {e}", parent=self.root)
             self.root.destroy()
@@ -198,30 +276,64 @@ class LoginApp:
         current_width = root.winfo_screenwidth()
         scaling_factor = current_width / base_resolution
         return int(size * scaling_factor)
+    
+    
 
     def setup_gui(self):
-        main_frame = tk.Frame(self.root, bg="#F5F6F5")
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        # Fix window size and center it
+        win_w, win_h = 350, 300
+        scr_w, scr_h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        self.root.geometry(f"{win_w}x{win_h}+{x}+{y}")
+        self.root.resizable(False, False)
 
-        tk.Label(main_frame, text="Shinano POS Login", font=("Helvetica", self.scale_size(18, self.root), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10, self.root))
+        # Main card frame
+        card = tk.Frame(self.root, bg="white", bd=1, relief="solid")
+        card.place(relx=0.5, rely=0.5, anchor="center", width=320, height=260)
 
-        tk.Label(main_frame, text="Username:", font=("Helvetica", self.scale_size(14, self.root)),
-                 bg="#F5F6F5", fg="#2C3E50").pack()
-        self.username_entry = tk.Entry(main_frame, font=("Helvetica", self.scale_size(14, self.root)), bg="#F4E1C1")
-        self.username_entry.pack(pady=self.scale_size(5, self.root))
+        # Title
+        tk.Label(card, text="Shinano POS Login",
+                font=("Helvetica", 14, "bold"),
+                bg="white", fg="#2C3E50").pack(pady=10)
 
-        tk.Label(main_frame, text="Password:", font=("Helvetica", self.scale_size(14, self.root)),
-                 bg="#F5F6F5", fg="#2C3E50").pack()
-        self.password_entry = tk.Entry(main_frame, show="*", font=("Helvetica", self.scale_size(14, self.root)), bg="#F4E1C1")
-        self.password_entry.pack(pady=self.scale_size(5, self.root))
+        # Username Entry
+        self.username_entry = tk.Entry(card,
+                                    font=("Helvetica", 12),
+                                    bg="#F8F9FA", relief="solid", bd=1,
+                                    justify="center")
+        self.username_entry.pack(pady=5, ipady=4, fill="x", padx=30)
+        self.add_placeholder(self.username_entry, "Enter Username")
 
-        tk.Button(main_frame, text="Login", command=self.validate_login,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, self.root), "bold"),
-                  activebackground="#2C3E50", activeforeground="#F5F6F5",
-                  padx=self.scale_size(12, self.root), pady=self.scale_size(6, self.root)).pack(pady=self.scale_size(10, self.root))
+        # Password Entry
+        self.password_entry = tk.Entry(card,
+                                    font=("Helvetica", 12),
+                                    bg="#F8F9FA", relief="solid", bd=1,
+                                    justify="center")
+        self.password_entry.pack(pady=5, ipady=4, fill="x", padx=30)
+        self.add_placeholder(self.password_entry, "Enter Password", is_password=True)
 
+        # Show/Hide password
+        self.show_pw = tk.BooleanVar(value=False)
+        show_pw_cb = tk.Checkbutton(card, text="Show Password",
+                                    variable=self.show_pw,
+                                    bg="white", fg="#2C3E50",
+                                    font=("Helvetica", 10),
+                                    command=lambda: self.password_entry.config(
+                                        show="" if self.show_pw.get() else "*"))
+        show_pw_cb.pack(pady=2)
+
+        # Login button (Bootstrap-style primary)
+        login_btn = tk.Button(card, text="Login", command=self.validate_login,
+                            bg="#4DA8DA", fg="white",
+                            font=("Helvetica", 12, "bold"),
+                            activebackground="#2C3E50", activeforeground="white",
+                            relief="flat", cursor="hand2")
+        login_btn.pack(pady=15, ipadx=20, ipady=4)
+
+        # Bind Enter key
         self.password_entry.bind("<Return>", lambda e: self.validate_login())
+
+
 
     def validate_login(self):
         username = self.username_entry.get().strip()
@@ -462,6 +574,26 @@ class LoginApp:
             module_class(new_window, current_user=username, user_role=role, db_path=db_path)
         else:
             module_class(new_window, current_user=username, user_role=role)
+
+
+    def add_placeholder(self, entry, placeholder, is_password=False):
+    
+        def on_focus_in(event):
+            if entry.get() == placeholder:
+                entry.delete(0, tk.END)
+                if is_password:
+                    entry.config(show="*")
+
+        def on_focus_out(event):
+            if not entry.get():
+                entry.insert(0, placeholder)
+                if is_password:
+                    entry.config(show="")
+
+        entry.insert(0, placeholder)
+        entry.bind("<FocusIn>", on_focus_in)
+        entry.bind("<FocusOut>", on_focus_out)
+
 
     def __del__(self):
         if self.conn:
