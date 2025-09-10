@@ -10,6 +10,7 @@ from transactions import TransactionManager
 from sales_summary import SalesSummary
 import sys, traceback
 import shutil, datetime
+from tkinter import messagebox
 
 
 
@@ -20,19 +21,32 @@ except ImportError:
     pillow_available = False
 # --- Backup & Crash Handling ---
 
-def backup_database(db_path: str, backup_dir: str = "db_backups"):
-    """Creates a timestamped backup of the database."""
+def backup_database(db_filename="pharmacy.db"):
+    """Backup database into ShinanoPOS/backups with timestamp."""
     try:
+        app_data = os.getenv('APPDATA', os.path.expanduser("~"))
+        db_dir = os.path.join(app_data, "ShinanoPOS")
+        db_path = os.path.join(db_dir, db_filename)
+
+        if not os.path.exists(db_path):
+            raise FileNotFoundError(f"Database not found at {db_path}")
+
+        # Backups folder
+        backup_dir = os.path.join(db_dir, "backups")
         os.makedirs(backup_dir, exist_ok=True)
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = os.path.join(backup_dir, f"pharmacy_backup_{timestamp}.db")
-        shutil.copy2(db_path, backup_path)
-        print(f"[Backup] Database copied to {backup_path}")
-        return backup_path
+        backup_file = os.path.join(
+            backup_dir,
+            f"{db_filename.replace('.db','')}_backup_{timestamp}.db"
+        )
+
+        shutil.copy2(db_path, backup_file)
+        print(f"[Backup] Database saved: {backup_file}")
+        return backup_file
     except Exception as e:
         print(f"[Backup Error] {e}")
         return None
-
 
 def handle_exception(exc_type, exc_value, exc_traceback):
     """Global exception hook for crash handling, backup, and auto-restart."""
@@ -49,7 +63,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     # Backup DB on crash
     try:
-        backup_database("pharmacy.db")
+        backup_database()
     except Exception as e:
         print(f"[Crash Handler Error] Backup failed: {e}")
 
@@ -372,11 +386,14 @@ class LoginApp:
             new_root.destroy()
         new_root.mainloop()
 
-    def return_to_login(self, current_root: tk.Tk):
+    def return_to_login(self, current_root):
+        # Backup before closing
+        backup_database()  # <— direct function call, not self.backup_database()
+
         current_root.destroy()
-        new_root = tk.Tk()
-        app = LoginApp(new_root)
-        new_root.mainloop()
+        from login import main
+        main()
+
 
     def show_account_management(self, root: tk.Tk, username: str, role: str):
         root.title("Admin Dashboard")
