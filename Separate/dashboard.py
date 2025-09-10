@@ -167,9 +167,25 @@ class Dashboard:
         self.root.destroy()
 
     def setup_navigation(self, main_frame):
-        # Navigation bar is empty as per request to remove control buttons
         nav_frame = tk.Frame(main_frame, bg="#343A40", highlightthickness=0)
         nav_frame.pack(fill="x")
+
+        logout_btn = tk.Button(
+            nav_frame,
+            text="Logout",
+            command=self.logout,
+            bg="#DC3545",
+            fg="#FFFFFF",
+            font=("Helvetica", self.scale_size(14), "bold"),
+            activebackground="#C82333",
+            activeforeground="#FFFFFF",
+            padx=self.scale_size(12),
+            pady=self.scale_size(6),
+            bd=0,
+            relief="flat"
+        )
+        logout_btn.pack(side="right", padx=self.scale_size(10), pady=self.scale_size(5))
+
 
     def show_dashboard(self) -> None:
         if not self.current_user:
@@ -819,6 +835,16 @@ class Dashboard:
         except Exception as e:
             print(f"Unexpected error in check_low_inventory: {e}")
             messagebox.showerror("Error", f"Unexpected error checking inventory: {e}", parent=self.root)
+
+    def logout(self):
+        confirm = messagebox.askyesno("Logout", "Are you sure you want to logout?", parent=self.root)
+        if confirm:
+            self.root.destroy()
+            import login  # Make sure you have a login.py file with your login UI
+            login.main()  # Call the main function of your login screen
+
+
+
 
     def __del__(self):
         if self.conn:

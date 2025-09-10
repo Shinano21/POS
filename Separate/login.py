@@ -379,16 +379,46 @@ class LoginApp:
         new_root.mainloop()
 
     def show_account_management(self, root: tk.Tk, username: str, role: str):
-        root.title("Account Management")
-        root.geometry("300x500")
-        root.configure(bg="#F5F6F5")
+        root.title("Admin Dashboard")
+        root.geometry("600x400")
+        root.configure(bg="#ECF0F1")
         self.set_window_icon(root)
-        tk.Label(root, text="Account Management - Drug Lord", font=("Helvetica", self.scale_size(18, root), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(20, root))
-        tk.Button(root, text="Manage Users", command=lambda: self.manage_users(root, username, role),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
-        tk.Button(root, text="Logout", command=lambda: self.return_to_login(root),
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
+
+        # Header
+        header = tk.Frame(root, bg="#8E44AD", height=50)
+        header.pack(fill="x")
+        tk.Label(header, text=f"Admin Dashboard - {username}",
+                font=("Helvetica", 14, "bold"), bg="#8E44AD", fg="white").pack(side="left", padx=15, pady=10)
+
+        # Main content
+        content = tk.Frame(root, bg="#ECF0F1")
+        content.pack(fill="both", expand=True, padx=20, pady=20)
+
+        def create_card(parent, text, command, bg_color="#4DA8DA"):
+            card = tk.Frame(parent, bg="white", relief="raised", bd=2)
+            card.grid_propagate(True)
+
+            btn = tk.Button(card, text=text, command=command,
+                            bg=bg_color, fg="white",
+                            font=("Helvetica", 12, "bold"),
+                            relief="flat", cursor="hand2", wraplength=150, justify="center")
+            btn.pack(expand=True, fill="both", padx=10, pady=10)
+            return card
+
+        grid = tk.Frame(content, bg="#ECF0F1")
+        grid.pack(expand=True)
+
+        card1 = create_card(grid, "👥 Manage Users",
+                            lambda: self.manage_users(root, username, role), bg_color="#3498DB")
+        card2 = create_card(grid, "🚪 Logout",
+                            lambda: self.return_to_login(root), bg_color="#E74C3C")
+
+        card1.grid(row=0, column=0, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
+        card2.grid(row=0, column=1, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
+
+        grid.grid_columnconfigure(0, weight=1, minsize=250)
+        grid.grid_columnconfigure(1, weight=1, minsize=250)
+
 
     def manage_users(self, root: tk.Tk, username: str, role: str):
         manage_window = tk.Toplevel(root)
@@ -545,27 +575,56 @@ class LoginApp:
 
     def show_manager_dashboard(self, root: tk.Tk, username: str, role: str):
         root.title("Manager Dashboard")
-        root.geometry("300x300")
-        root.configure(bg="#F5F6F5")
+        root.geometry("700x450")  # wider window
+        root.configure(bg="#ECF0F1")
         self.set_window_icon(root)
 
-        main_frame = tk.Frame(root, bg="#F5F6F5")
-        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        # Header
+        header = tk.Frame(root, bg="#2C3E50", height=50)
+        header.pack(fill="x")
+        tk.Label(header, text=f"Manager Dashboard - {username}",
+                font=("Helvetica", 14, "bold"), bg="#2C3E50", fg="white").pack(side="left", padx=15, pady=10)
 
-        tk.Label(main_frame, text="Manager Dashboard", font=("Helvetica", self.scale_size(18, root), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(20, root))
+        # Main content
+        content = tk.Frame(root, bg="#ECF0F1")
+        content.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Button(main_frame, text="Inventory Management",
-                  command=lambda: self.open_module(root, InventoryManager, username, role),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
-        tk.Button(main_frame, text="Transaction Management",
-                  command=lambda: self.open_module(root, TransactionManager, username, role),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
-        tk.Button(main_frame, text="Sales Summary",
-                  command=lambda: self.open_module(root, SalesSummary, username, role, db_path=self.db_path),
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
-        tk.Button(main_frame, text="Logout", command=lambda: self.return_to_login(root),
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=self.scale_size(10, root))
+        # Card creator
+        def create_card(parent, text, command, bg_color="#4DA8DA"):
+            card = tk.Frame(parent, bg="white", relief="raised", bd=2)
+            card.grid_propagate(True)
+
+            btn = tk.Button(card, text=text, command=command,
+                            bg=bg_color, fg="white",
+                            font=("Helvetica", 12, "bold"),
+                            relief="flat", cursor="hand2", wraplength=150, justify="center")
+            btn.pack(expand=True, fill="both", padx=10, pady=10)
+            return card
+
+        # Grid layout (2x2)
+        grid = tk.Frame(content, bg="#ECF0F1")
+        grid.pack(expand=True)
+
+        card1 = create_card(grid, "📦 Inventory Management",
+                            lambda: self.open_module(root, InventoryManager, username, role))
+        card2 = create_card(grid, "💳 Transaction Management",
+                            lambda: self.open_module(root, TransactionManager, username, role))
+        card3 = create_card(grid, "📊 Sales Summary",
+                            lambda: self.open_module(root, SalesSummary, username, role, db_path=self.db_path))
+        card4 = create_card(grid, "🚪 Logout",
+                            lambda: self.return_to_login(root), bg_color="#E74C3C")
+
+        # Bigger cards
+        card1.grid(row=0, column=0, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
+        card2.grid(row=0, column=1, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
+        card3.grid(row=1, column=0, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
+        card4.grid(row=1, column=1, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
+
+        # Allow equal resizing
+        for i in range(2):
+            grid.grid_columnconfigure(i, weight=1, minsize=200)
+            grid.grid_rowconfigure(i, weight=1, minsize=150)
+
 
     def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):
         new_window = tk.Toplevel(current_root)
@@ -599,8 +658,13 @@ class LoginApp:
         if self.conn:
             self.conn.close()
 
-if __name__ == "__main__":
+def main():
     root = tk.Tk()
     app = LoginApp(root)
     root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+
 
