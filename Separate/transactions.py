@@ -37,9 +37,16 @@ class TransactionManager:
         self.show_transactions()
         self.enable_windows_controls()
 
-        # Bind keys for window management
+        #Binding keys
+        self.root.bind("<F1>", lambda e: self.print_receipt())
+        self.root.bind("<F2>", lambda e: self.edit_transaction_btn.invoke())
+        self.root.bind("<F3>", lambda e: self.delete_transaction_btn.invoke())
+        self.root.bind("<F4>", lambda e: self.refund_btn.invoke())
+        self.root.bind("<F5>", lambda e: self.update_transactions_table())
         self.root.bind("<F11>", self.toggle_maximize_restore)
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
+        
+
 
     def enable_windows_controls(self):
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())

@@ -33,8 +33,14 @@ class InventoryManager:
         self.show_inventory()
         self.enable_windows_controls()
 
+        # Inventory Shortcuts
+        self.root.bind("<F1>", lambda e: self.upload_inventory_csv())
+        self.root.bind("<F2>", lambda e: self.show_add_item())
+        self.root.bind("<F3>", lambda e: self.show_update_item_from_selection())
+        self.root.bind("<F4>", lambda e: self.confirm_delete_item())
         self.root.bind("<F11>", self.toggle_maximize_restore)
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
+
 
     def enable_windows_controls(self):
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
