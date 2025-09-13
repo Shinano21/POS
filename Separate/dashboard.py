@@ -558,21 +558,37 @@ class Dashboard:
         if not self.cart or self.selected_item_index is None:
             messagebox.showerror("Error", "No item selected or cart is empty", parent=self.root)
             return
+
         item = self.cart[self.selected_item_index]
         window = tk.Toplevel(self.root)
         window.title(f"Edit Quantity for {item['name']}")
-        window.geometry(f"{self.scale_size(300)}x{self.scale_size(200)}")
         window.configure(bg="#FFFFFF")
+
+        # --- Center the popup ---
+        win_w, win_h = self.scale_size(400), self.scale_size(250)
+        scr_w, scr_h = window.winfo_screenwidth(), window.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        window.geometry(f"{win_w}x{win_h}+{x}+{y}")
+
+        # --- Larger fonts for readability ---
+        font_label_big = ("Helvetica", max(self.scale_size(20), 20), "bold")
+        font_label = ("Helvetica", max(self.scale_size(16), 16), "bold")
+        font_entry = ("Helvetica", max(self.scale_size(18), 18))
+        font_btn = ("Helvetica", max(self.scale_size(18), 18), "bold")
+
         edit_box = tk.Frame(window, bg="#FFFFFF", padx=self.scale_size(20), pady=self.scale_size(20),
                             bd=1, relief="flat", highlightthickness=1, highlightbackground="#DEE2E6")
-        edit_box.pack(pady=self.scale_size(20))
-        tk.Label(edit_box, text=f"Edit Quantity for {item['name']}", font=("Helvetica", self.scale_size(18), "bold"),
-                 bg="#FFFFFF", fg="#343A40").pack(pady=self.scale_size(10))
-        tk.Label(edit_box, text="Quantity", font=("Helvetica", self.scale_size(12), "bold"),
-                 bg="#FFFFFF", fg="#343A40").pack()
-        quantity_entry = tk.Entry(edit_box, font=("Helvetica", self.scale_size(12)), bg="#E9ECEF",
-                                 fg="#343A40", highlightthickness=1, highlightbackground="#CED4DA", relief="flat")
-        quantity_entry.pack(pady=self.scale_size(5), fill="x")
+        edit_box.pack(pady=self.scale_size(20), fill="both", expand=True)
+
+        tk.Label(edit_box, text=f"Edit Quantity for {item['name']}",
+                font=font_label_big, bg="#FFFFFF", fg="#343A40").pack(pady=self.scale_size(10))
+
+        tk.Label(edit_box, text="Quantity",
+                font=font_label, bg="#FFFFFF", fg="#343A40").pack()
+
+        quantity_entry = tk.Entry(edit_box, font=font_entry, bg="#E9ECEF", fg="#343A40",
+                                highlightthickness=1, highlightbackground="#CED4DA", relief="flat", justify="center")
+        quantity_entry.pack(pady=self.scale_size(10), fill="x", ipadx=10, ipady=8)
         quantity_entry.insert(0, str(item["quantity"]))
         quantity_entry.focus_set()
 
@@ -587,7 +603,11 @@ class Dashboard:
                     cursor.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item["id"],))
                     inventory_qty = cursor.fetchone()[0]
                     if new_quantity > inventory_qty:
-                        messagebox.showerror("Error", f"Insufficient stock for {item['name']}. Available: {inventory_qty}", parent=window)
+                        messagebox.showerror(
+                            "Error",
+                            f"Insufficient stock for {item['name']}. Available: {inventory_qty}",
+                            parent=window
+                        )
                         return
                     item["quantity"] = new_quantity
                     item["subtotal"] = item["retail_price"] * new_quantity
@@ -599,11 +619,13 @@ class Dashboard:
             except ValueError:
                 messagebox.showerror("Error", "Invalid quantity.", parent=window)
 
-        tk.Button(edit_box, text="Update", command=update_quantity,
-                 bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(12), "bold"),
-                 activebackground="#218838", activeforeground="#FFFFFF",
-                 padx=self.scale_size(12), pady=self.scale_size(8), bd=0, relief="flat").pack(pady=self.scale_size(10))
+        tk.Button(edit_box, text="✓ Update", command=update_quantity,
+                bg="#28A745", fg="#FFFFFF", font=font_btn,
+                activebackground="#218838", activeforeground="#FFFFFF",
+                padx=15, pady=10, bd=0, relief="flat").pack(pady=self.scale_size(15))
+
         quantity_entry.bind("<Return>", lambda e: update_quantity())
+
 
     def update_cart_totals(self) -> None:
         final_total = sum((item['retail_price'] or 0) * (item['quantity'] or 0) for item in self.cart)

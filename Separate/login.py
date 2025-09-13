@@ -380,7 +380,7 @@ class LoginApp:
         elif role == "Manager":
             self.show_manager_dashboard(new_root, username, role)
         elif role == "User":
-            Dashboard(new_root, current_user=username, user_role=role)
+            Dashboard(new_root, current_user=username, user_role=role) 
         else:
             messagebox.showerror("Error", "Unknown user role", parent=new_root)
             new_root.destroy()
@@ -397,33 +397,42 @@ class LoginApp:
 
     def show_account_management(self, root: tk.Tk, username: str, role: str):
         root.title("Admin Dashboard")
-        root.geometry("600x400")
+
+        # --- Center the dashboard ---
+        win_w, win_h = 900, 600
+        scr_w, scr_h = root.winfo_screenwidth(), root.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        root.geometry(f"{win_w}x{win_h}+{x}+{y}")
         root.configure(bg="#ECF0F1")
+        root.resizable(True, True)
         self.set_window_icon(root)
 
+        # Larger fonts
+        font_header = ("Helvetica", 20, "bold")
+        font_btn = ("Helvetica", 18, "bold")
+
         # Header
-        header = tk.Frame(root, bg="#8E44AD", height=50)
+        header = tk.Frame(root, bg="#8E44AD", height=60)
         header.pack(fill="x")
         tk.Label(header, text=f"Admin Dashboard - {username}",
-                font=("Helvetica", 14, "bold"), bg="#8E44AD", fg="white").pack(side="left", padx=15, pady=10)
+                font=font_header, bg="#8E44AD", fg="white").pack(side="left", padx=20, pady=15)
 
         # Main content
         content = tk.Frame(root, bg="#ECF0F1")
-        content.pack(fill="both", expand=True, padx=20, pady=20)
+        content.pack(fill="both", expand=True, padx=30, pady=30)
 
         def create_card(parent, text, command, bg_color="#4DA8DA"):
             card = tk.Frame(parent, bg="white", relief="raised", bd=2)
             card.grid_propagate(True)
-
             btn = tk.Button(card, text=text, command=command,
                             bg=bg_color, fg="white",
-                            font=("Helvetica", 12, "bold"),
-                            relief="flat", cursor="hand2", wraplength=150, justify="center")
-            btn.pack(expand=True, fill="both", padx=10, pady=10)
+                            font=font_btn, wraplength=200,
+                            relief="flat", cursor="hand2", justify="center")
+            btn.pack(expand=True, fill="both", padx=20, pady=20)
             return card
 
         grid = tk.Frame(content, bg="#ECF0F1")
-        grid.pack(expand=True)
+        grid.pack(expand=True, fill="both")
 
         card1 = create_card(grid, "👥 Manage Users",
                             lambda: self.manage_users(root, username, role), bg_color="#3498DB")
@@ -433,19 +442,28 @@ class LoginApp:
         card1.grid(row=0, column=0, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
         card2.grid(row=0, column=1, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
 
-        grid.grid_columnconfigure(0, weight=1, minsize=250)
-        grid.grid_columnconfigure(1, weight=1, minsize=250)
+        grid.grid_columnconfigure(0, weight=1, minsize=300)
+        grid.grid_columnconfigure(1, weight=1, minsize=300)
+
 
 
     def manage_users(self, root: tk.Tk, username: str, role: str):
         manage_window = tk.Toplevel(root)
         manage_window.title("Manage Users")
-        manage_window.geometry("600x400")
+
+        # --- Center the window ---
+        win_w, win_h = 800, 500
+        scr_w, scr_h = manage_window.winfo_screenwidth(), manage_window.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        manage_window.geometry(f"{win_w}x{win_h}+{x}+{y}")
         manage_window.configure(bg="#F5F6F5")
         self.set_window_icon(manage_window)
 
-        tk.Label(manage_window, text="User Management", font=("Helvetica", self.scale_size(16, root), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=self.scale_size(10, root))
+        # Bigger font
+        tk.Label(manage_window, text="User Management",
+                font=("Helvetica", 20, "bold"),
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=20)
+
 
         columns = ("Username", "Role", "Status")
         user_table = ttk.Treeview(manage_window, columns=columns, show="headings")
@@ -478,23 +496,45 @@ class LoginApp:
     def add_user(self, parent: tk.Tk, user_table: ttk.Treeview, root: tk.Tk):
         add_window = tk.Toplevel(parent)
         add_window.title("Add User")
-        add_window.geometry("400x300")
+
+        # --- Center window ---
+        win_w, win_h = 500, 400
+        scr_w, scr_h = add_window.winfo_screenwidth(), add_window.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        add_window.geometry(f"{win_w}x{win_h}+{x}+{y}")
         add_window.configure(bg="#F5F6F5")
         self.set_window_icon(add_window)
 
-        tk.Label(add_window, text="Username:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
-        username_entry = tk.Entry(add_window, font=("Helvetica", self.scale_size(14, root)))
-        username_entry.pack(pady=5)
+        # --- Larger fonts ---
+        font_label = ("Helvetica", max(self.scale_size(18, root), 18), "bold")
+        font_entry = ("Helvetica", max(self.scale_size(18, root), 18))
+        font_btn   = ("Helvetica", max(self.scale_size(18, root), 18), "bold")
 
-        tk.Label(add_window, text="Password:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
-        password_entry = tk.Entry(add_window, show="*", font=("Helvetica", self.scale_size(14, root)))
-        password_entry.pack(pady=5)
+        # --- Username ---
+        tk.Label(add_window, text="Username:", font=font_label,
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
+        username_entry = tk.Entry(add_window, font=font_entry, width=25,
+                                bg="#FFFFFF", fg="#2C3E50", relief="flat",
+                                highlightthickness=1, highlightbackground="#BDC3C7")
+        username_entry.pack(pady=5, ipady=6)
 
-        tk.Label(add_window, text="Role:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        # --- Password ---
+        tk.Label(add_window, text="Password:", font=font_label,
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
+        password_entry = tk.Entry(add_window, show="*", font=font_entry, width=25,
+                                bg="#FFFFFF", fg="#2C3E50", relief="flat",
+                                highlightthickness=1, highlightbackground="#BDC3C7")
+        password_entry.pack(pady=5, ipady=6)
+
+        # --- Role ---
+        tk.Label(add_window, text="Role:", font=font_label,
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
         role_var = tk.StringVar(value="User")
-        ttk.Combobox(add_window, textvariable=role_var, values=["User", "Manager", "Drug Lord"],
-                     state="readonly", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
+        ttk.Combobox(add_window, textvariable=role_var,
+                    values=["User", "Manager", "Drug Lord"],
+                    state="readonly", font=font_entry, width=22).pack(pady=5, ipady=4)
 
+        # --- Inner save function ---
         def save_user():
             username = username_entry.get().strip()
             password = password_entry.get().strip()
@@ -505,8 +545,10 @@ class LoginApp:
             try:
                 with self.conn:
                     cursor = self.conn.cursor()
-                    cursor.execute("INSERT INTO users (username, password, role, status) VALUES (?, ?, ?, ?)",
-                                  (username, password, role, "Online"))
+                    cursor.execute(
+                        "INSERT INTO users (username, password, role, status) VALUES (?, ?, ?, ?)",
+                        (username, password, role, "Online")
+                    )
                     self.conn.commit()
                     user_table.insert("", "end", values=(username, role, "Online"))
                     messagebox.showinfo("Success", "User added successfully", parent=add_window)
@@ -516,10 +558,22 @@ class LoginApp:
             except sqlite3.Error as e:
                 messagebox.showerror("Database Error", f"Failed to add user: {e}", parent=add_window)
 
-        tk.Button(add_window, text="Save", command=save_user,
-                  bg="#4DA8DA", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=10)
-        tk.Button(add_window, text="Cancel", command=add_window.destroy,
-                  bg="#E74C3C", fg="#F5F6F5", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
+        # --- Buttons ---
+        btn_frame = tk.Frame(add_window, bg="#F5F6F5")
+        btn_frame.pack(pady=20)
+
+        tk.Button(btn_frame, text="Save", command=save_user,
+                bg="#4DA8DA", fg="#FFFFFF", font=font_btn,
+                activebackground="#2980B9", activeforeground="#FFFFFF",
+                relief="flat", padx=20, pady=10).pack(side="left", padx=10)
+
+        tk.Button(btn_frame, text="Cancel", command=add_window.destroy,
+                bg="#E74C3C", fg="#FFFFFF", font=font_btn,
+                activebackground="#C0392B", activeforeground="#FFFFFF",
+                relief="flat", padx=20, pady=10).pack(side="left", padx=10)
+
+        username_entry.focus_set()
+
 
     def update_user(self, parent: tk.Tk, user_table: ttk.Treeview, root: tk.Tk):
         selected_item = user_table.selection()
@@ -530,21 +584,43 @@ class LoginApp:
         username = user_table.item(selected_item)["values"][0]
         update_window = tk.Toplevel(parent)
         update_window.title("Update User")
-        update_window.geometry("400x300")
+
+        # --- Center the window ---
+        win_w, win_h = 500, 400
+        scr_w, scr_h = update_window.winfo_screenwidth(), update_window.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        update_window.geometry(f"{win_w}x{win_h}+{x}+{y}")
         update_window.configure(bg="#F5F6F5")
         self.set_window_icon(update_window)
 
-        tk.Label(update_window, text=f"Updating User: {username}", font=("Helvetica", self.scale_size(14, root), "bold"),
-                 bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        # --- Larger fonts ---
+        font_label = ("Helvetica", max(self.scale_size(18, root), 18), "bold")
+        font_entry = ("Helvetica", max(self.scale_size(18, root), 18))
+        font_btn   = ("Helvetica", max(self.scale_size(18, root), 18), "bold")
 
-        tk.Label(update_window, text="New Password:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
-        password_entry = tk.Entry(update_window, show="*", font=("Helvetica", self.scale_size(14, root)))
-        password_entry.pack(pady=5)
+        # --- Header ---
+        tk.Label(update_window, text=f"Updating User: {username}",
+                font=font_label, bg="#F5F6F5", fg="#2C3E50").pack(pady=15)
 
-        tk.Label(update_window, text="Role:", font=("Helvetica", self.scale_size(14, root)), bg="#F5F6F5", fg="#2C3E50").pack(pady=5)
+        # --- New Password ---
+        tk.Label(update_window, text="New Password:", font=font_label,
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
+        password_entry = tk.Entry(update_window, show="*", font=font_entry, width=25,
+                                bg="#FFFFFF", fg="#2C3E50", relief="flat",
+                                highlightthickness=1, highlightbackground="#BDC3C7")
+        password_entry.pack(pady=5, ipady=6)
+
+        # --- Role ---
+        tk.Label(update_window, text="Role:", font=font_label,
+                bg="#F5F6F5", fg="#2C3E50").pack(pady=10)
         role_var = tk.StringVar(value=user_table.item(selected_item)["values"][1])
-        ttk.Combobox(update_window, textvariable=role_var, values=["User", "Manager", "Drug Lord"],
-                     state="readonly", font=("Helvetica", self.scale_size(14, root))).pack(pady=5)
+        ttk.Combobox(update_window, textvariable=role_var,
+                    values=["User", "Manager", "Drug Lord"],
+                    state="readonly", font=font_entry, width=22).pack(pady=5, ipady=4)
+
+        # --- Buttons ---
+        btn_frame = tk.Frame(update_window, bg="#F5F6F5")
+        btn_frame.pack(pady=20)
 
         def save_update():
             new_password = password_entry.get().strip()
@@ -592,19 +668,30 @@ class LoginApp:
 
     def show_manager_dashboard(self, root: tk.Tk, username: str, role: str):
         root.title("Manager Dashboard")
-        root.geometry("700x450")  # wider window
+
+        # --- Center and resize ---
+        win_w, win_h = 900, 600  # Bigger default size for readability
+        scr_w, scr_h = root.winfo_screenwidth(), root.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        root.geometry(f"{win_w}x{win_h}+{x}+{y}")
         root.configure(bg="#ECF0F1")
+        root.resizable(True, True)
+
         self.set_window_icon(root)
 
+        # --- Fonts (minimum size for accessibility) ---
+        font_header = ("Helvetica", 20, "bold")
+        font_btn = ("Helvetica", 18, "bold")
+
         # Header
-        header = tk.Frame(root, bg="#2C3E50", height=50)
+        header = tk.Frame(root, bg="#2C3E50", height=60)
         header.pack(fill="x")
         tk.Label(header, text=f"Manager Dashboard - {username}",
-                font=("Helvetica", 14, "bold"), bg="#2C3E50", fg="white").pack(side="left", padx=15, pady=10)
+                font=font_header, bg="#2C3E50", fg="white").pack(side="left", padx=20, pady=15)
 
         # Main content
         content = tk.Frame(root, bg="#ECF0F1")
-        content.pack(fill="both", expand=True, padx=20, pady=20)
+        content.pack(fill="both", expand=True, padx=30, pady=30)
 
         # Card creator
         def create_card(parent, text, command, bg_color="#4DA8DA"):
@@ -613,14 +700,14 @@ class LoginApp:
 
             btn = tk.Button(card, text=text, command=command,
                             bg=bg_color, fg="white",
-                            font=("Helvetica", 12, "bold"),
-                            relief="flat", cursor="hand2", wraplength=150, justify="center")
-            btn.pack(expand=True, fill="both", padx=10, pady=10)
+                            font=font_btn, wraplength=200,
+                            relief="flat", cursor="hand2", justify="center")
+            btn.pack(expand=True, fill="both", padx=20, pady=20)
             return card
 
         # Grid layout (2x2)
         grid = tk.Frame(content, bg="#ECF0F1")
-        grid.pack(expand=True)
+        grid.pack(expand=True, fill="both")
 
         card1 = create_card(grid, "📦 Inventory Management",
                             lambda: self.open_module(root, InventoryManager, username, role))
@@ -631,16 +718,17 @@ class LoginApp:
         card4 = create_card(grid, "🚪 Logout",
                             lambda: self.return_to_login(root), bg_color="#E74C3C")
 
-        # Bigger cards
-        card1.grid(row=0, column=0, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
-        card2.grid(row=0, column=1, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
-        card3.grid(row=1, column=0, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
-        card4.grid(row=1, column=1, padx=15, pady=15, ipadx=40, ipady=40, sticky="nsew")
+        # Bigger cards (more padding for touch/readability)
+        card1.grid(row=0, column=0, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
+        card2.grid(row=0, column=1, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
+        card3.grid(row=1, column=0, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
+        card4.grid(row=1, column=1, padx=20, pady=20, ipadx=60, ipady=60, sticky="nsew")
 
         # Allow equal resizing
         for i in range(2):
-            grid.grid_columnconfigure(i, weight=1, minsize=200)
-            grid.grid_rowconfigure(i, weight=1, minsize=150)
+            grid.grid_columnconfigure(i, weight=1, minsize=250)
+            grid.grid_rowconfigure(i, weight=1, minsize=200)
+
 
 
     def open_module(self, current_root: tk.Tk, module_class, username: str, role: str, db_path: Optional[str] = None):

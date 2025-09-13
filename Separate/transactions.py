@@ -109,12 +109,23 @@ class TransactionManager:
     def create_password_auth_window(self, title: str, prompt: str, callback, **kwargs):
         window = tk.Toplevel(self.root)
         window.title(title)
-        window.geometry(f"{self.scale_size(400)}x{self.scale_size(200)}")
+
+        # Scale dimensions
+        win_w, win_h = self.scale_size(500), self.scale_size(250)
+        scr_w, scr_h = window.winfo_screenwidth(), window.winfo_screenheight()
+        x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
+        window.geometry(f"{win_w}x{win_h}+{x}+{y}")
         window.configure(bg="#F8F9FA")
-        tk.Label(window, text=prompt, font=("Helvetica", self.scale_size(18)), bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(10))
-        password_entry = tk.Entry(window, show="*", font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
-        password_entry.pack(pady=self.scale_size(10))
-        
+
+        # Larger fonts for accessibility
+        font_label = ("Helvetica", max(self.scale_size(20), 20), "bold")
+        font_entry = ("Helvetica", max(self.scale_size(20), 20))
+        font_btn   = ("Helvetica", max(self.scale_size(20), 20), "bold")
+
+        tk.Label(window, text=prompt, font=font_label, bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(15))
+        password_entry = tk.Entry(window, show="*", font=font_entry, bg="#FFFFFF", fg="#212529")
+        password_entry.pack(pady=self.scale_size(15), ipadx=10, ipady=8)
+
         def validate_and_submit(event=None):
             password = password_entry.get().strip()
             if not password:
@@ -123,12 +134,15 @@ class TransactionManager:
             callback(password, window, **kwargs)
 
         password_entry.bind("<Return>", validate_and_submit)
+
         tk.Button(window, text="✓ Submit",
-                  command=validate_and_submit,
-                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
-                  activebackground="#0056B3", activeforeground="#FFFFFF",
-                  relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
+                command=validate_and_submit,
+                bg="#007BFF", fg="#FFFFFF", font=font_btn,
+                activebackground="#0056B3", activeforeground="#FFFFFF",
+                relief="flat", padx=15, pady=8).pack(pady=self.scale_size(15))
+
         password_entry.focus_set()
+
 
     def get_user_role(self):
         return self.user_role
