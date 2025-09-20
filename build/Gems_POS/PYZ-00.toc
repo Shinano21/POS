@@ -1238,6 +1238,7 @@
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\logging\\__init__.py',
    'PYMODULE'),
+  ('login', 'E:\\Projects\\POS\\Separate\\login.py', 'PYMODULE'),
   ('lzma',
    'C:\\Users\\U S E R '
    '-PC\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\lzma.py',

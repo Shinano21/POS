@@ -254,10 +254,26 @@ class TransactionManager:
         columns = ("TransactionID", "ItemsList", "TotalAmount", "CashPaid", "ChangeAmount", "Timestamp", "Status", "PaymentMethod", "CustomerID")
         headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT", "CASH PAID", "CHANGE", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER ID")
         self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20, style="Treeview")
+        col_widths = {
+            "TransactionID": self.scale_size(200),
+            "ItemsList": self.scale_size(350),
+            "TotalAmount": self.scale_size(160),
+            "CashPaid": self.scale_size(160),
+            "ChangeAmount": self.scale_size(160),
+            "Timestamp": self.scale_size(250),
+            "Status": self.scale_size(140),
+            "PaymentMethod": self.scale_size(250),
+            "CustomerID": self.scale_size(180),
+        }
+
         for col, head in zip(columns, headers):
             self.transactions_table.heading(col, text=head)
-            width = self.scale_size(300) if col == "ItemsList" else self.scale_size(150)
-            self.transactions_table.column(col, width=width, anchor="center" if col != "ItemsList" else "w")
+            self.transactions_table.column(
+                col,
+                width=col_widths.get(col, self.scale_size(150)),
+                anchor="center" if col != "ItemsList" else "w"
+            )
+
         self.transactions_table.pack(fill="both", expand=True)
 
         def configure_canvas(event=None):
@@ -410,10 +426,16 @@ class TransactionManager:
                                 cursor.execute("SELECT name FROM inventory WHERE item_id = ?", (item_id,))
                                 name = cursor.fetchone()
                                 if name:
-                                    item_names.append(f"{name[0]} (x{qty})")
+                                    unit = "pc" if int(qty) == 1 else "pcs"
+                                    item_names.append(f"{name[0]} ({qty} {unit})")
                             except ValueError as e:
                                 print(f"Error parsing item_data '{item_data}': {e}")
-                    items_display = ", ".join(item_names)[:100] + "..." if len(", ".join(item_names)) > 100 else ", ".join(item_names) if item_names else "No items"
+                    if item_names:
+                        items_display = "\n".join(item_names)
+                        if len(items_display) > 200:
+                            items_display = items_display[:200] + "..."
+                    else:
+                        items_display = "No items"
                     self.transactions_table.insert("", "end", values=(
                         transaction[0], items_display, f"{transaction[2]:.2f}",
                         f"{transaction[3]:.2f}", f"{transaction[4]:.2f}",
