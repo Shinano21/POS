@@ -64,6 +64,7 @@ class Dashboard:
         self.root.bind("<F3>", self.void_order)
         self.root.bind("<F4>", self.mode_of_payment)
         self.root.bind("<F5>", self.select_customer)
+        self.root.bind("<F12>", self.open_login_window)
         self.root.bind("<Shift_R>", self.focus_cash_paid)
         self.root.bind("<Shift-Return>", self.process_checkout)
 
@@ -74,6 +75,13 @@ class Dashboard:
         if scaling_factor >= 1.75:
             return scaling_factor
         return 1.0
+    
+    def open_login_window(self, event=None):
+            """Open a new Login window without closing the Dashboard."""
+            from login import LoginApp   # ✅ lazy import fixes circular import
+            login_window = tk.Toplevel(self.root)
+            LoginApp(login_window)
+            login_window.grab_set()      # focus stays on login until closed
 
     def scale_size(self, size: int) -> int:
         return int(size * self.scaling_factor)
