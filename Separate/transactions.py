@@ -36,6 +36,7 @@ class TransactionManager:
         self.main_frame.pack(fill="both", expand=True)
         self.show_transactions()
         self.enable_windows_controls()
+        
 
         #Binding keys
         self.root.bind("<F1>", lambda e: self.print_receipt())
@@ -346,6 +347,15 @@ class TransactionManager:
                                     activebackground="#C82333", activeforeground="#FFFFFF",
                                     relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
         self.refund_btn.pack(side="left", padx=self.scale_size(5))
+        self.view_btn = tk.Button(
+            self.transaction_button_frame, text="👁",
+            command=lambda: self.view_transaction(self.transactions_table.selection()),
+            bg="#17A2B8", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+            activebackground="#117A8B", activeforeground="#FFFFFF",
+            relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled"
+        )
+        self.view_btn.pack(side="left", padx=self.scale_size(5))
+
 
         self.style_config()
 
@@ -457,6 +467,7 @@ class TransactionManager:
         self.edit_transaction_btn.config(state=state)
         self.delete_transaction_btn.config(state=state)
         self.refund_btn.config(state=state)
+        self.view_btn.config(state=state)  
 
     def validate_delete_main_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         selected_item = kwargs.get("selected_item")
@@ -698,6 +709,71 @@ class TransactionManager:
             if self.conn:
                 self.conn.close()
                 self.conn = None
+
+    def view_transaction(self, selected_item):
+        if not selected_item:
+            messagebox.showerror("Error", "No transaction selected", parent=self.root)
+            return
+        transaction_id = self.transactions_table.item(selected_item)["values"][0]
+
+        try:
+            self.conn = sqlite3.connect(self.db_path)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("""
+                    SELECT items, total_amount, cash_paid, change_amount, timestamp, status, payment_method, customer_id
+                    FROM transactions WHERE transaction_id = ?
+                """, (transaction_id,))
+                transaction = cursor.fetchone()
+                if not transaction:
+                    messagebox.showerror("Error", "Transaction not found", parent=self.root)
+                    return
+
+                items_str, total_amount, cash_paid, change, timestamp, status, payment_method, customer_id = transaction
+
+                # Parse items
+                item_lines = []
+                for item_data in items_str.split(";"):
+                    if item_data:
+                        try:
+                            item_id, qty = item_data.split(":")
+                            cursor.execute("SELECT name FROM inventory WHERE item_id = ?", (item_id,))
+                            name = cursor.fetchone()
+                            if name:
+                                unit = "pc" if int(qty) == 1 else "pcs"
+                                item_lines.append(f"{name[0]} ({qty} {unit})")
+                        except ValueError:
+                            continue
+
+            # Create detail window
+            window = tk.Toplevel(self.root)
+            window.title(f"Transaction {transaction_id}")
+            window.geometry(f"{self.scale_size(600)}x{self.scale_size(400)}")
+            window.configure(bg="#F8F9FA")
+
+            tk.Label(window, text=f"Transaction ID: {transaction_id}", font=("Helvetica", self.scale_size(18), "bold"), bg="#F8F9FA").pack(pady=10)
+            tk.Label(window, text=f"Date: {timestamp}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+            tk.Label(window, text=f"Status: {status}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+            tk.Label(window, text=f"Payment Method: {payment_method}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+            tk.Label(window, text=f"Customer ID: {customer_id}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+
+            tk.Label(window, text="Items:", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").pack(pady=5)
+            items_box = tk.Text(window, font=("Helvetica", self.scale_size(14)), height=10, width=50, wrap="word", bg="#FFFFFF")
+            items_box.insert("1.0", "\n".join(item_lines))
+            items_box.config(state="disabled")
+            items_box.pack(padx=10, pady=5)
+
+            tk.Label(window, text=f"Total: {total_amount:.2f}", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").pack()
+            tk.Label(window, text=f"Cash Paid: {cash_paid:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+            tk.Label(window, text=f"Change: {change:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+        finally:
+            if self.conn:
+                self.conn.close()
+                self.conn = None
+
 
     def print_receipt(self) -> None:
         selected_item = self.transactions_table.selection()
