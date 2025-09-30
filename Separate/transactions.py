@@ -748,24 +748,46 @@ class TransactionManager:
             # Create detail window
             window = tk.Toplevel(self.root)
             window.title(f"Transaction {transaction_id}")
-            window.geometry(f"{self.scale_size(600)}x{self.scale_size(400)}")
+            window.geometry(f"{self.scale_size(600)}x{self.scale_size(700)}")
             window.configure(bg="#F8F9FA")
 
-            tk.Label(window, text=f"Transaction ID: {transaction_id}", font=("Helvetica", self.scale_size(18), "bold"), bg="#F8F9FA").pack(pady=10)
-            tk.Label(window, text=f"Date: {timestamp}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
-            tk.Label(window, text=f"Status: {status}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
-            tk.Label(window, text=f"Payment Method: {payment_method}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
-            tk.Label(window, text=f"Customer ID: {customer_id}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+            # Create main frame for grid layout
+            main_frame = tk.Frame(window, bg="#F8F9FA")
+            main_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+            window.grid_columnconfigure(0, weight=1)
+            window.grid_rowconfigure(0, weight=1)
 
-            tk.Label(window, text="Items:", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").pack(pady=5)
-            items_box = tk.Text(window, font=("Helvetica", self.scale_size(14)), height=10, width=50, wrap="word", bg="#FFFFFF")
+            # Transaction details
+            tk.Label(main_frame, text="Transaction Details", font=("Helvetica", self.scale_size(18), "bold"), bg="#F8F9FA").grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="w")
+            tk.Label(main_frame, text="Transaction ID:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=1, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=transaction_id, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=1, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Date:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=2, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=timestamp, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=2, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Status:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=3, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=status, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=3, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Payment Method:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=4, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=payment_method, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=4, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Customer ID:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=5, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=customer_id, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=5, column=1, sticky="w", padx=5)
+
+            # Items section
+            tk.Label(main_frame, text="Items:", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=6, column=0, columnspan=2, pady=(10, 5), sticky="w")
+            items_box = tk.Text(main_frame, font=("Helvetica", self.scale_size(14)), height=10, width=50, wrap="word", bg="#FFFFFF")
             items_box.insert("1.0", "\n".join(item_lines))
             items_box.config(state="disabled")
-            items_box.pack(padx=10, pady=5)
+            items_box.grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
-            tk.Label(window, text=f"Total: {total_amount:.2f}", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").pack()
-            tk.Label(window, text=f"Cash Paid: {cash_paid:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
-            tk.Label(window, text=f"Change: {change:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").pack()
+            # Financial details
+            tk.Label(main_frame, text="Total:", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=8, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=f"{total_amount:.2f}", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=8, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Cash Paid:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=9, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=f"{cash_paid:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=9, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Change:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=10, column=0, sticky="w", padx=5)
+            tk.Label(main_frame, text=f"{change:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=10, column=1, sticky="w", padx=5)
+
+            # Configure grid weights for proper spacing
+            main_frame.grid_columnconfigure(0, weight=1)
+            main_frame.grid_columnconfigure(1, weight=2)
 
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
