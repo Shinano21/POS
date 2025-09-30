@@ -36,9 +36,8 @@ class TransactionManager:
         self.main_frame.pack(fill="both", expand=True)
         self.show_transactions()
         self.enable_windows_controls()
-        
 
-        #Binding keys
+        # Binding keys
         self.root.bind("<F1>", lambda e: self.print_receipt())
         self.root.bind("<F2>", lambda e: self.edit_transaction_btn.invoke())
         self.root.bind("<F3>", lambda e: self.delete_transaction_btn.invoke())
@@ -46,8 +45,6 @@ class TransactionManager:
         self.root.bind("<F5>", lambda e: self.update_transactions_table())
         self.root.bind("<F11>", self.toggle_maximize_restore)
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
-        
-
 
     def enable_windows_controls(self):
         hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
@@ -112,20 +109,20 @@ class TransactionManager:
         window.title(title)
 
         # Scale dimensions
-        win_w, win_h = self.scale_size(500), self.scale_size(250)
+        win_w, win_h = self.scale_size(400), self.scale_size(200)
         scr_w, scr_h = window.winfo_screenwidth(), window.winfo_screenheight()
         x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
         window.geometry(f"{win_w}x{win_h}+{x}+{y}")
         window.configure(bg="#F8F9FA")
 
         # Larger fonts for accessibility
-        font_label = ("Helvetica", max(self.scale_size(20), 20), "bold")
-        font_entry = ("Helvetica", max(self.scale_size(20), 20))
-        font_btn   = ("Helvetica", max(self.scale_size(20), 20), "bold")
+        font_label = ("Helvetica", max(self.scale_size(16), 16), "bold")
+        font_entry = ("Helvetica", max(self.scale_size(16), 16))
+        font_btn = ("Helvetica", max(self.scale_size(16), 16), "bold")
 
-        tk.Label(window, text=prompt, font=font_label, bg="#F8F9FA", fg="#212529").pack(pady=self.scale_size(15))
+        tk.Label(window, text=prompt, font=font_label, bg="#F8F9FA", fg="#212529").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         password_entry = tk.Entry(window, show="*", font=font_entry, bg="#FFFFFF", fg="#212529")
-        password_entry.pack(pady=self.scale_size(15), ipadx=10, ipady=8)
+        password_entry.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
         def validate_and_submit(event=None):
             password = password_entry.get().strip()
@@ -137,13 +134,13 @@ class TransactionManager:
         password_entry.bind("<Return>", validate_and_submit)
 
         tk.Button(window, text="✓ Submit",
-                command=validate_and_submit,
-                bg="#007BFF", fg="#FFFFFF", font=font_btn,
-                activebackground="#0056B3", activeforeground="#FFFFFF",
-                relief="flat", padx=15, pady=8).pack(pady=self.scale_size(15))
+                  command=validate_and_submit,
+                  bg="#007BFF", fg="#FFFFFF", font=font_btn,
+                  activebackground="#0056B3", activeforeground="#FFFFFF",
+                  relief="flat", padx=10, pady=5).grid(row=2, column=0, pady=5, sticky="ew")
 
+        window.grid_columnconfigure(0, weight=1)
         password_entry.focus_set()
-
 
     def get_user_role(self):
         return self.user_role
@@ -197,10 +194,10 @@ class TransactionManager:
     def style_config(self):
         style = ttk.Style()
         style.configure("Treeview", background="#FFFFFF", foreground="#212529",
-                        rowheight=self.scale_size(30), font=("Helvetica", self.scale_size(16)))
+                        rowheight=self.scale_size(25), font=("Helvetica", self.scale_size(14)))
         style.map("Treeview", background=[("selected", "#007BFF")], foreground=[("selected", "#FFFFFF")])
         style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
-        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(16), "bold"), background="#E9ECEF", foreground="#212529")
+        style.configure("Treeview.Heading", font=("Helvetica", self.scale_size(14), "bold"), background="#E9ECEF", foreground="#212529")
 
     def show_transactions(self, event: Optional[tk.Event] = None) -> None:
         if self.user_role == "Drug Lord":
@@ -219,23 +216,26 @@ class TransactionManager:
         main_frame.pack(fill="both", expand=True)
         self.setup_navigation(main_frame)
 
-        content_frame = tk.Frame(main_frame, bg="#F8F9FA", padx=self.scale_size(20), pady=self.scale_size(20))
-        content_frame.pack(fill="both", expand=True, padx=(self.scale_size(10), 0))
+        # Reduced padding for content frame
+        content_frame = tk.Frame(main_frame, bg="#F8F9FA", padx=self.scale_size(10), pady=self.scale_size(10))
+        content_frame.pack(fill="both", expand=True)
 
+        # Search frame with tighter spacing
         search_frame = tk.Frame(content_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
-        search_frame.pack(fill="x", pady=self.scale_size(10))
-        tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", self.scale_size(18)),
-                 bg="#FFFFFF", fg="#212529").pack(side="left", padx=self.scale_size(10))
-        self.search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(18)), bg="#FFFFFF", fg="#212529")
-        self.search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5))
+        search_frame.pack(fill="x", pady=self.scale_size(5))
+        tk.Label(search_frame, text="Search by Transaction ID:", font=("Helvetica", self.scale_size(16)),
+                 bg="#FFFFFF", fg="#212529").pack(side="left", padx=self.scale_size(5), pady=self.scale_size(5))
+        self.search_entry = tk.Entry(search_frame, font=("Helvetica", self.scale_size(16)), bg="#FFFFFF", fg="#212529")
+        self.search_entry.pack(side="left", fill="x", expand=True, padx=self.scale_size(5), pady=self.scale_size(5))
         self.search_entry.bind("<KeyRelease>", self.update_transactions_table)
         tk.Button(search_frame, text="🔄", command=self.update_transactions_table,
-                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                  bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(16), "bold"),
                   activebackground="#0056B3", activeforeground="#FFFFFF",
-                  relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(side="left", padx=self.scale_size(5))
+                  relief="flat", padx=self.scale_size(8), pady=self.scale_size(4)).pack(side="left", padx=self.scale_size(5), pady=self.scale_size(5))
 
+        # Transactions frame with reduced padding
         transactions_frame = tk.Frame(content_frame, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
-        transactions_frame.pack(fill="both", expand=True, pady=self.scale_size(10))
+        transactions_frame.pack(fill="both", expand=True, pady=self.scale_size(5))
         transactions_frame.grid_rowconfigure(1, weight=1)
         transactions_frame.grid_columnconfigure(0, weight=1)
 
@@ -256,22 +256,22 @@ class TransactionManager:
         headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT", "CASH PAID", "CHANGE", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER ID")
         self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20, style="Treeview")
         col_widths = {
-            "TransactionID": self.scale_size(200),
-            "ItemsList": self.scale_size(350),
-            "TotalAmount": self.scale_size(160),
-            "CashPaid": self.scale_size(160),
-            "ChangeAmount": self.scale_size(160),
-            "Timestamp": self.scale_size(250),
-            "Status": self.scale_size(140),
-            "PaymentMethod": self.scale_size(250),
-            "CustomerID": self.scale_size(180),
+            "TransactionID": self.scale_size(180),
+            "ItemsList": self.scale_size(300),
+            "TotalAmount": self.scale_size(140),
+            "CashPaid": self.scale_size(140),
+            "ChangeAmount": self.scale_size(140),
+            "Timestamp": self.scale_size(220),
+            "Status": self.scale_size(120),
+            "PaymentMethod": self.scale_size(220),
+            "CustomerID": self.scale_size(160),
         }
 
         for col, head in zip(columns, headers):
             self.transactions_table.heading(col, text=head)
             self.transactions_table.column(
                 col,
-                width=col_widths.get(col, self.scale_size(150)),
+                width=col_widths.get(col, self.scale_size(130)),
                 anchor="center" if col != "ItemsList" else "w"
             )
 
@@ -316,46 +316,46 @@ class TransactionManager:
         self.update_transactions_table()
         self.transactions_table.bind("<<TreeviewSelect>>", self.on_transaction_select)
 
+        # Button frame with reduced padding
         self.transaction_button_frame = tk.Frame(transactions_frame, bg="#FFFFFF")
-        self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=self.scale_size(10))
+        self.transaction_button_frame.grid(row=3, column=0, columnspan=9, pady=self.scale_size(5))
         self.print_btn = tk.Button(self.transaction_button_frame, text="🖨", command=self.print_receipt,
-                                   bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                                   bg="#28A745", fg="#FFFFFF", font=("Helvetica", self.scale_size(16), "bold"),
                                    activebackground="#218838", activeforeground="#FFFFFF",
-                                   relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
-        self.print_btn.pack(side="left", padx=self.scale_size(5))
+                                   relief="flat", padx=self.scale_size(8), pady=self.scale_size(4), state="disabled")
+        self.print_btn.pack(side="left", padx=self.scale_size(3))
         self.edit_transaction_btn = tk.Button(self.transaction_button_frame, text="✏",
                                              command=lambda: self.create_password_auth_window(
                                                  "Authenticate Edit", "Enter admin password to edit transaction",
                                                  self.validate_edit_transaction_auth, selected_item=self.transactions_table.selection()),
-                                             bg="#FFC107", fg="#212529", font=("Helvetica", self.scale_size(18), "bold"),
+                                             bg="#FFC107", fg="#212529", font=("Helvetica", self.scale_size(16), "bold"),
                                              activebackground="#E0A800", activeforeground="#212529",
-                                             relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
-        self.edit_transaction_btn.pack(side="left", padx=self.scale_size(5))
+                                             relief="flat", padx=self.scale_size(8), pady=self.scale_size(4), state="disabled")
+        self.edit_transaction_btn.pack(side="left", padx=self.scale_size(3))
         self.delete_transaction_btn = tk.Button(self.transaction_button_frame, text="🗑",
                                                command=lambda: self.create_password_auth_window(
                                                    "Authenticate Deletion", "Enter admin password to delete transaction",
                                                    self.validate_delete_main_transaction_auth, selected_item=self.transactions_table.selection()),
-                                               bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                                               bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(16), "bold"),
                                                activebackground="#C82333", activeforeground="#FFFFFF",
-                                               relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
-        self.delete_transaction_btn.pack(side="left", padx=self.scale_size(5))
+                                               relief="flat", padx=self.scale_size(8), pady=self.scale_size(4), state="disabled")
+        self.delete_transaction_btn.pack(side="left", padx=self.scale_size(3))
         self.refund_btn = tk.Button(self.transaction_button_frame, text="🔄",
                                     command=lambda: self.create_password_auth_window(
                                         "Authenticate Refund", "Enter admin password to process refund",
                                         self.validate_refund_auth, selected_item=self.transactions_table.selection()),
-                                    bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                                    bg="#DC3545", fg="#FFFFFF", font=("Helvetica", self.scale_size(16), "bold"),
                                     activebackground="#C82333", activeforeground="#FFFFFF",
-                                    relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled")
-        self.refund_btn.pack(side="left", padx=self.scale_size(5))
+                                    relief="flat", padx=self.scale_size(8), pady=self.scale_size(4), state="disabled")
+        self.refund_btn.pack(side="left", padx=self.scale_size(3))
         self.view_btn = tk.Button(
             self.transaction_button_frame, text="👁",
             command=lambda: self.view_transaction(self.transactions_table.selection()),
-            bg="#17A2B8", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+            bg="#17A2B8", fg="#FFFFFF", font=("Helvetica", self.scale_size(16), "bold"),
             activebackground="#117A8B", activeforeground="#FFFFFF",
-            relief="flat", padx=self.scale_size(12), pady=self.scale_size(6), state="disabled"
+            relief="flat", padx=self.scale_size(8), pady=self.scale_size(4), state="disabled"
         )
-        self.view_btn.pack(side="left", padx=self.scale_size(5))
-
+        self.view_btn.pack(side="left", padx=self.scale_size(3))
 
         self.style_config()
 
@@ -414,7 +414,7 @@ class TransactionManager:
                 print("No valid search_entry available")
         except tk.TclError as e:
             print(f"TclError accessing search_entry: {e}")
-        
+
         try:
             self.conn = sqlite3.connect(self.db_path)
             with self.conn:
@@ -425,7 +425,7 @@ class TransactionManager:
                     cursor.execute("SELECT * FROM transactions")
                 transactions = cursor.fetchall()
                 print(f"Fetched {len(transactions)} transactions")
-                
+
                 for transaction in transactions:
                     items_str = transaction[1]
                     item_names = []
@@ -441,7 +441,7 @@ class TransactionManager:
                             except ValueError as e:
                                 print(f"Error parsing item_data '{item_data}': {e}")
                     if item_names:
-                        items_display = "\n".join(item_names)
+                        items_display = ", ".join(item_names)   # or " | ".join(item_names)
                         if len(items_display) > 200:
                             items_display = items_display[:200] + "..."
                     else:
@@ -467,7 +467,7 @@ class TransactionManager:
         self.edit_transaction_btn.config(state=state)
         self.delete_transaction_btn.config(state=state)
         self.refund_btn.config(state=state)
-        self.view_btn.config(state=state)  
+        self.view_btn.config(state=state)
 
     def validate_delete_main_transaction_auth(self, password: str, window: tk.Toplevel, **kwargs) -> None:
         selected_item = kwargs.get("selected_item")
@@ -596,10 +596,10 @@ class TransactionManager:
                 window.configure(bg="#F8F9FA")
 
                 content_frame = tk.Frame(window, bg="#FFFFFF", relief="raised", bd=1, highlightbackground="#DEE2E6", highlightthickness=1)
-                content_frame.pack(fill="both", expand=True, padx=self.scale_size(20), pady=self.scale_size(20))
+                content_frame.pack(fill="both", expand=True, padx=self.scale_size(10), pady=self.scale_size(10))
 
-                tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", self.scale_size(18), "bold"),
-                         bg="#FFFFFF", fg="#212529").pack(pady=self.scale_size(10))
+                tk.Label(content_frame, text=f"Edit Transaction {transaction_id}", font=("Helvetica", self.scale_size(16), "bold"),
+                         bg="#FFFFFF", fg="#212529").pack(pady=self.scale_size(5))
 
                 columns = ("Item", "OriginalQuantity", "NewQuantity")
                 headers = ("ITEM", "ORIGINAL QTY", "NEW QTY")
@@ -607,7 +607,7 @@ class TransactionManager:
                 for col, head in zip(columns, headers):
                     edit_table.heading(col, text=head)
                     edit_table.column(col, width=self.scale_size(150) if col != "Item" else self.scale_size(200), anchor="center" if col != "Item" else "w")
-                edit_table.pack(fill="both", expand=True)
+                edit_table.pack(fill="both", expand=True, padx=self.scale_size(5), pady=self.scale_size(5))
 
                 quantity_entries = {}
                 vcmd_int = (self.root.register(lambda P: P.isdigit() or P == ""), "%P")
@@ -633,9 +633,9 @@ class TransactionManager:
 
                 tk.Button(content_frame, text="✓ Confirm Changes",
                           command=lambda: self.validate_edit_transaction_fields(quantity_entries, window) and self.process_edit_transaction(transaction_id, edit_items, quantity_entries, transaction[2], transaction[5], transaction[6], window),
-                          bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(18), "bold"),
+                          bg="#007BFF", fg="#FFFFFF", font=("Helvetica", self.scale_size(16), "bold"),
                           activebackground="#0056B3", activeforeground="#FFFFFF",
-                          relief="flat", padx=self.scale_size(12), pady=self.scale_size(6)).pack(pady=self.scale_size(10))
+                          relief="flat", padx=self.scale_size(8), pady=self.scale_size(4)).pack(pady=self.scale_size(5))
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
         finally:
@@ -748,42 +748,42 @@ class TransactionManager:
             # Create detail window
             window = tk.Toplevel(self.root)
             window.title(f"Transaction {transaction_id}")
-            window.geometry(f"{self.scale_size(600)}x{self.scale_size(700)}")
+            window.geometry(f"{self.scale_size(500)}x{self.scale_size(400)}")
             window.configure(bg="#F8F9FA")
 
             # Create main frame for grid layout
             main_frame = tk.Frame(window, bg="#F8F9FA")
-            main_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+            main_frame.grid(row=0, column=0, padx=self.scale_size(5), pady=self.scale_size(5), sticky="nsew")
             window.grid_columnconfigure(0, weight=1)
             window.grid_rowconfigure(0, weight=1)
 
             # Transaction details
-            tk.Label(main_frame, text="Transaction Details", font=("Helvetica", self.scale_size(18), "bold"), bg="#F8F9FA").grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky="w")
-            tk.Label(main_frame, text="Transaction ID:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=1, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=transaction_id, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=1, column=1, sticky="w", padx=5)
-            tk.Label(main_frame, text="Date:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=2, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=timestamp, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=2, column=1, sticky="w", padx=5)
-            tk.Label(main_frame, text="Status:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=3, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=status, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=3, column=1, sticky="w", padx=5)
-            tk.Label(main_frame, text="Payment Method:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=4, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=payment_method, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=4, column=1, sticky="w", padx=5)
-            tk.Label(main_frame, text="Customer ID:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=5, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=customer_id, font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=5, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Transaction Details", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=0, column=0, columnspan=2, pady=(0, 5), sticky="w")
+            tk.Label(main_frame, text="Transaction ID:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=transaction_id, font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=1, column=1, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text="Date:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=2, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=timestamp, font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=2, column=1, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text="Status:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=3, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=status, font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=3, column=1, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text="Payment Method:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=4, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=payment_method, font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=4, column=1, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text="Customer ID:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=5, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=customer_id, font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=5, column=1, sticky="w", padx=5, pady=2)
 
             # Items section
-            tk.Label(main_frame, text="Items:", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=6, column=0, columnspan=2, pady=(10, 5), sticky="w")
-            items_box = tk.Text(main_frame, font=("Helvetica", self.scale_size(14)), height=10, width=50, wrap="word", bg="#FFFFFF")
+            tk.Label(main_frame, text="Items:", font=("Helvetica", self.scale_size(14), "bold"), bg="#F8F9FA").grid(row=6, column=0, columnspan=2, pady=(5, 2), sticky="w")
+            items_box = tk.Text(main_frame, font=("Helvetica", self.scale_size(12)), height=8, width=40, wrap="word", bg="#FFFFFF")
             items_box.insert("1.0", "\n".join(item_lines))
             items_box.config(state="disabled")
-            items_box.grid(row=7, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
+            items_box.grid(row=7, column=0, columnspan=2, padx=5, pady=2, sticky="ew")
 
             # Financial details
-            tk.Label(main_frame, text="Total:", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=8, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=f"{total_amount:.2f}", font=("Helvetica", self.scale_size(16), "bold"), bg="#F8F9FA").grid(row=8, column=1, sticky="w", padx=5)
-            tk.Label(main_frame, text="Cash Paid:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=9, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=f"{cash_paid:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=9, column=1, sticky="w", padx=5)
-            tk.Label(main_frame, text="Change:", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=10, column=0, sticky="w", padx=5)
-            tk.Label(main_frame, text=f"{change:.2f}", font=("Helvetica", self.scale_size(16)), bg="#F8F9FA").grid(row=10, column=1, sticky="w", padx=5)
+            tk.Label(main_frame, text="Total:", font=("Helvetica", self.scale_size(14), "bold"), bg="#F8F9FA").grid(row=8, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=f"{total_amount:.2f}", font=("Helvetica", self.scale_size(14), "bold"), bg="#F8F9FA").grid(row=8, column=1, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text="Cash Paid:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=9, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=f"{cash_paid:.2f}", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=9, column=1, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text="Change:", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=10, column=0, sticky="w", padx=5, pady=2)
+            tk.Label(main_frame, text=f"{change:.2f}", font=("Helvetica", self.scale_size(14)), bg="#F8F9FA").grid(row=10, column=1, sticky="w", padx=5, pady=2)
 
             # Configure grid weights for proper spacing
             main_frame.grid_columnconfigure(0, weight=1)
@@ -795,7 +795,6 @@ class TransactionManager:
             if self.conn:
                 self.conn.close()
                 self.conn = None
-
 
     def print_receipt(self) -> None:
         selected_item = self.transactions_table.selection()
