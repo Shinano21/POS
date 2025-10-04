@@ -409,22 +409,21 @@ class TransactionManager:
         try:
             if hasattr(self, 'search_entry') and self.search_entry.winfo_exists():
                 search_term = self.search_entry.get().strip()
-                print(f"Search term: '{search_term}'")
-            else:
-                print("No valid search_entry available")
-        except tk.TclError as e:
-            print(f"TclError accessing search_entry: {e}")
+        except tk.TclError:
+            pass
 
         try:
             self.conn = sqlite3.connect(self.db_path)
             with self.conn:
                 cursor = self.conn.cursor()
                 if search_term:
-                    cursor.execute("SELECT * FROM transactions WHERE UPPER(transaction_id) LIKE UPPER(?)", (f"%{search_term}%",))
+                    cursor.execute(
+                        "SELECT * FROM transactions WHERE UPPER(transaction_id) LIKE UPPER(?)",
+                        (f"%{search_term}%",)
+                    )
                 else:
                     cursor.execute("SELECT * FROM transactions")
                 transactions = cursor.fetchall()
-                print(f"Fetched {len(transactions)} transactions")
 
                 for transaction in transactions:
                     items_str = transaction[1]
@@ -438,27 +437,37 @@ class TransactionManager:
                                 if name:
                                     unit = "pc" if int(qty) == 1 else "pcs"
                                     item_names.append(f"{name[0]} ({qty} {unit})")
-                            except ValueError as e:
-                                print(f"Error parsing item_data '{item_data}': {e}")
+                            except ValueError:
+                                continue
                     if item_names:
-                        items_display = ", ".join(item_names)   # or " | ".join(item_names)
+                        items_display = ", ".join(item_names)
                         if len(items_display) > 200:
                             items_display = items_display[:200] + "..."
                     else:
                         items_display = "No items"
-                    self.transactions_table.insert("", "end", values=(
-                        transaction[0], items_display, f"{transaction[2]:.2f}",
-                        f"{transaction[3]:.2f}", f"{transaction[4]:.2f}",
-                        transaction[5], transaction[6], transaction[7] or "Cash",
-                        transaction[8] or "None"
-                    ))
+
+                    self.transactions_table.insert(
+                        "",
+                        "end",
+                        values=(
+                            transaction[0],
+                            items_display,
+                            f"{transaction[2]:.2f}",
+                            f"{transaction[3]:.2f}",
+                            f"{transaction[4]:.2f}",
+                            transaction[5],
+                            transaction[6],
+                            transaction[7] or "Cash",
+                            transaction[8] or "None",
+                        ),
+                    )
         except sqlite3.Error as e:
-            print(f"Database error: {e}")
             messagebox.showerror("Database Error", f"Failed to fetch transactions: {e}", parent=self.root)
         finally:
             if self.conn:
                 self.conn.close()
                 self.conn = None
+
 
     def on_transaction_select(self, event: tk.Event) -> None:
         selected_item = self.transactions_table.selection()
@@ -748,7 +757,7 @@ class TransactionManager:
             # Create detail window
             window = tk.Toplevel(self.root)
             window.title(f"Transaction {transaction_id}")
-            window.geometry(f"{self.scale_size(500)}x{self.scale_size(400)}")
+            window.geometry(f"{self.scale_size(500)}x{self.scale_size(500)}")
             window.configure(bg="#F8F9FA")
 
             # Create main frame for grid layout
