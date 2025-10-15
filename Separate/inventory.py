@@ -539,9 +539,10 @@ class InventoryManager:
 
     def add_item(self, item_id: str, name: str, item_type: str, retail_price: str, unit_price: str, quantity: str, supplier: str, window: tk.Toplevel):
         try:
-            retail_price = float(retail_price) if retail_price.strip() else 0.0
-            unit_price = float(unit_price) if retail_price.strip() else 0.0
-            quantity = int(quantity) if quantity.strip() else 0
+            retail_price = float(retail_price) if str(retail_price).strip() else 0.0
+            unit_price = float(unit_price) if str(unit_price).strip() else 0.0
+            quantity = int(quantity) if str(quantity).strip() else 0
+
 
             if not name or retail_price <= 0:
                 messagebox.showerror("Error", "Name and Retail Price are required", parent=self.root)
@@ -829,6 +830,7 @@ class InventoryManager:
         for item in self.inventory_table.get_children():
             self.inventory_table.delete(item)
         self.inventory_table.tag_configure('low_stock', background='#DC3545', foreground='#FFFFFF')
+
         with self.conn:
             cursor = self.conn.cursor()
             query = self.inventory_search_entry.get().strip()
@@ -836,6 +838,7 @@ class InventoryManager:
             sql = "SELECT item_id, name, type, retail_price, quantity, supplier FROM inventory"
             params = []
             conditions = []
+
             if query:
                 conditions.append("(name LIKE ?)")
                 params.append(f"%{query}%")
@@ -844,6 +847,10 @@ class InventoryManager:
                 params.append(type_filter)
             if conditions:
                 sql += " WHERE " + " AND ".join(conditions)
+
+            # ✅ Add sorting by name (A → Z)
+            sql += " ORDER BY LOWER(name) ASC"
+
             cursor.execute(sql, params)
             for item in cursor.fetchall():
                 item_id, name, item_type, retail_price, quantity, supplier = item
@@ -852,6 +859,7 @@ class InventoryManager:
                 self.inventory_table.insert("", "end", iid=item_id, values=(
                     name, item_type, f"{retail_price:.2f}", quantity, supplier or "Unknown"
                 ), tags=tags)
+
 
     def get_item_types(self):
         with self.conn:
