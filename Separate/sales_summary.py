@@ -522,7 +522,7 @@ class SalesSummary:
             # MONTHLY SALES SUMMARY
             # ---------------------------
             elements.append(Paragraph("<b>Monthly Sales Summary (Jan - Selected Month)</b>", styles['Heading2']))
-            monthly_data_table = [["Month", "Total Sales (₱)", "Unit Cost (₱)", "Net Profit (₱)"]]
+            monthly_data_table = [["Month", "Total Sales", "Unit Cost", "Net Profit"]]
 
             for m_num in range(1, month + 1):
                 month_key = f"{year}-{m_num:02d}"
@@ -570,7 +570,7 @@ class SalesSummary:
             # DAILY SALES SUMMARY
             # ---------------------------
             elements.append(Paragraph("<b>Daily Sales Summary</b>", styles['Heading2']))
-            daily_data_table = [["Date", "Total Sales (₱)", "Unit Cost (₱)", "Net Profit (₱)"]]
+            daily_data_table = [["Date", "Total Sales", "Unit Cost", "Net Profit"]]
 
             if daily_sales:
                 for date in sorted(daily_sales.keys()):
