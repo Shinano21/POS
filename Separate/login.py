@@ -219,23 +219,69 @@ class LoginApp:
         crash_log = os.path.join(os.getcwd(), "crash_log.txt")
         backup_dir = os.path.join(get_appdata_path(), "backups")
 
-        if os.path.exists(crash_log) and os.path.exists(backup_dir):
-            try:
-                backups = sorted(
-                    [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.endswith(".db")],
-                    key=os.path.getmtime,
-                    reverse=True,
-                )
-                if backups:
-                    latest_backup = backups[0]
-                    shutil.copy2(latest_backup, self.db_path)
-                    print(f"[Recovery] Restored database from {latest_backup}")
-                    messagebox.showwarning(
-                        "Recovery",
-                        f"The app crashed previously.\nDatabase restored from:\n{os.path.basename(latest_backup)}",
-                    )
-            except Exception as e:
-                print(f"[Recovery Error] {e}")
+        if not (os.path.exists(crash_log) and os.path.exists(backup_dir)):
+            return
+
+        try:
+            backups = []
+            for f in os.listdir(backup_dir):
+                if f.startswith("pharmacy_backup_") and f.endswith(".db"):
+                    backups.append(os.path.join(backup_dir, f))
+
+            if not backups:
+                return
+
+            backups.sort(key=os.path.getmtime, reverse=True)
+            latest_backup = backups[0]
+
+            if os.path.basename(latest_backup) == "pharmacy.db":
+                print("[Recovery] Skipping live DB file.")
+                return
+
+            shutil.copy2(latest_backup, self.db_path)
+            print(f"[Recovery] Restored database from {latest_backup}")
+            messagebox.showwarning(
+                "Recovery",
+                f"The app crashed previously.\nDatabase restored from:\n{os.path.basename(latest_backup)}",
+            )
+        except Exception as e:
+            print(f"[Recovery Error] {e}")
+
+    # ------------------- AUTO BACKUP ON LOGIN -------------------
+    def auto_backup_database(self):
+        """Automatically back up database upon successful login and delete old backups."""
+        try:
+            db_dir = get_appdata_path()
+            db_path = os.path.join(db_dir, "pharmacy.db")
+            backup_dir = os.path.join(db_dir, "backups")
+            os.makedirs(backup_dir, exist_ok=True)
+
+            # Create new backup
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_filename = f"pharmacy_backup_{timestamp}.db"
+            backup_file = os.path.join(backup_dir, backup_filename)
+            shutil.copy2(db_path, backup_file)
+            print(f"[Auto Backup] Created {backup_filename}")
+
+            # Auto-delete old backups (>7 days)
+            now = datetime.datetime.now()
+            retention_days = 7
+            deleted = 0
+            for f in os.listdir(backup_dir):
+                if f.startswith("pharmacy_backup_") and f.endswith(".db"):
+                    f_path = os.path.join(backup_dir, f)
+                    try:
+                        ts = f.replace("pharmacy_backup_", "").replace(".db", "")
+                        f_time = datetime.datetime.strptime(ts, "%Y%m%d_%H%M%S")
+                        if (now - f_time).days > retention_days:
+                            os.remove(f_path)
+                            deleted += 1
+                    except Exception as err:
+                        print(f"[Cleanup Warning] Skipped {f}: {err}")
+            if deleted:
+                print(f"[Cleanup] Deleted {deleted} old backup(s).")
+        except Exception as e:
+            print(f"[Auto Backup Error] {e}")
 
     # ------------------- LOGIN GUI -------------------
     def setup_gui(self):
@@ -248,10 +294,8 @@ class LoginApp:
         card = tk.Frame(self.root, bg="white", bd=1, relief="solid")
         card.place(relx=0.5, rely=0.5, anchor="center", width=320, height=260)
 
-        tk.Label(
-            card, text="Shinano POS Login",
-            font=("Helvetica", 14, "bold"), bg="white", fg="#2C3E50"
-        ).pack(pady=10)
+        tk.Label(card, text="Shinano POS Login",
+                 font=("Helvetica", 14, "bold"), bg="white", fg="#2C3E50").pack(pady=10)
 
         self.username_entry = tk.Entry(card, font=("Helvetica", 12),
                                        bg="#F8F9FA", relief="solid", bd=1,
@@ -297,6 +341,10 @@ class LoginApp:
                 user = cur.fetchone()
                 if user:
                     username, _, role = user
+
+                    # Auto backup upon successful login
+                    self.auto_backup_database()
+
                     self.redirect_to_module(username, role)
                 else:
                     messagebox.showerror("Error", "Invalid username or password", parent=self.root)
