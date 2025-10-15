@@ -19,7 +19,7 @@ class AccountDashboard:
     # ------------------ UI SETUP ------------------
     def setup_ui(self):
         self.root.title("Admin Dashboard")
-        win_w, win_h = 950, 600
+        win_w, win_h = 1000, 600
         scr_w, scr_h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         x, y = (scr_w // 2) - (win_w // 2), (scr_h // 2) - (win_h // 2)
         self.root.geometry(f"{win_w}x{win_h}+{x}+{y}")
@@ -124,7 +124,7 @@ class AccountDashboard:
     def add_user(self, parent, table):
         win = tk.Toplevel(parent)
         win.title("Add User")
-        win.geometry("400x300")
+        win.geometry("400x320")
         win.configure(bg="#F5F6F5")
 
         tk.Label(win, text="Add New User", font=("Helvetica", 18, "bold"), bg="#F5F6F5").pack(pady=10)
@@ -183,7 +183,7 @@ class AccountDashboard:
 
         win = tk.Toplevel(parent)
         win.title("Update User")
-        win.geometry("400x280")
+        win.geometry("400x300")
         win.configure(bg="#F5F6F5")
 
         tk.Label(win, text=f"Update User: {username}", font=("Helvetica", 16, "bold"), bg="#F5F6F5").pack(pady=10)
