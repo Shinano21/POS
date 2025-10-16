@@ -64,6 +64,7 @@ class Dashboard:
         self.root.bind("<F3>", self.void_order)
         self.root.bind("<F4>", self.mode_of_payment)
         self.root.bind("<F5>", self.select_customer)
+        self.root.bind("<F6>", self.apply_discount)
         self.root.bind("<F12>", self.open_login_window)
         self.root.bind("<Shift_R>", self.focus_cash_paid)
         self.root.bind("<Shift-Return>", self.process_checkout)
@@ -142,11 +143,113 @@ class Dashboard:
     def setup_gui(self):
         self.show_dashboard()
 
-    def mode_of_payment(self, event=None):
-        messagebox.showinfo("Info", "Mode of payment not implemented.", parent=self.root)
 
+     # ---------------------------
+    #  DISCOUNT SYSTEM (F6)
+    # ---------------------------
+    def apply_discount(self, event=None):
+        """Authenticate admin, then apply 20% discount to selected item."""
+        if not self.cart or self.selected_item_index is None:
+            messagebox.showerror("Error", "No item selected.", parent=self.root)
+            return
+
+        # Require password authentication
+        self.create_password_auth_window(
+            "Authenticate Discount",
+            "Enter admin password to apply discount:",
+            self.validate_discount_auth
+        )
+
+    def validate_discount_auth(self, password: str, window: tk.Toplevel):
+        """Check if password belongs to admin, then apply discount."""
+        try:
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT password FROM users WHERE role = 'Drug Lord'")
+                valid_passwords = [row[0] for row in cursor.fetchall()]
+                if password in valid_passwords:
+                    window.destroy()
+                    self.discount_authenticated = True
+                    self.apply_20_percent_discount()
+                else:
+                    window.destroy()
+                    messagebox.showerror("Access Denied", "Invalid admin password.", parent=self.root)
+        except sqlite3.Error as e:
+            window.destroy()
+            messagebox.showerror("Database Error", str(e), parent=self.root)
+
+    def apply_20_percent_discount(self):
+        if not self.discount_authenticated:
+            messagebox.showerror("Error", "Discount not authenticated.", parent=self.root)
+            return
+
+        item = self.cart[self.selected_item_index]
+        if item.get("discount_applied", False):
+            messagebox.showinfo("Info", "Discount already applied to this item.", parent=self.root)
+            return
+
+        item["original_price"] = item["retail_price"]  # ✅ Keep original
+        discounted_price = round(item["retail_price"] * 0.8, 2)
+        item["discounted_price"] = discounted_price
+        item["discount_applied"] = True
+        item["discount_note"] = f"20% off (₱{item['retail_price'] - discounted_price:.2f})"
+        item["subtotal"] = discounted_price * item["quantity"]
+
+        self.discount_authenticated = False
+        self.update_cart_table()
+        messagebox.showinfo("Success", "20% discount applied.", parent=self.root)
+
+
+     # ---------------------------
+    #  PAYMENT MODE (F4)
+    # ---------------------------
+    def mode_of_payment(self, event=None):
+        """Select cash as payment mode."""
+        self.current_payment_method = "Cash"
+        messagebox.showinfo("Payment Mode", "✅ Cash mode selected.", parent=self.root)
+
+    # ---------------------------
+    #  CUSTOMER NAME (F5)
+    # ---------------------------
     def select_customer(self, event=None):
-        messagebox.showinfo("Info", "Select customer not implemented.", parent=self.root)
+        """Popup for entering customer name."""
+        win = tk.Toplevel(self.root)
+        win.title("Enter Customer Name")
+        win.geometry("300x180")
+        win.configure(bg="#FFFFFF")
+        tk.Label(win, text="Customer Name:", bg="#FFFFFF", font=("Helvetica", 14, "bold")).pack(pady=10)
+        entry = tk.Entry(win, font=("Helvetica", 14), bg="#E9ECEF")
+        entry.pack(pady=10, fill="x", padx=20)
+        entry.focus_set()
+
+        def save_customer():
+            name = entry.get().strip()
+            if not name:
+                messagebox.showerror("Error", "Customer name cannot be empty.", parent=win)
+                return
+            customer_id = str(uuid.uuid4())
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute("SELECT customer_id FROM customers WHERE name = ?", (name,))
+                existing = cursor.fetchone()
+                if existing:
+                    customer_id = existing[0]
+                else:
+                    cursor.execute(
+                        "INSERT INTO customers (customer_id, name, contact, address) VALUES (?, ?, ?, ?)",
+                        (customer_id, name, "", "")
+                    )
+                self.conn.commit()
+            self.current_customer_id = customer_id
+            self.current_customer_name = name
+            win.destroy()
+            messagebox.showinfo("Customer Selected", f"Customer: {name}", parent=self.root)
+
+        tk.Button(win, text="Save", command=save_customer,
+                  bg="#28A745", fg="#FFFFFF", font=("Helvetica", 12, "bold"),
+                  padx=15, pady=8, bd=0, relief="flat").pack(pady=15)
+        entry.bind("<Return>", lambda e: save_customer())
+
 
     def focus_cash_paid(self, event=None):
         if "Cash Paid " in self.summary_entries:
@@ -540,16 +643,36 @@ class Dashboard:
             messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
 
     def update_cart_table(self) -> None:
+        """Update cart UI, marking discounted items."""
         if hasattr(self, 'cart_table') and self.cart_table.winfo_exists():
-            for item in self.cart_table.get_children():
-                self.cart_table.delete(item)
+            self.cart_table.delete(*self.cart_table.get_children())
+
             for item in self.cart:
-                subtotal = item['retail_price'] * item['quantity']
-                item['subtotal'] = subtotal
-                self.cart_table.insert("", "end", values=(
-                    item['name'], f"{item['retail_price']:.2f}", item['quantity'], f"{subtotal:.2f}"
-                ))
+                # Use discounted price if available
+                price = item.get("discounted_price", item["retail_price"])
+                subtotal = price * item["quantity"]
+                item["subtotal"] = subtotal
+
+                # ✅ Show "(discounted)" tag on item name
+                display_name = item["name"]
+                if item.get("discount_applied"):
+                    display_name = f"{display_name} (discounted)"
+
+                # Insert into cart table
+                self.cart_table.insert(
+                    "",
+                    "end",
+                    values=(
+                        display_name,
+                        f"{price:.2f}",
+                        item["quantity"],
+                        f"{subtotal:.2f}",
+                    ),
+                )
+
             self.update_cart_totals()
+
+
 
     def on_item_select(self, event: tk.Event) -> None:
         selected_item = self.cart_table.selection()
@@ -635,14 +758,17 @@ class Dashboard:
         quantity_entry.bind("<Return>", lambda e: update_quantity())
 
 
-    def update_cart_totals(self) -> None:
-        final_total = sum((item['retail_price'] or 0) * (item['quantity'] or 0) for item in self.cart)
-        if "Final Total " in self.summary_entries and self.summary_entries["Final Total "].winfo_exists():
+    def update_cart_totals(self):
+        """Recalculate total including discounts."""
+        total = sum((item.get("discounted_price", item["retail_price"]) or 0) * (item["quantity"] or 0)
+                    for item in self.cart)
+        if "Final Total " in self.summary_entries:
             self.summary_entries["Final Total "].config(state="normal")
             self.summary_entries["Final Total "].delete(0, tk.END)
-            self.summary_entries["Final Total "].insert(0, f"{final_total:.2f}")
+            self.summary_entries["Final Total "].insert(0, f"{total:.2f}")
             self.summary_entries["Final Total "].config(state="readonly")
         self.update_change()
+
 
     def confirm_clear_cart(self) -> None:
         if messagebox.askyesno("Confirm Clear Cart",
@@ -758,6 +884,10 @@ class Dashboard:
 
                 self.conn.commit()
 
+            # ✅ Make snapshot before clearing the cart for receipt
+            cart_snapshot = [item.copy() for item in self.cart]
+
+            # --- Clear cart and reset UI ---
             self.cart.clear()
             self.selected_item_index = None
             self.update_cart_table()
@@ -780,7 +910,8 @@ class Dashboard:
 
             messagebox.showinfo("Success", f"Transaction completed. Change: ₱{change:.2f}", parent=self.root)
 
-            self.generate_receipt(transaction_id, timestamp, items, final_total, cash_paid, change)
+            # ✅ Generate receipt using cart snapshot (not cleared cart)
+            self.generate_receipt(transaction_id, timestamp, cart_snapshot, final_total, cash_paid, change)
             self.check_low_inventory()
 
         except (sqlite3.Error, ValueError) as e:
@@ -790,49 +921,94 @@ class Dashboard:
             logging.error(f"Unexpected error in process_checkout: {e}")
             messagebox.showerror("Error", f"An unexpected error occurred: {e}", parent=self.root)
 
-    def generate_receipt(self, transaction_id: str, timestamp: str, items: str, total_amount: float, cash_paid: float, change: float) -> None:
+
+    def generate_receipt(self, transaction_id: str, timestamp: str, cart_items: list, total_amount: float, cash_paid: float, change: float) -> None:
+        """Generate a properly formatted PDF receipt with discount markings."""
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        import os
+
         try:
             receipt_dir = os.path.join(os.path.dirname(self.db_path), "receipts")
             os.makedirs(receipt_dir, exist_ok=True)
             receipt_path = os.path.join(receipt_dir, f"receipt_{transaction_id}.pdf")
-            
+
             c = canvas.Canvas(receipt_path, pagesize=letter)
-            c.setFont("Helvetica", 12)
-            
-            c.drawString(100, 750, "Shinano Pharmacy Receipt")
-            c.drawString(100, 730, f"Transaction ID: {transaction_id}")
-            c.drawString(100, 710, f"Date: {timestamp}")
-            c.drawString(100, 690, "-" * 50)
-            
-            y = 670
-            c.drawString(100, y, "Item | Quantity | Price | Subtotal")
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(200, 770, "Shinano Pharmacy Receipt")
+
+            c.setFont("Helvetica", 11)
+            c.drawString(100, 745, f"Transaction ID: {transaction_id}")
+            c.drawString(100, 730, f"Date: {timestamp}")
+            if hasattr(self, "current_customer_name") and self.current_customer_name:
+                c.drawString(100, 715, f"Customer: {self.current_customer_name}")
+            c.drawString(100, 700, "-" * 60)
+
+            # Table header
+            y = 680
+            c.setFont("Helvetica-Bold", 11)
+            c.drawString(100, y, "Item")
+            c.drawString(300, y, "Qty")
+            c.drawString(360, y, "Price")
+            c.drawString(440, y, "Subtotal")
+            y -= 15
+            c.line(100, y, 500, y)
+            y -= 10
+
+            c.setFont("Helvetica", 11)
+            for item in cart_items:
+                if y < 100:  # New page if space runs out
+                    c.showPage()
+                    c.setFont("Helvetica", 11)
+                    y = 750
+
+                name = item["name"]
+                qty = item["quantity"]
+                price = item.get("discounted_price", item["retail_price"])
+                subtotal = item["subtotal"]
+                discount_flag = item.get("discount_applied", False)
+                original_price = item.get("original_price", item["retail_price"])
+
+                # Main item line
+                c.drawString(100, y, f"{name[:25]}")  # limit name width
+                c.drawRightString(330, y, f"{qty}")
+                c.drawRightString(420, y, f"₱{price:.2f}")
+                c.drawRightString(500, y, f"₱{subtotal:.2f}")
+                y -= 15
+
+                # Show discount note if applied
+                if discount_flag:
+                    discount_note = f"   → Discounted 20% (was ₱{original_price:.2f})"
+                    c.setFont("Helvetica-Oblique", 10)
+                    c.setFillColorRGB(0.2, 0.6, 0.2)  # green text
+                    c.drawString(100, y, discount_note)
+                    c.setFillColorRGB(0, 0, 0)
+                    c.setFont("Helvetica", 11)
+                    y -= 15
+
+            # Totals
+            c.drawString(100, y - 5, "-" * 60)
             y -= 20
-            
-            for item_str in items.split(";"):
-                item_id, qty = item_str.split(":")
-                qty = int(qty)
-                with self.conn:
-                    cursor = self.conn.cursor()
-                    cursor.execute("SELECT name, retail_price FROM inventory WHERE item_id = ?", (item_id,))
-                    item_data = cursor.fetchone()
-                    if item_data:
-                        name, price = item_data
-                        subtotal = (price or 0) * (qty or 0)
-                        c.drawString(100, y, f"{name} | {qty} | ₱{price:.2f} | ₱{subtotal:.2f}")
-                        y -= 20
-            
-            c.drawString(100, y - 20, "-" * 50)
-            c.drawString(100, y - 40, f"Total: ₱{total_amount:.2f}")
-            c.drawString(100, y - 60, f"Cash Paid: ₱{cash_paid:.2f}")
-            c.drawString(100, y - 80, f"Change: ₱{change:.2f}")
-            
+            c.setFont("Helvetica-Bold", 12)
+            c.drawRightString(480, y, f"Total: ₱{total_amount:.2f}")
+            y -= 15
+            c.setFont("Helvetica", 11)
+            c.drawRightString(480, y, f"Cash Paid: ₱{cash_paid:.2f}")
+            y -= 15
+            c.drawRightString(480, y, f"Change: ₱{change:.2f}")
+
+            y -= 40
+            c.setFont("Helvetica-Oblique", 10)
+            c.drawString(200, y, "Thank you for shopping at Shinano Pharmacy!")
+
             c.showPage()
             c.save()
-            
-            print(f"Receipt generated at {receipt_path}")
+
+            messagebox.showinfo("Receipt", f"Receipt saved:\n{receipt_path}", parent=self.root)
+
         except Exception as e:
-            print(f"Error generating receipt: {e}")
             messagebox.showerror("Error", f"Failed to generate receipt: {e}", parent=self.root)
+
 
     def check_low_inventory(self) -> None:
         try:
@@ -872,6 +1048,9 @@ class Dashboard:
             self.root.destroy()
             import login  # Make sure you have a login.py file with your login UI
             login.main()  # Call the main function of your login screen
+
+
+    
 
 
 
