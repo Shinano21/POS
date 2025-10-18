@@ -392,6 +392,38 @@ class LoginApp:
         if self.conn:
             self.conn.close()
 
+#-----------------------re-login callback----------------------------------------------
+    def redirect_to_module(self, username: str, role: str):
+        # ✅ If this LoginApp was launched from F12 (has a callback set by dashboard)
+        if hasattr(self.root, "on_manager_login") and role == "Manager":
+            try:
+                # Inform parent dashboard that manager successfully logged in
+                self.root.on_manager_login(username, role, self.db_path)
+                return
+            finally:
+                # Destroy this temporary login window
+                self.root.destroy()
+
+        # --- Normal standalone login flow ---
+        self.root.destroy()
+        new_root = tk.Tk()
+
+        if role == "Drug Lord":
+            from account import AccountDashboard
+            AccountDashboard(new_root, username, role, self.db_path)
+        elif role == "Manager":
+            from manager import ManagerDashboard
+            ManagerDashboard(new_root, username, role, self.db_path)
+        elif role == "User":
+            from dashboard import Dashboard
+            Dashboard(new_root, current_user=username, user_role=role)
+        else:
+            messagebox.showerror("Error", "Unknown role detected", parent=new_root)
+            new_root.destroy()
+
+        new_root.mainloop()
+
+
 
 # ------------------- MAIN -------------------
 def main():

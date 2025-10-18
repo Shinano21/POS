@@ -15,6 +15,7 @@ class AccountDashboard:
         self.conn = sqlite3.connect(db_path)
 
         self.setup_ui()
+        self.root.bind("<F12>", self.open_login_window)
 
     # ------------------ UI SETUP ------------------
     def setup_ui(self):
@@ -378,6 +379,13 @@ class AccountDashboard:
             messagebox.showerror("Error", f"Failed to delete old backups:\n{e}")
 
     # ------------------ LOGOUT ------------------
+
+    def open_login_window(self, event=None):
+        """Close the dashboard and return to the main login screen."""
+        from login import main  # Import the main login entry point
+        self.root.destroy()     # ✅ Close current dashboard window
+        main()                  # ✅ Open login window again
+
     def logout(self):
         self.conn.close()
         self.root.destroy()

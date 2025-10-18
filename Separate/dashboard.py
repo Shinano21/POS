@@ -78,11 +78,53 @@ class Dashboard:
         return 1.0
     
     def open_login_window(self, event=None):
-            """Open a new Login window without closing the Dashboard."""
-            from login import LoginApp   # ✅ lazy import fixes circular import
-            login_window = tk.Toplevel(self.root)
-            LoginApp(login_window)
-            login_window.grab_set()      # focus stays on login until closed
+        """Temporarily disable User Dashboard and open login for Manager re-login."""
+        from login import LoginApp
+        from manager import ManagerDashboard
+
+        # Disable the current User Dashboard while login is active
+        self.root.attributes("-disabled", True)
+
+        # Create the login popup
+        login_window = tk.Toplevel(self.root)
+        login_window.title("Re-Login")
+        login_window.geometry("500x400")
+        LoginApp(login_window)
+
+        # --- Called by LoginApp when Manager successfully logs in ---
+        def on_manager_login(username, role, db_path):
+            login_window.destroy()
+            # Open ManagerDashboard as a new top-level window
+            manager_window = tk.Toplevel(self.root)
+            ManagerDashboard(manager_window, username, role, db_path)
+
+            # When Manager closes the window, re-enable the User Dashboard
+            def on_manager_close():
+                try:
+                    self.root.attributes("-disabled", False)
+                except Exception as e:
+                    print("Re-enable failed:", e)
+                manager_window.destroy()
+                print("✅ User Dashboard re-enabled after Manager closed.")
+
+            manager_window.protocol("WM_DELETE_WINDOW", on_manager_close)
+
+        # Attach callback so LoginApp can call it
+        login_window.on_manager_login = on_manager_login
+
+        # If login window is closed without logging in, re-enable dashboard
+        def on_close_login():
+            self.root.attributes("-disabled", False)
+            login_window.destroy()
+            print("⚙️ Login window closed — Dashboard re-enabled.")
+
+        login_window.protocol("WM_DELETE_WINDOW", on_close_login)
+        login_window.grab_set()
+
+
+
+
+
 
     def scale_size(self, size: int) -> int:
         return int(size * self.scaling_factor)
@@ -114,6 +156,8 @@ class Dashboard:
             self.root.state('normal')
         else:
             self.root.state('zoomed')
+
+#------------------Void Fucntion------------------------
 
     def void_selected_items(self, event=None):
         if not self.cart or self.selected_item_index is None:
@@ -204,9 +248,79 @@ class Dashboard:
     #  PAYMENT MODE (F4)
     # ---------------------------
     def mode_of_payment(self, event=None):
-        """Select cash as payment mode."""
-        self.current_payment_method = "Cash"
-        messagebox.showinfo("Payment Mode", "✅ Cash mode selected.", parent=self.root)
+        """Select the mode of payment using dropdowns."""
+        import tkinter as tk
+        from tkinter import ttk
+
+        payment_window = tk.Toplevel(self.root)
+        payment_window.title("Select Payment Method")
+        payment_window.geometry("350x200")
+        payment_window.transient(self.root)
+        payment_window.grab_set()
+        payment_window.configure(bg="#F8F9FA")
+
+        tk.Label(payment_window, text="Payment Method:", font=("Helvetica", 12, "bold"), bg="#F8F9FA").pack(pady=10)
+        payment_var = tk.StringVar(value="Cash")
+        payment_dropdown = ttk.Combobox(
+            payment_window,
+            textvariable=payment_var,
+            values=["Cash", "Credit", "Debit", "E-Wallet"],
+            state="readonly",
+            width=20,
+            justify="center",
+        )
+        payment_dropdown.pack(pady=5)
+
+        # --- E-Wallet Type Dropdown ---
+        ewallet_var = tk.StringVar(value="")
+        ewallet_dropdown = ttk.Combobox(
+            payment_window,
+            textvariable=ewallet_var,
+            values=["GCash", "Maya", "PayMaya", "ShopeePay", "GrabPay"],
+            state="readonly",
+            width=20,
+            justify="center",
+        )
+        ewallet_dropdown.pack(pady=5)
+        ewallet_dropdown.pack_forget()  # hidden unless E-Wallet chosen
+
+        def on_payment_change(event=None):
+            if payment_var.get() == "E-Wallet":
+                ewallet_dropdown.pack(pady=5)
+            else:
+                ewallet_dropdown.pack_forget()
+
+        payment_dropdown.bind("<<ComboboxSelected>>", on_payment_change)
+
+        def confirm_selection():
+            selected_method = payment_var.get()
+            if selected_method == "E-Wallet":
+                wallet_type = ewallet_var.get()
+                if not wallet_type:
+                    tk.messagebox.showwarning("Missing Info", "Please select an E-Wallet type.", parent=payment_window)
+                    return
+                self.current_payment_method = f"E-Wallet ({wallet_type})"
+            else:
+                self.current_payment_method = selected_method
+
+            tk.messagebox.showinfo("Payment Mode", f"✅ {self.current_payment_method} mode selected.", parent=self.root)
+            payment_window.destroy()
+
+        confirm_btn = tk.Button(
+            payment_window,
+            text="Confirm",
+            command=confirm_selection,
+            bg="#4DA8DA",
+            fg="white",
+            font=("Helvetica", 12, "bold"),
+            relief="flat",
+            cursor="hand2",
+        )
+        confirm_btn.pack(pady=15)
+
+        payment_window.bind("<Return>", lambda e: confirm_selection())
+
+
 
     # ---------------------------
     #  CUSTOMER NAME (F5)

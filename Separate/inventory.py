@@ -11,7 +11,7 @@ import ctypes
 from ctypes import wintypes
 
 class InventoryManager:
-    def __init__(self, root, current_user, user_role, back_callback=None):
+    def __init__(self, root, current_user, user_role, db_path, back_callback=None):
         self.root = root
         self.root.title("Inventory Management")
         self.root.configure(bg="#F8F9FA")  # Bootstrap light background
@@ -20,8 +20,12 @@ class InventoryManager:
         self.current_user = current_user
         self.user_role = user_role
         self.back_callback = back_callback
-        self.db_path = self.get_writable_db_path()
+
+        # ✅ Use the database path passed from ManagerDashboard instead of creating a new one
+        self.db_path = db_path
         self.conn = sqlite3.connect(self.db_path)
+
+        # --- UI setup ---
         self.inventory_search_entry = None
         self.type_filter_var = None
         self.type_filter_combobox = None
@@ -30,16 +34,22 @@ class InventoryManager:
         self.delete_item_btn = None
         self.main_frame = tk.Frame(self.root, bg="#F8F9FA")
         self.main_frame.pack(fill="both", expand=True)
+
+        # --- Build UI and controls ---
         self.show_inventory()
         self.enable_windows_controls()
 
-        # Inventory Shortcuts
+        # --- Inventory Shortcuts ---
         self.root.bind("<F1>", lambda e: self.upload_inventory_csv())
         self.root.bind("<F2>", lambda e: self.show_add_item())
         self.root.bind("<F3>", lambda e: self.show_update_item_from_selection())
         self.root.bind("<F4>", lambda e: self.confirm_delete_item())
         self.root.bind("<F11>", self.toggle_maximize_restore)
         self.root.bind("<Escape>", lambda e: self.root.state('normal'))
+
+        # ✅ Debug check — make sure same DB is used as dashboard/manager
+        print("InventoryManager using DB:", self.db_path)
+
 
 
     def enable_windows_controls(self):

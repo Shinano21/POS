@@ -13,6 +13,7 @@ class ManagerDashboard:
         self.db_path = db_path
 
         self.setup_ui()
+        self.root.bind("<F12>", self.open_login_window)
 
     def setup_ui(self):
         self.root.title("Manager Dashboard")
@@ -71,12 +72,25 @@ class ManagerDashboard:
         sales.pack(side="left", expand=True, fill="both", padx=20, pady=20)
         logout.pack(side="left", expand=True, fill="both", padx=20, pady=20)
 
+
+
+    def open_login_window(self, event=None):
+        """Close the dashboard and return to the main login screen."""
+        from login import main  # Import the main login entry point
+        self.root.destroy()     # ✅ Close current dashboard window
+        main()                  # ✅ Open login window again
+
+
     def open_module(self, module_class):
+        """Open a new window for the selected module with proper database access."""
         new = tk.Toplevel(self.root)
-        if module_class == SalesSummary:
+        try:
+            # Pass db_path to all modules to ensure consistent database connection
             module_class(new, current_user=self.username, user_role=self.role, db_path=self.db_path)
-        else:
+        except TypeError:
+            # In case a module does not require db_path (for compatibility)
             module_class(new, current_user=self.username, user_role=self.role)
+
 
     def logout(self):
         self.root.destroy()
