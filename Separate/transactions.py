@@ -11,8 +11,13 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import webbrowser
+import win32print
+import win32api
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 import ctypes
 from ctypes import wintypes
+
 
 class TransactionManager:
     def __init__(self, root, current_user, user_role):
@@ -252,8 +257,8 @@ class TransactionManager:
         tree_frame = tk.Frame(canvas, bg="#FFFFFF")
         canvas_window = canvas.create_window((0, 0), window=tree_frame, anchor="nw")
 
-        columns = ("TransactionID", "ItemsList", "TotalAmount", "CashPaid", "ChangeAmount", "Timestamp", "Status", "PaymentMethod", "CustomerID")
-        headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT", "CASH PAID", "CHANGE", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER ID")
+        columns = ("TransactionID", "ItemsList", "TotalAmount", "CashPaid", "ChangeAmount", "Timestamp", "Status", "PaymentMethod", "CustomerName")
+        headers = ("TRANSACTION ID", "ITEMS", "TOTAL AMOUNT", "CASH PAID", "CHANGE", "TIMESTAMP", "STATUS", "PAYMENT METHOD", "CUSTOMER NAME")
         self.transactions_table = ttk.Treeview(tree_frame, columns=columns, show="headings", height=20, style="Treeview")
         col_widths = {
             "TransactionID": self.scale_size(180),
@@ -417,13 +422,26 @@ class TransactionManager:
             with self.conn:
                 cursor = self.conn.cursor()
                 if search_term:
-                    cursor.execute(
-                        "SELECT * FROM transactions WHERE UPPER(transaction_id) LIKE UPPER(?)",
-                        (f"%{search_term}%",)
-                    )
+                    cursor.execute("""
+                        SELECT t.transaction_id, t.items, t.total_amount, t.cash_paid, t.change_amount,
+                            t.timestamp, t.status, t.payment_method,
+                            COALESCE(c.name, 'N/A') AS customer_name
+                        FROM transactions t
+                        LEFT JOIN customers c ON t.customer_id = c.customer_id
+                        WHERE UPPER(t.transaction_id) LIKE UPPER(?)
+                        ORDER BY t.timestamp DESC
+                    """, (f"%{search_term}%",))
                 else:
-                    cursor.execute("SELECT * FROM transactions")
+                    cursor.execute("""
+                        SELECT t.transaction_id, t.items, t.total_amount, t.cash_paid, t.change_amount,
+                            t.timestamp, t.status, t.payment_method,
+                            COALESCE(c.name, 'N/A') AS customer_name
+                        FROM transactions t
+                        LEFT JOIN customers c ON t.customer_id = c.customer_id
+                        ORDER BY t.timestamp DESC
+                    """)
                 transactions = cursor.fetchall()
+
 
                 for transaction in transactions:
                     items_str = transaction[1]
@@ -810,88 +828,201 @@ class TransactionManager:
         if not selected_item:
             messagebox.showerror("Error", "No transaction selected", parent=self.root)
             return
-        transaction_id = self.transactions_table.item(selected_item)["values"][0]
-        items = self.transactions_table.item(selected_item)["values"][1].split(", ")
-        total_amount = float(self.transactions_table.item(selected_item)["values"][2])
-        cash_paid = float(self.transactions_table.item(selected_item)["values"][3])
-        change = float(self.transactions_table.item(selected_item)["values"][4])
-        timestamp = self.transactions_table.item(selected_item)["values"][5]
 
-        downloads_path = os.path.expanduser("~/Downloads")
-        pdf_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.pdf")
+        transaction_values = self.transactions_table.item(selected_item)["values"]
+        transaction_id = transaction_values[0]
+        timestamp = transaction_values[5]
+        payment_method = transaction_values[7]
+        customer_name = transaction_values[8]
+        total_amount = float(transaction_values[2])
+        cash_paid = float(transaction_values[3])
+        change = float(transaction_values[4])
 
         try:
             self.conn = sqlite3.connect(self.db_path)
-            c = canvas.Canvas(pdf_path, pagesize=letter)
-            c.setFont("Helvetica", self.scale_size(12))
-
-            c.drawString(self.scale_size(100), self.scale_size(750), "Shinano POS")
-            c.drawString(self.scale_size(100), self.scale_size(732), "Gem's Pharmacy")
-            c.drawString(self.scale_size(100), self.scale_size(678), "123 Pharmacy Drive, Health City Tel #555-0123")
-            c.drawString(self.scale_size(100), self.scale_size(650), f"Date: {timestamp}")
-            c.drawString(self.scale_size(100), self.scale_size(632), f"TRANSACTION CODE: {transaction_id}")
-
-            data = [["Name", "Qty", "Price"]]
-            total_qty = 0
-            missing_items = []
             with self.conn:
                 cursor = self.conn.cursor()
-                for item in items:
-                    if item:
-                        name, qty = item.rsplit(" (x", 1) if " (x" in item else (item, "0")
-                        qty = int(qty.strip(")")) if qty != "0" else 0
-                        item_name = name.strip()
-                        retail_price = 0.0
-                        cursor.execute("SELECT retail_price FROM inventory WHERE name = ?", (item_name,))
-                        result = cursor.fetchone()
-                        if result:
-                            retail_price = float(result[0])
-                        else:
-                            missing_items.append(item_name)
-                        data.append([item_name, str(qty), f"{retail_price:.2f}"])
-                        total_qty += qty
+                cursor.execute("SELECT items FROM transactions WHERE transaction_id = ?", (transaction_id,))
+                result = cursor.fetchone()
+                if not result:
+                    messagebox.showerror("Error", "Transaction not found.", parent=self.root)
+                    return
+                items_str = result[0]
 
-            if missing_items:
-                messagebox.showwarning("Warning", f"Items not found in inventory: {', '.join(missing_items)}", parent=self.root)
+                # Parse items list
+                items = []
+                for item_data in items_str.split(";"):
+                    if item_data:
+                        try:
+                            item_id, qty = item_data.split(":")
+                            qty = int(qty)
+                            cursor.execute("SELECT name, retail_price FROM inventory WHERE item_id = ?", (item_id,))
+                            item_info = cursor.fetchone()
+                            if item_info:
+                                name, price = item_info
+                                subtotal = price * qty
+                                items.append((name, qty, price, subtotal))
+                        except ValueError:
+                            continue
 
-            data.append(["Total", str(total_qty), f"{total_amount:.2f}"])
+            # --- Printer Detection ---
+            printers = [p[2] for p in win32print.EnumPrinters(
+                win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
+            )]
+            thermal_printer = None
+            default_printer = win32print.GetDefaultPrinter() if printers else None
+            active_printers = []
 
-            table = Table(data, colWidths=[self.scale_size(200), self.scale_size(100), self.scale_size(100)])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#007BFF")),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), self.scale_size(12)),
-                ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor("#F8F9FA"), colors.HexColor("#E9ECEF")])
-            ]))
+            # Check which printers are actually active (status == 0)
+            for printer_name in printers:
+                try:
+                    hPrinter = win32print.OpenPrinter(printer_name)
+                    printer_info = win32print.GetPrinter(hPrinter, 2)
+                    status = printer_info["Status"]
+                    win32print.ClosePrinter(hPrinter)
+                    if status == 0:  # Printer ready
+                        active_printers.append(printer_name)
+                except Exception:
+                    continue
 
-            table_width = self.scale_size(400)
-            table_x = (letter[0] - table_width) / 2
-            table_y = self.scale_size(600)
-            table.wrapOn(c, table_width, self.scale_size(400))
-            table.drawOn(c, table_x, table_y - len(data) * self.scale_size(20))
+            # Pick the first active thermal printer
+            for printer_name in active_printers:
+                if any(keyword in printer_name.lower() for keyword in ["pos", "thermal", "receipt", "80mm", "58mm"]):
+                    thermal_printer = printer_name
+                    break
 
-            y = table_y - len(data) * self.scale_size(20) - self.scale_size(20)
-            c.drawString(self.scale_size(100), y - self.scale_size(40), f"CASH: {cash_paid:.2f}")
-            c.drawString(self.scale_size(100), y - self.scale_size(60), f"CHANGE: {change:.2f}")
-            c.drawString(self.scale_size(100), y - self.scale_size(80), f"VAT SALE: {(total_amount * 0.12):.2f}")
-            c.drawString(self.scale_size(100), y - self.scale_size(100), f"NON-VAT SALE: {(total_amount * 0.88):.2f}")
+            if default_printer not in active_printers:
+                default_printer = None
 
-            c.showPage()
-            c.save()
-            try:
+            # --- CASE 1: Thermal Printer Found ---
+            if thermal_printer:
+                receipt_lines = [
+                    "       Shinano Pharmacy Receipt",
+                    "------------------------------------------",
+                    f"Transaction ID: {transaction_id}",
+                    f"Date: {timestamp}",
+                    f"Customer: {customer_name}",
+                    f"Payment: {payment_method}",
+                    "------------------------------------------",
+                    "Item                    Qty   Price   Subtotal",
+                    "------------------------------------------",
+                ]
+                for name, qty, price, subtotal in items:
+                    line = f"{name[:15]:15} {qty:>3} {price:>7.2f} {subtotal:>8.2f}"
+                    receipt_lines.append(line)
+                receipt_lines.append("------------------------------------------")
+                receipt_lines.append(f"TOTAL: {total_amount:.2f}")
+                receipt_lines.append(f"CASH: {cash_paid:.2f}")
+                receipt_lines.append(f"CHANGE: {change:.2f}")
+                receipt_lines.append("------------------------------------------")
+                receipt_lines.append("Thank you for your purchase!")
+
+                text_data = "\n".join(receipt_lines)
+
+                hPrinter = win32print.OpenPrinter(thermal_printer)
+                try:
+                    hJob = win32print.StartDocPrinter(hPrinter, 1, ("Receipt", None, "RAW"))
+                    win32print.StartPagePrinter(hPrinter)
+                    win32print.WritePrinter(hPrinter, text_data.encode("utf-8"))
+                    win32print.EndPagePrinter(hPrinter)
+                    win32print.EndDocPrinter(hPrinter)
+                    messagebox.showinfo("Printed", f"Receipt printed on {thermal_printer}", parent=self.root)
+                finally:
+                    win32print.ClosePrinter(hPrinter)
+
+            # --- CASE 2: Regular Active Printer Found ---
+            elif default_printer:
+                downloads_path = os.path.expanduser("~/Downloads")
+                txt_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.txt")
+
+                with open(txt_path, "w", encoding="utf-8") as f:
+                    f.write("Shinano Pharmacy Receipt\n")
+                    f.write("------------------------------------------\n")
+                    f.write(f"Transaction ID: {transaction_id}\nDate: {timestamp}\n")
+                    f.write(f"Customer: {customer_name}\nPayment: {payment_method}\n")
+                    f.write("------------------------------------------\n")
+                    f.write("Item                    Qty   Price   Subtotal\n")
+                    f.write("------------------------------------------\n")
+                    for name, qty, price, subtotal in items:
+                        f.write(f"{name[:15]:15} {qty:>3} {price:>7.2f} {subtotal:>8.2f}\n")
+                    f.write("------------------------------------------\n")
+                    f.write(f"TOTAL: {total_amount:.2f}\nCASH: {cash_paid:.2f}\nCHANGE: {change:.2f}\n")
+                    f.write("------------------------------------------\n")
+                    f.write("Thank you for your purchase!\n")
+
+                win32api.ShellExecute(0, "print", txt_path, None, ".", 0)
+                messagebox.showinfo("Printing", f"Receipt sent to printer: {default_printer}", parent=self.root)
+
+            # --- CASE 3: No Active Printers → Save to PDF ---
+            else:
+                downloads_path = os.path.expanduser("~/Downloads")
+                pdf_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.pdf")
+
+                c = canvas.Canvas(pdf_path, pagesize=letter)
+                y = 750
+                line_height = 18
+                c.setFont("Helvetica-Bold", 14)
+                c.drawString(220, y, "Shinano Pharmacy Receipt")
+                y -= line_height * 2
+                c.setFont("Helvetica", 10)
+                c.drawString(100, y, f"Transaction ID: {transaction_id}")
+                y -= line_height
+                c.drawString(100, y, f"Date: {timestamp}")
+                y -= line_height
+                c.drawString(100, y, f"Customer: {customer_name}")
+                y -= line_height
+                c.drawString(100, y, f"Payment: {payment_method}")
+                y -= line_height
+                c.line(100, y, 500, y)
+                y -= line_height
+
+                c.setFont("Helvetica-Bold", 10)
+                c.drawString(100, y, "Item")
+                c.drawString(300, y, "Qty")
+                c.drawString(350, y, "Price")
+                c.drawString(420, y, "Subtotal")
+                y -= line_height
+                c.line(100, y, 500, y)
+                y -= line_height
+
+                c.setFont("Helvetica", 10)
+                for name, qty, price, subtotal in items:
+                    if y < 100:
+                        c.showPage()
+                        y = 750
+                        c.setFont("Helvetica", 10)
+                    c.drawString(100, y, name[:25])
+                    c.drawRightString(390, y, str(qty))
+                    c.drawRightString(440, y, f"{price:.2f}")
+                    c.drawRightString(490, y, f"{subtotal:.2f}")
+                    y -= line_height
+
+                c.line(100, y, 500, y)
+                y -= line_height
+                c.setFont("Helvetica-Bold", 10)
+                c.drawRightString(490, y, f"TOTAL: {total_amount:.2f}")
+                y -= line_height
+                c.setFont("Helvetica", 10)
+                c.drawRightString(490, y, f"CASH: {cash_paid:.2f}")
+                y -= line_height
+                c.drawRightString(490, y, f"CHANGE: {change:.2f}")
+                y -= line_height * 2
+                c.setFont("Helvetica-Oblique", 9)
+                c.drawString(180, y, "Thank you for your purchase!")
+                c.save()
+
                 webbrowser.open(f"file://{pdf_path}")
-                messagebox.showinfo("Success", f"Opening receipt: {pdf_path}", parent=self.root)
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to open receipt: {e}", parent=self.root)
-        except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Database error: {e}", parent=self.root)
+                messagebox.showinfo("Saved", f"No active printer detected. PDF saved to {pdf_path}", parent=self.root)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Printing failed: {e}", parent=self.root)
         finally:
             if self.conn:
                 self.conn.close()
                 self.conn = None
+
+
+
 
     def validate_refund_auth(self, password: str, window: tk.Toplevel, **kwargs):
         selected_item = kwargs.get("selected_item")
