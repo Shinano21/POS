@@ -849,7 +849,7 @@ class TransactionManager:
                     return
                 items_str = result[0]
 
-                # Parse items list
+                # Parse items
                 items = []
                 for item_data in items_str.split(";"):
                     if item_data:
@@ -865,7 +865,7 @@ class TransactionManager:
                         except ValueError:
                             continue
 
-            # --- Printer Detection ---
+            # --- Detect Active Printers ---
             printers = [p[2] for p in win32print.EnumPrinters(
                 win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
             )]
@@ -873,31 +873,28 @@ class TransactionManager:
             default_printer = win32print.GetDefaultPrinter() if printers else None
             active_printers = []
 
-            # Check which printers are actually active (status == 0)
             for printer_name in printers:
                 try:
                     hPrinter = win32print.OpenPrinter(printer_name)
-                    printer_info = win32print.GetPrinter(hPrinter, 2)
-                    status = printer_info["Status"]
+                    info = win32print.GetPrinter(hPrinter, 2)
+                    status = info["Status"]
+                    offline = info["Attributes"] & 0x00000080  # PRINTER_ATTRIBUTE_WORK_OFFLINE
                     win32print.ClosePrinter(hPrinter)
-                    if status == 0:  # Printer ready
+                    if status == 0 and offline == 0:
                         active_printers.append(printer_name)
                 except Exception:
                     continue
 
-            # Pick the first active thermal printer
-            for printer_name in active_printers:
-                if any(keyword in printer_name.lower() for keyword in ["pos", "thermal", "receipt", "80mm", "58mm"]):
-                    thermal_printer = printer_name
+            # Find active thermal printer
+            for p in active_printers:
+                if any(k in p.lower() for k in ["pos", "thermal", "receipt", "80mm", "58mm"]):
+                    thermal_printer = p
                     break
 
-            if default_printer not in active_printers:
-                default_printer = None
-
-            # --- CASE 1: Thermal Printer Found ---
+            # --- CASE 1: Active Thermal Printer ---
             if thermal_printer:
                 receipt_lines = [
-                    "       Shinano Pharmacy Receipt",
+                    "      Shinano Pharmacy Receipt",
                     "------------------------------------------",
                     f"Transaction ID: {transaction_id}",
                     f"Date: {timestamp}",
@@ -905,7 +902,7 @@ class TransactionManager:
                     f"Payment: {payment_method}",
                     "------------------------------------------",
                     "Item                    Qty   Price   Subtotal",
-                    "------------------------------------------",
+                    "------------------------------------------"
                 ]
                 for name, qty, price, subtotal in items:
                     line = f"{name[:15]:15} {qty:>3} {price:>7.2f} {subtotal:>8.2f}"
@@ -930,8 +927,8 @@ class TransactionManager:
                 finally:
                     win32print.ClosePrinter(hPrinter)
 
-            # --- CASE 2: Regular Active Printer Found ---
-            elif default_printer:
+            # --- CASE 2: Regular Printer (Active) ---
+            elif default_printer in active_printers:
                 downloads_path = os.path.expanduser("~/Downloads")
                 txt_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.txt")
 
@@ -951,13 +948,12 @@ class TransactionManager:
                     f.write("Thank you for your purchase!\n")
 
                 win32api.ShellExecute(0, "print", txt_path, None, ".", 0)
-                messagebox.showinfo("Printing", f"Receipt sent to printer: {default_printer}", parent=self.root)
+                messagebox.showinfo("Printing", f"Receipt sent to active printer: {default_printer}", parent=self.root)
 
-            # --- CASE 3: No Active Printers → Save to PDF ---
+            # --- CASE 3: No Active Printers → PDF ---
             else:
                 downloads_path = os.path.expanduser("~/Downloads")
                 pdf_path = os.path.join(downloads_path, f"Receipt_{transaction_id}.pdf")
-
                 c = canvas.Canvas(pdf_path, pagesize=letter)
                 y = 750
                 line_height = 18
@@ -1012,7 +1008,7 @@ class TransactionManager:
                 c.save()
 
                 webbrowser.open(f"file://{pdf_path}")
-                messagebox.showinfo("Saved", f"No active printer detected. PDF saved to {pdf_path}", parent=self.root)
+                messagebox.showinfo("Saved", f"No active printer connected. PDF saved to {pdf_path}", parent=self.root)
 
         except Exception as e:
             messagebox.showerror("Error", f"Printing failed: {e}", parent=self.root)
